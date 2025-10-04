@@ -1,0 +1,294 @@
+# Product Requirements Document (PRD)
+
+# Model Context Interface (MCI) v1
+
+## Overview
+
+MCI is an open-source, platform-agnostic system for defining and executing AI agent tools through a standardized JSON schema. It allows synchronous execution of tools via adapters in multiple programming languages, initially focusing on Python (with the goal of expanding to PHP, Go, and Node.js). MCI aims to offer a secure, lightweight alternative to MCP, eliminating dependency on third-party code and providing fine-grained control over tool sets.
+
+- **Version:** v1.0.0 (initial public release)
+- **Owner / PM:** Revaz Ghambarashvili (aka MaestroError)
+- **Drivers:** Lightweight alternative to MCP, sync-first, schema-defined context, language-agnostic via adapters
+- **Primary Outcomes:** Enable agents to call tools described in a static JSON file; execute synchronously via adapter; reduce supply-chain risk; reduce token cost by scoping minimal toolsets.
+
+---
+
+## Goals **(v1)**
+
+- JSON **schema v1** that defines Tools with properties and Execution.
+- **HTTP** and **CLI** execution types with robust parameter templating.
+- **Python adapter** that loads the JSON, validates, executes synchronously, returns structured results.
+- Minimal, clear **docs** (Quickstart, Schema Reference, Examples).
+- Security posture: **env-only secrets**
+
+## Primary Use Cases
+
+1. Wrap an HTTP API.
+2. Wrap a CLI utility.
+3. Minimal toolset per agent.
+4. Portable definitions.
+
+## Functional Requirements
+
+### FR-1: JSON Tool Definition Schema
+
+### JSON Schema v1
+
+- Formal JSON Schema (Draft 2020‑12) for an **MCI context**.
+- Platform agnostic — works identically on Linux, macOS, and Windows.
+- Top‑level keys:
+  - `schemaVersion` (string, SemVer; e.g., "1.0")
+  - `metadata` (object; optional: `name`, `description`, `version`, `license`, `authors[]`)
+  - `tools[]`: Array of Objects including tool definition (check example below)
+
+Each tool is defined as:
+
+```json
+{
+  "name": "get_weather",
+  "title": "Weather Information Provider",
+  "description": "Get current weather information for a location",
+  "inputSchema": {
+    "type": "object",
+    "properties": {
+      "location": {
+        "type": "string",
+        "description": "City name or zip code"
+      }
+    },
+    "required": ["location"]
+  },
+  "execution": {}
+}
+```
+
+### FR-2: Execution Types
+
+Initial release supports:
+
+- **HTTP requests**
+- **CLI commands**
+- **File execution**
+- **Text execution**
+
+### FR‑3: HTTP Execution (Detailed)
+
+- Keys:
+  - `type`: "http"
+  - `auth` (optional)
+  - `method`: GET|POST|PUT|PATCH|DELETE|HEAD|OPTIONS
+  - `url`: templatable string
+  - `headers`: object with templating
+  - `query`: key-value pairs
+  - `body`: `{ "json": {...} }` | `{ "form": {...} }` | `{ "raw": "string" }`
+  - `timeout_ms`: integer
+  - `retries` (optional): `{ "attempts": 1, "backoff_ms": 500 }`
+
+### HTTP Request Execution Schema Example (JSON body, API Key Auth)
+
+```json
+{
+  "execution": {
+    "type": "http",
+    "method": "POST",
+    "url": "https://api.example.com/weather",
+    "headers": {
+      "Accept": "application/json"
+    },
+    "auth": {
+		  "type": "apiKey",
+		  "in": "header",
+		  "name": "X-API-Key",
+		  "value": "{{env.API_KEY}}"
+		}
+    "body": {
+      "type": "json",
+      "content": {
+        "location": "{{input.location}}"
+      }
+    }
+  }
+}
+```
+
+`auth.in` can be also a “query”
+
+### HTTP Request Execution Schema Example (Form body, Bearer Token)
+
+```json
+{
+  "execution": {
+    "type": "http",
+    "method": "POST",
+    "url": "https://api.example.com/weather",
+    "auth": {
+      "type": "bearer",
+      "token": "{{env.BERERTOA_KEN}}"
+    },
+    "body": {
+      "type": "form",
+      "content": {
+        "location": "{{input.location}}",
+        "unit": "celsius"
+      }
+    }
+  }
+}
+```
+
+### HTTP Request Execution Schema Example (Raw body, Basic Auth)
+
+```json
+{
+  "execution": {
+    "type": "http",
+    "method": "POST",
+    "url": "https://api.example.com/weather",
+    "auth": {
+      "type": "basic",
+      "username": "{{env.USERNAME}}",
+      "password": "{{env.PASSWORD}}"
+    },
+    "body": {
+      "type": "raw",
+      "content": "location={{input.location}}&unit=celsius"
+    }
+  }
+}
+```
+
+### HTTP Request Execution Schema Example (OAuth2 Client Credentials)
+
+```json
+{
+  "type": "http",
+  "method": "GET",
+  "url": "https://api.example.com/weather",
+  "auth": {
+    "type": "oauth2",
+    "flow": "clientCredentials",
+    "tokenUrl": "https://auth.example.com/token",
+    "clientId": "{{env.CLIENT_ID}}",
+    "clientSecret": "{{env.CLIENT_SECRET}}",
+    "scopes": ["read:weather"]
+  },
+  "params": {
+    "location": "{{input.location}}"
+  }
+}
+```
+
+### FR‑4: CLI Execution (Detailed)
+
+- Keys:
+  - `type`: "cli"
+  - `command`: string
+  - `args`: array of fixed arguments
+  - `flags`: object mapping flags to parameter sources
+  - `cwd`: templatable string
+  - `timeout_ms`: integer
+
+### CLI Command Execution Schema Example
+
+```json
+{
+  "type": "cli",
+  "command": "grep",
+  "args": ["-n"],
+  "flags": {
+    "-i": { "from": "parameters.ignore_case", "type": "boolean" },
+    "--file": { "from": "parameters.file", "type": "value" }
+  },
+  "cwd": "{{parameters.directory}}",
+  "timeout_ms": 8000
+}
+```
+
+### FR-5: File read
+
+- `type`: "file"
+- `path`: string
+- `parsePlaceholders`: boolean
+
+### File Execution Schema Example
+
+```json
+{
+  "execution": {
+    "type": "file",
+    "path": "./templates/report-{{ properties.report_id }}.txt",
+    "parsePlaceholders": true
+  }
+}
+```
+
+- **Behavior**: Adapter reads the file, replaces placeholders like `{{input.propertyName}}` and `{{env.VAR_NAME}}`.
+
+### FR-6: Text return
+
+- `type`: "text"
+- `text`: string
+
+### Text Execution Schema Example
+
+```json
+{
+  "execution": {
+    "type": "text",
+    "text": "Report generated for {{input.username}} on {{env.CURRENT_DATE}}"
+  }
+}
+```
+
+- **Behavior**: Adapter directly processes the given string with placeholder substitution.
+
+---
+
+## Output Format
+
+```json
+{
+  "result": {
+    "content": [
+      {
+        "type": "text",
+        "text": "Current weather in New York:\nTemperature: 72°F\nConditions: Partly cloudy"
+      }
+    ],
+    "isError": false
+  }
+}
+```
+
+```json
+{
+  "result": {
+    "error": "Error message"
+    "isError": true
+  }
+}
+```
+
+---
+
+## Non-Functional Requirements
+
+- Platform-agnostic JSON schema.
+- Secure execution: Environment variables and secrets are passed via adapter (`{{env.VAR_NAME}}`).
+- Adapters handle authentication, input parsing, execution, and result formatting.
+
+### Adapter API
+
+Python package should support reading JSON file, filtering it with `except` and `only` methods. ENV variables should be passed on initialization alongside with JSON file path. Parameters/Properties should be passed via `execute` method.
+
+## Testing Strategy
+
+- Schema tests, templating tests, HTTP, HTTP Auth tests, CLI execution tests, security, cross‑platform.
+
+---
+
+## Other concerns
+
+- **Execution timeout**: Default 30s, configurable per tool.
+- **Error handling**: Always return `isError: true` with `error` content;
+- **Schema versioning**: Start at `v1.0.0`, bump minor for backward-compatible, major for breaking changes.
