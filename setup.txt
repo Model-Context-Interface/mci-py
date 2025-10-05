@@ -1,0 +1,13 @@
+# mci-py Development Environment Setup Commands
+
+## Step 1: Install uv (curl-based installation)
+curl -LsSf https://astral.sh/uv/install.sh | sh
+
+## Step 2: Add uv to PATH (if needed after installation)
+source $HOME/.cargo/env
+
+## Step 3: Install Python 3.13 using uv
+uv python install 3.13
+
+## Step 4: Install project dependencies
+make install
