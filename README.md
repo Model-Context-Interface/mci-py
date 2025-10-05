@@ -4,6 +4,18 @@ ToDo: Brief description of MCIPY
 
 ---
 
+## Quick Start
+
+To quickly set up your development environment, run:
+
+```shell
+./setup_env.sh
+```
+
+This will install `uv`, Python, and all project dependencies automatically.
+
+---
+
 ## Project Docs
 
 For how to install uv and Python, see [installation.md](installation.md).
