@@ -184,7 +184,7 @@ Initial release supports:
   - `type`: "cli"
   - `command`: string
   - `args`: array of fixed arguments
-  - `flags`: object mapping flags to parameter sources
+  - `flags`: object mapping flags to property sources
   - `cwd`: templatable string
   - `timeout_ms`: integer
 
@@ -196,10 +196,10 @@ Initial release supports:
   "command": "grep",
   "args": ["-n"],
   "flags": {
-    "-i": { "from": "parameters.ignore_case", "type": "boolean" },
-    "--file": { "from": "parameters.file", "type": "value" }
+    "-i": { "from": "props.ignore_case", "type": "boolean" },
+    "--file": { "from": "props.file", "type": "value" }
   },
-  "cwd": "{{parameters.directory}}",
+  "cwd": "{{props.directory}}",
   "timeout_ms": 8000
 }
 ```
@@ -222,7 +222,7 @@ Initial release supports:
 }
 ```
 
-- **Behavior**: Adapter reads the file, replaces placeholders like `{{input.propertyName}}` and `{{env.VAR_NAME}}`.
+- **Behavior**: Adapter reads the file, replaces placeholders like `{{props.propertyName}}` and `{{env.VAR_NAME}}` and do all other templating.
 
 ### FR-6: Text return
 
@@ -246,40 +246,48 @@ Initial release supports:
 
 ## Output Format
 
+Successful:
+
 ```json
 {
-  "result": {
-    "content": [
-      {
-        "type": "text",
-        "text": "Current weather in New York:\nTemperature: 72°F\nConditions: Partly cloudy"
-      }
-    ],
-    "isError": false
-  }
+  "isError": false,
+  "content": [
+    {
+      "type": "text",
+      "text": "Current weather in New York:\nTemperature: 72°F\nConditions: Partly cloudy"
+    }
+  ]
 }
 ```
 
 ```json
 {
-  "result": {
-    "error": "Error message"
-    "isError": true
-  }
+  "isError": true,
+  "error": "Error message"
 }
 ```
 
 ---
 
+## Templating
+
+Basic templating should be enabled in parts where we have templating such as execution part, headers and etc.
+Loops and Control blocks should be applied in large text parts, like text execution and while parsing a file in file execution flow.
+
+- **Basic**: replaces placeholders like `{{props.propertyName}}` and `{{env.VAR_NAME}}` with values.
+- **Loops**: For array and object props or env variables, Adapter should be able to parse `@for` -> `@endfor` and `@foreach` -> `@endforeach`
+- **Control Blocks**: Adapter should be able to use control blocks: `@if` -> `@elseif` -> `@else` -> `@endif`
+
 ## Non-Functional Requirements
 
 - Platform-agnostic JSON schema.
 - Secure execution: Environment variables and secrets are passed via adapter (`{{env.VAR_NAME}}`).
+- Properties: Tool properties in templating, including execution JSON part and files parsed should be accessible as `props.propertyName`.
 - Adapters handle authentication, input parsing, execution, and result formatting.
 
 ### Adapter API
 
-Python package should support reading JSON file, filtering it with `except` and `only` methods. ENV variables should be passed on initialization alongside with JSON file path. Parameters/Properties should be passed via `execute` method.
+Python package should support reading JSON file, filtering it with `except` and `only` methods. ENV variables should be passed on initialization alongside with JSON file path. Properties should be passed via `execute` method.
 
 ## Testing Strategy
 
