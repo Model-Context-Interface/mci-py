@@ -27,7 +27,7 @@
         "method": "GET",
         "url": "https://api.example.com/weather",
         "params": {
-          "location": "{{input.location}}",
+          "location": "{{props.location}}",
           "units": "metric"
         },
         "headers": {
@@ -69,8 +69,8 @@
         "body": {
           "type": "json",
           "content": {
-            "title": "{{input.title}}",
-            "content": "{{input.content}}",
+            "title": "{{props.title}}",
+            "content": "{{props.content}}",
             "timestamp": "{{env.CURRENT_TIMESTAMP}}"
           }
         },
@@ -105,11 +105,11 @@
         "args": ["-r", "-n"],
         "flags": {
           "-i": {
-            "from": "input.ignore_case",
+            "from": "props.ignore_case",
             "type": "boolean"
           }
         },
-        "cwd": "{{input.directory}}",
+        "cwd": "{{props.directory}}",
         "timeout_ms": 8000
       }
     },
@@ -149,7 +149,7 @@
       },
       "execution": {
         "type": "text",
-        "text": "Hello {{input.username}}! This message was generated on {{env.CURRENT_DATE}}."
+        "text": "Hello {{props.username}}! This message was generated on {{env.CURRENT_DATE}}."
       }
     }
   ]

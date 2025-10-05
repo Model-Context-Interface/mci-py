@@ -1,1 +1,1 @@
-this is text from file
+this is text from file for {{props.username}}
