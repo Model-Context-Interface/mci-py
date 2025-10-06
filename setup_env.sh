@@ -2,7 +2,8 @@
 # setup_env.sh - Environment setup script for mci-py
 # This script installs uv, Python, and project dependencies
 
-set -e  # Exit on error
+set -euo pipefail  # Exit on error, unset variables, and pipeline failures
+IFS=$'\n\t'        # Make word splitting more robust
 
 echo "========================================"
 echo "Setting up mci-py development environment"
