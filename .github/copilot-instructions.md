@@ -137,7 +137,7 @@ Create manual test files for large features that should be run individually via 
 
 ### Test Organization
 
-Organize tests in the `tests/` directory: Unit tests in `tests/unit/` mimicing `src/` directory structure; place feature tests directly under `tests/` directory.
+Organize tests in the `tests/` directory: Unit tests in `tests/unit/` mimicking `src/` directory structure; place feature tests directly under `tests/` directory.
 
 Example:
 
