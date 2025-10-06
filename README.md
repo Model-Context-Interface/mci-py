@@ -16,6 +16,10 @@ This will install `uv`, Python, and all project dependencies automatically.
 
 ---
 
+## Test coverage
+
+Run `make coverage` for coverage report
+
 ## Project Docs
 
 For how to install uv and Python, see [installation.md](installation.md).
