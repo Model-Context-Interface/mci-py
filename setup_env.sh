@@ -31,13 +31,34 @@ else
             brew update
             brew install uv
         else
-            echo "Homebrew not found. Using curl to install uv..."
-            curl -LsSf https://astral.sh/uv/install.sh | sh
-        fi
+            echo "Homebrew not found. Downloading uv installer script..."
+            tmpfile=$(mktemp /tmp/uv-install.XXXXXX.sh)
+            curl -LsSf https://astral.sh/uv/install.sh -o "$tmpfile"
+            echo "WARNING: You are about to execute a script downloaded from https://astral.sh/uv/install.sh"
+            echo "This can be risky if the source is compromised. Consider verifying the script before running."
+            echo "Do you want to proceed and run the installer script? [y/N]"
+            read -r confirm
+            if [[ "$confirm" =~ ^[Yy]$ ]]; then
+                sh "$tmpfile"
+            else
+                echo "Aborted. You can inspect the installer script at $tmpfile"
+                exit 1
+            fi
     elif [[ "$OSTYPE" == "linux-gnu"* ]]; then
         # Linux
-        echo "Using curl to install uv..."
-        curl -LsSf https://astral.sh/uv/install.sh | sh
+        echo "Downloading uv installer script..."
+        tmpfile=$(mktemp /tmp/uv-install.XXXXXX.sh)
+        curl -LsSf https://astral.sh/uv/install.sh -o "$tmpfile"
+        echo "WARNING: You are about to execute a script downloaded from https://astral.sh/uv/install.sh"
+        echo "This can be risky if the source is compromised. Consider verifying the script before running."
+        echo "Do you want to proceed and run the installer script? [y/N]"
+        read -r confirm
+        if [[ "$confirm" =~ ^[Yy]$ ]]; then
+            sh "$tmpfile"
+        else
+            echo "Aborted. You can inspect the installer script at $tmpfile"
+            exit 1
+        fi
     else
         echo "Unsupported OS: $OSTYPE"
         echo "Please install uv manually from https://docs.astral.sh/uv/getting-started/installation/"
