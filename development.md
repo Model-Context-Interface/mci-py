@@ -1,6 +1,19 @@
 # Development
 
-## Setting Up uv
+## Quick Setup
+
+For a quick automated setup, you can use the provided setup script:
+
+```shell
+./setup_env.sh
+```
+
+This script will:
+1. Install `uv` (if not already installed)
+2. Install Python 3.13 using `uv`
+3. Install project dependencies using `make install`
+
+## Setting Up uv Manually
 
 This project is set up to use [uv](https://docs.astral.sh/uv/) to manage Python and
 dependencies. First, be sure you

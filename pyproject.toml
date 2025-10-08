@@ -52,6 +52,7 @@ dev = [
     "rich>=14.0.0",
     "basedpyright>=1.29.1",
     "funlog>=0.2.1",
+    "pytest-cov>=7.0.0",
 ]
 
 [project.scripts]

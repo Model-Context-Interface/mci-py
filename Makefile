@@ -4,7 +4,7 @@
 
 .DEFAULT_GOAL := default
 
-.PHONY: default install lint test upgrade build clean agent-rules
+.PHONY: default install lint test coverage upgrade build clean agent-rules
 
 default: agent-rules install lint test 
 
@@ -16,6 +16,9 @@ lint:
 
 test:
 	uv run pytest
+
+coverage:
+	uv run pytest --cov=src/mcipy --cov-report=term-missing
 
 upgrade:
 	uv sync --upgrade --all-extras --dev
