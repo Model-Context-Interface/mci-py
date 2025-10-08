@@ -5,7 +5,9 @@
     "description": "Example JSON file demonstrating various MCI execution types",
     "version": "1.0.0",
     "license": "MIT",
-    "authors": ["MCI Development Team"]
+    "authors": [
+      "MCI Development Team"
+    ]
   },
   "tools": [
     {
@@ -20,7 +22,9 @@
             "description": "City name or location"
           }
         },
-        "required": ["location"]
+        "required": [
+          "location"
+        ]
       },
       "execution": {
         "type": "http",
@@ -52,7 +56,10 @@
             "description": "Report content"
           }
         },
-        "required": ["title", "content"]
+        "required": [
+          "title",
+          "content"
+        ]
       },
       "execution": {
         "type": "http",
@@ -97,12 +104,18 @@
             "description": "Ignore case when searching"
           }
         },
-        "required": ["pattern", "directory"]
+        "required": [
+          "pattern",
+          "directory"
+        ]
       },
       "execution": {
         "type": "cli",
         "command": "grep",
-        "args": ["-r", "-n"],
+        "args": [
+          "-r",
+          "-n"
+        ],
         "flags": {
           "-i": {
             "from": "props.ignore_case",
@@ -125,12 +138,14 @@
             "description": "Username for placeholder substitution"
           }
         },
-        "required": ["username"]
+        "required": [
+          "username"
+        ]
       },
       "execution": {
         "type": "file",
         "path": "./text.txt",
-        "parsePlaceholders": true
+        "enableTemplating": true
       }
     },
     {
@@ -145,7 +160,9 @@
             "description": "Username to include in the message"
           }
         },
-        "required": ["username"]
+        "required": [
+          "username"
+        ]
       },
       "execution": {
         "type": "text",
