@@ -117,7 +117,7 @@ def test_file_tool():
     print_section("File Reading Tool")
 
     execution = FileExecutionConfig(
-        path="./templates/report-{{props.report_id}}.txt", parsePlaceholders=True
+        path="./templates/report-{{props.report_id}}.txt", enableTemplating=True
     )
 
     tool = Tool(
@@ -129,7 +129,7 @@ def test_file_tool():
 
     print(f"Tool Name: {tool.name}")
     print(f"File Path: {tool.execution.path}")
-    print(f"Parse Placeholders: {tool.execution.parsePlaceholders}")
+    print(f"Parse Placeholders: {tool.execution.enableTemplating}")
 
 
 def test_text_tool():
@@ -190,7 +190,7 @@ def test_full_mci_schema():
         name="read_config",
         title="Config Reader",
         description="Read configuration file",
-        execution=FileExecutionConfig(path="{{props.config_path}}", parsePlaceholders=False),
+        execution=FileExecutionConfig(path="{{props.config_path}}", enableTemplating=False),
     )
 
     # Text tool

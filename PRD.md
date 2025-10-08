@@ -208,7 +208,7 @@ Initial release supports:
 
 - `type`: "file"
 - `path`: string
-- `parsePlaceholders`: boolean
+- `enableTemplating`: boolean
 
 ### File Execution Schema Example
 
@@ -217,7 +217,7 @@ Initial release supports:
   "execution": {
     "type": "file",
     "path": "./templates/report-{{ properties.report_id }}.txt",
-    "parsePlaceholders": true
+    "enableTemplating": true
   }
 }
 ```

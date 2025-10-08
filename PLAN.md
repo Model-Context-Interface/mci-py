@@ -9,25 +9,29 @@ This plan outlines the step-by-step implementation of the Model Context Interfac
 ## Stage 1: Core Infrastructure and Data Models
 
 ### 1.1 Execution Type Enum
+
 **File**: `src/mcipy/enums.py`
 
 Define execution types as an enum:
+
 - `HTTP` - HTTP request execution
 - `CLI` - Command-line execution
 - `FILE` - File reading execution
 - `TEXT` - Text template execution
 
 ### 1.2 Data Models
+
 **File**: `src/mcipy/models.py`
 
 Define Pydantic models for:
+
 - `MCISchema` - Top-level schema with `schemaVersion`, `metadata`, `tools[]`
 - `Metadata` - Optional metadata fields (`name`, `description`, `version`, `license`, `authors[]`)
 - `Tool` - Individual tool definition with `name`, `title`, `description`, `inputSchema`, `execution`
 - `ExecutionConfig` - Base execution configuration
 - `HTTPExecutionConfig` - HTTP-specific fields (method, url, auth, headers, body, timeout_ms, retries)
 - `CLIExecutionConfig` - CLI-specific fields (command, args, flags, cwd, timeout_ms)
-- `FileExecutionConfig` - File-specific fields (path, parsePlaceholders)
+- `FileExecutionConfig` - File-specific fields (path, enableTemplating)
 - `TextExecutionConfig` - Text-specific fields (text)
 - `AuthConfig` - Authentication configurations (apiKey, bearer, basic, oauth2)
 - `ExecutionResult` - Result format with `isError` and `content`/`error`
@@ -39,11 +43,13 @@ Define Pydantic models for:
 ## Stage 2: Templating Engine
 
 ### 2.1 Template Processor
+
 **File**: `src/mcipy/templating.py`
 
 Implement a decoupled templating engine with:
 
 **Class**: `TemplateEngine`
+
 - `render_basic(template: str, context: dict) -> str` - Basic placeholder substitution (`{{props.x}}`, `{{env.Y}}`)
 - `render_advanced(template: str, context: dict) -> str` - Advanced templating with loops and control blocks
 - `_resolve_placeholder(path: str, context: dict) -> Any` - Resolve dot-notation paths (e.g., `props.location`)
@@ -52,6 +58,7 @@ Implement a decoupled templating engine with:
 - `_parse_control_blocks(content: str, context: dict) -> str` - Parse `@if` -> `@elseif` -> `@else` -> `@endif`
 
 **Context Structure**:
+
 ```python
 {
     "props": {...},  # Properties from execute() call
@@ -65,18 +72,22 @@ Implement a decoupled templating engine with:
 ## Stage 3: Execution Handlers
 
 ### 3.1 Base Executor Class
+
 **File**: `src/mcipy/executors/base.py`
 
 **Class**: `BaseExecutor` (Abstract)
+
 - `execute(config: ExecutionConfig, context: dict) -> ExecutionResult` - Abstract method
 - `_build_context(props: dict, env_vars: dict) -> dict` - Build template context
 - `_handle_timeout(timeout_ms: int) -> int` - Convert timeout to seconds, apply defaults
 - `_format_error(error: Exception) -> ExecutionResult` - Standardize error responses
 
 ### 3.2 HTTP Executor
+
 **File**: `src/mcipy/executors/http_executor.py`
 
 **Class**: `HTTPExecutor(BaseExecutor)`
+
 - `execute(config: HTTPExecutionConfig, context: dict) -> ExecutionResult`
 - `_apply_authentication(auth: AuthConfig, request_kwargs: dict) -> None` - Apply auth to request
 - `_handle_api_key_auth(auth: AuthConfig, request_kwargs: dict) -> None`
@@ -89,9 +100,11 @@ Implement a decoupled templating engine with:
 **Dependencies**: `requests` library
 
 ### 3.3 CLI Executor
+
 **File**: `src/mcipy/executors/cli_executor.py`
 
 **Class**: `CLIExecutor(BaseExecutor)`
+
 - `execute(config: CLIExecutionConfig, context: dict) -> ExecutionResult`
 - `_build_command_args(config: CLIExecutionConfig, context: dict) -> list` - Build full command with args and flags
 - `_apply_flags(flags: dict, context: dict) -> list` - Convert flags based on type (boolean/value)
@@ -100,25 +113,31 @@ Implement a decoupled templating engine with:
 **Platform Consideration**: Handle Windows/Linux/macOS path and command differences.
 
 ### 3.4 File Executor
+
 **File**: `src/mcipy/executors/file_executor.py`
 
 **Class**: `FileExecutor(BaseExecutor)`
+
 - `execute(config: FileExecutionConfig, context: dict) -> ExecutionResult`
 - `_resolve_path(path: str, context: dict) -> str` - Resolve templated path
 - `_read_file(path: str) -> str` - Read file content
 - `_parse_content(content: str, context: dict, parse_placeholders: bool) -> str` - Apply templating if enabled
 
 ### 3.5 Text Executor
+
 **File**: `src/mcipy/executors/text_executor.py`
 
 **Class**: `TextExecutor(BaseExecutor)`
+
 - `execute(config: TextExecutionConfig, context: dict) -> ExecutionResult`
 - Simple implementation that applies templating to text string
 
 ### 3.6 Executor Factory
+
 **File**: `src/mcipy/executors/__init__.py`
 
 **Class**: `ExecutorFactory`
+
 - `get_executor(execution_type: ExecutionType) -> BaseExecutor` - Return appropriate executor instance
 
 **Purpose**: Centralize executor instantiation based on execution type.
@@ -128,9 +147,11 @@ Implement a decoupled templating engine with:
 ## Stage 4: JSON Parser and Tool Manager
 
 ### 4.1 Schema Parser
+
 **File**: `src/mcipy/parser.py`
 
 **Class**: `SchemaParser`
+
 - `parse_file(file_path: str) -> MCISchema` - Load and validate JSON file
 - `parse_dict(data: dict) -> MCISchema` - Parse dictionary into schema
 - `_validate_schema_version(version: str) -> None` - Validate schema version compatibility
@@ -140,9 +161,11 @@ Implement a decoupled templating engine with:
 **Dependencies**: Pydantic for validation
 
 ### 4.2 Tool Manager
+
 **File**: `src/mcipy/tool_manager.py`
 
 **Class**: `ToolManager`
+
 - `__init__(schema: MCISchema)`
 - `get_tool(name: str) -> Tool | None` - Retrieve tool by name
 - `list_tools() -> list[Tool]` - List all available tools
@@ -153,11 +176,13 @@ Implement a decoupled templating engine with:
 ## Stage 5: Main Adapter API
 
 ### 5.1 MCI Adapter
+
 **File**: `src/mcipy/adapter.py`
 
 **Class**: `MCIAdapter`
 
 **Initialization**:
+
 - `__init__(json_file_path: str, env_vars: dict | None = None)`
 - Load JSON via `SchemaParser`
 - Store environment variables
@@ -165,6 +190,7 @@ Implement a decoupled templating engine with:
 - Cache executors via `ExecutorFactory`
 
 **Methods**:
+
 - `only(tool_names: list[str]) -> MCIAdapter` - Filter to include only specified tools
 - `except_(tool_names: list[str]) -> MCIAdapter` - Filter to exclude specified tools
 - `execute(tool_name: str, properties: dict) -> ExecutionResult` - Execute a tool
@@ -172,6 +198,7 @@ Implement a decoupled templating engine with:
 - `get_tool_schema(tool_name: str) -> dict` - Return tool's input schema
 
 **Execute Flow**:
+
 1. Validate tool exists
 2. Build context from properties and env_vars
 3. Get appropriate executor from factory
@@ -180,6 +207,7 @@ Implement a decoupled templating engine with:
 6. Return structured result
 
 **Error Handling**:
+
 - Tool not found → `ExecutionResult(isError=True, error="Tool not found")`
 - Invalid properties → `ExecutionResult(isError=True, error="Invalid input")`
 - Execution error → `ExecutionResult(isError=True, error=<error message>)`
@@ -189,9 +217,11 @@ Implement a decoupled templating engine with:
 ## Stage 6: Testing Infrastructure
 
 ### 6.1 Unit Tests
+
 **Directory**: `tests/unit/`
 
 Test files:
+
 - `test_enums.py` - Test execution type enum
 - `test_models.py` - Test Pydantic models and validation
 - `test_templating.py` - Test basic and advanced templating
@@ -204,18 +234,22 @@ Test files:
 - `test_adapter.py` - Test main adapter API
 
 ### 6.2 Integration Tests
+
 **Directory**: `tests/integration/`
 
 Test files:
+
 - `test_http_integration.py` - Real HTTP calls (or mock server)
 - `test_cli_integration.py` - Real CLI commands
 - `test_file_integration.py` - Real file operations
 - `test_end_to_end.py` - Full workflow tests with example JSON
 
 ### 6.3 Security Tests
+
 **Directory**: `tests/security/`
 
 Test files:
+
 - `test_env_vars.py` - Ensure secrets only from env vars
 - `test_injection.py` - Test against command injection
 - `test_path_traversal.py` - Test file path security
@@ -225,36 +259,44 @@ Test files:
 ## Stage 7: Documentation and Examples
 
 ### 7.1 API Documentation
+
 **File**: `docs/api_reference.md`
 
 Document:
+
 - `MCIAdapter` class and methods
 - Configuration models
 - Execution result format
 - Error handling
 
 ### 7.2 Quickstart Guide
+
 **File**: `docs/quickstart.md`
 
 Include:
+
 - Installation instructions
 - Basic usage example
 - Tool definition example
 - Execution examples for each type
 
 ### 7.3 Schema Reference
+
 **File**: `docs/schema_reference.md`
 
 Document:
+
 - Complete JSON schema structure
 - All execution types and their parameters
 - Authentication options
 - Templating syntax
 
 ### 7.4 Examples
+
 **Directory**: `examples/`
 
 Provide:
+
 - `http_example.json` - HTTP execution examples
 - `cli_example.json` - CLI execution examples
 - `file_example.json` - File execution examples
@@ -267,20 +309,25 @@ Provide:
 ## Stage 8: Package Configuration and Build
 
 ### 8.1 Dependencies
+
 **File**: `pyproject.toml`
 
 Add required dependencies:
+
 - `pydantic>=2.0` - Data validation
 - `requests>=2.31` - HTTP requests
 - Development dependencies already configured
 
 ### 8.2 Package Metadata
+
 Update `pyproject.toml`:
+
 - Version: `1.0.0`
 - Description and keywords
 - Entry points if needed
 
 ### 8.3 Type Hints and Linting
+
 - Ensure all code has proper type hints
 - Run `basedpyright` for type checking
 - Run `ruff` for linting and formatting
@@ -291,18 +338,21 @@ Update `pyproject.toml`:
 ## Implementation Principles
 
 ### DRY (Don't Repeat Yourself)
+
 - Shared templating logic in single `TemplateEngine` class
 - Base executor class for common functionality
 - Executor factory for instantiation
 - Shared context building and error formatting
 
 ### KISS (Keep It Simple, Stupid)
+
 - Each executor handles only its execution type
 - Clear separation between parsing, templating, and execution
 - Simple, focused methods with single responsibilities
 - Minimal dependencies (only `pydantic` and `requests`)
 
 ### Additional Best Practices
+
 - **Type Safety**: Pydantic models for all data structures
 - **Error Handling**: Consistent error format across all executors
 - **Testability**: Decoupled components, easy to mock

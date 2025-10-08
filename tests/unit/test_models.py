@@ -267,12 +267,12 @@ class TestFileExecutionConfig:
         config = FileExecutionConfig(path="/path/to/file.txt")
         assert config.type == ExecutionType.FILE
         assert config.path == "/path/to/file.txt"
-        assert config.parsePlaceholders is True
+        assert config.enableTemplating is True
 
     def test_file_config_no_parse(self):
         """Test file config with placeholders disabled."""
-        config = FileExecutionConfig(path="/path/to/file.txt", parsePlaceholders=False)
-        assert config.parsePlaceholders is False
+        config = FileExecutionConfig(path="/path/to/file.txt", enableTemplating=False)
+        assert config.enableTemplating is False
 
 
 class TestTextExecutionConfig:

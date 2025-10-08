@@ -147,7 +147,7 @@ class FileExecutionConfig(ExecutionConfig):
 
     type: ExecutionType = Field(default=ExecutionType.FILE)
     path: str
-    parsePlaceholders: bool = Field(default=True)
+    enableTemplating: bool = Field(default=True)
 
 
 class TextExecutionConfig(ExecutionConfig):
