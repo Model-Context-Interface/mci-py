@@ -31,7 +31,7 @@ def test_basic_placeholders():
 
     templates = [
         ("Simple props", "Hello {{props.name}}!"),
-        ("Multiple props", "{{props.name}} lives in {{props.city}} and is {{props.age}} years old"),
+        ("Multiple props", "{{props.name}} lives in {{ props.city }} and is {{props.age}} years old"),
         ("Environment vars", "API Key: {{env.API_KEY}}, User: {{env.USER}}"),
         ("Input alias", "Using input: {{input.name}} from {{input.city}}"),
         ("Mixed", "User {{env.USER}} is processing {{props.name}}'s request"),
