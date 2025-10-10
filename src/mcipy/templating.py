@@ -369,12 +369,40 @@ class TemplateEngine:
                 elif op == "!=":
                     return left_value != right_value
                 elif op == ">":
+                    if not (
+                        isinstance(left_value, (int, float))
+                        and isinstance(right_value, (int, float))
+                    ):
+                        raise TemplateError(
+                            f"Cannot compare types '{type(left_value).__name__}' and '{type(right_value).__name__}' with '>'"
+                        )
                     return left_value > right_value  # pyright: ignore[reportOperatorIssue]
                 elif op == "<":
+                    if not (
+                        isinstance(left_value, (int, float))
+                        and isinstance(right_value, (int, float))
+                    ):
+                        raise TemplateError(
+                            f"Cannot compare types '{type(left_value).__name__}' and '{type(right_value).__name__}' with '<'"
+                        )
                     return left_value < right_value  # pyright: ignore[reportOperatorIssue]
                 elif op == ">=":
+                    if not (
+                        isinstance(left_value, (int, float))
+                        and isinstance(right_value, (int, float))
+                    ):
+                        raise TemplateError(
+                            f"Cannot compare types '{type(left_value).__name__}' and '{type(right_value).__name__}' with '>='"
+                        )
                     return left_value >= right_value  # pyright: ignore[reportOperatorIssue]
                 elif op == "<=":
+                    if not (
+                        isinstance(left_value, (int, float))
+                        and isinstance(right_value, (int, float))
+                    ):
+                        raise TemplateError(
+                            f"Cannot compare types '{type(left_value).__name__}' and '{type(right_value).__name__}' with '<='"
+                        )
                     return left_value <= right_value  # pyright: ignore[reportOperatorIssue]
 
         # No operator found - just check truthiness
