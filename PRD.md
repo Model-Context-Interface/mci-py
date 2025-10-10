@@ -28,6 +28,48 @@ MCI is an open-source, platform-agnostic system for defining and executing AI ag
 3. Minimal toolset per agent.
 4. Portable definitions.
 
+### Usage Example
+
+```python
+from mcipy import MCIClient
+
+# Initialize adapter with JSON file and environment variables
+client = MCIClient(
+    json_file_path="example.mci.json",
+    env_vars={"API_KEY": "your-secret-key", "USERNAME": "user"}
+)
+
+# List all available tools
+all_tools = client.list_tools()
+print(f"Available tools: {all_tools}")
+
+# List all available tools
+weather_tools = client.list_tools(
+  only=["get_weather", "get_forecast"]
+)
+print(f"Only weather tools: {all_tools}")
+
+# Filter to include only specific tools
+weather_tools = client.only(["get_weather", "get_forecast"])
+
+# Filter to exclude specific tools
+restricted_tools = client.except_(["delete_data", "admin_tools"])
+
+# Execute a tool with properties
+result = client.execute(
+    tool_name="get_weather",
+    properties={"location": "New York", "unit": "celsius"}
+)
+
+# Handle result
+if result.isError:
+    print(f"Error: {result.error}")
+else:
+    for content in result.content:
+        if content.type == "text":
+            print(content.text)
+```
+
 ## Functional Requirements
 
 ### FR-1: JSON Tool Definition Schema
@@ -300,3 +342,4 @@ Python package should support reading JSON file, filtering it with `except` and 
 - **Execution timeout**: Default 30s, configurable per tool.
 - **Error handling**: Always return `isError: true` with `error` content;
 - **Schema versioning**: Start at `v1.0.0`, bump minor for backward-compatible, major for breaking changes.
+- **Jinja**: Add templating engine choice feature and add "built-in" & "Jinja2" as options
