@@ -216,3 +216,193 @@ class TestBaseExecutor:
         executor._apply_basic_templating_to_config(config, context)
 
         assert config.path == "/static/path/file.txt"
+
+    def test_apply_basic_templating_to_config_with_http_config(self, executor):
+        """Test applying basic templating to HTTP execution config fields."""
+        from mcipy.models import HTTPExecutionConfig
+
+        config = HTTPExecutionConfig(
+            url="https://{{env.API_HOST}}/api/{{props.endpoint}}",
+            method="POST",
+            headers={"Authorization": "Bearer {{env.API_TOKEN}}"},
+            params={"user": "{{props.username}}", "limit": "10"},
+        )
+        context = {
+            "props": {"endpoint": "users", "username": "alice"},
+            "env": {"API_HOST": "api.example.com", "API_TOKEN": "secret123"},
+            "input": {"endpoint": "users", "username": "alice"},
+        }
+
+        executor._apply_basic_templating_to_config(config, context)
+
+        assert config.url == "https://api.example.com/api/users"
+        assert config.headers == {"Authorization": "Bearer secret123"}
+        assert config.params == {"user": "alice", "limit": "10"}
+
+    def test_apply_basic_templating_to_dict_nested_deep(self, executor):
+        """Test applying basic templating to deeply nested dictionaries."""
+        data: dict[str, Any] = {
+            "level1": {
+                "level2": {
+                    "level3": {
+                        "value": "{{props.deep}}",
+                    },
+                    "another": "{{env.VAR}}",
+                },
+            },
+        }
+        context = {
+            "props": {"deep": "nested_value"},
+            "env": {"VAR": "env_value"},
+            "input": {"deep": "nested_value"},
+        }
+
+        executor._apply_basic_templating_to_dict(data, context)
+
+        assert data["level1"]["level2"]["level3"]["value"] == "nested_value"
+        assert data["level1"]["level2"]["another"] == "env_value"
+
+    def test_apply_basic_templating_to_list_nested(self, executor):
+        """Test applying basic templating to nested lists and dicts."""
+        data = [
+            "{{props.item}}",
+            {"key": "{{env.VALUE}}"},
+            ["{{props.nested1}}", "{{env.nested2}}"],
+        ]
+        context = {
+            "props": {"item": "first", "nested1": "n1"},
+            "env": {"VALUE": "val", "nested2": "n2"},
+            "input": {"item": "first", "nested1": "n1"},
+        }
+
+        executor._apply_basic_templating_to_list(data, context)
+
+        assert data[0] == "first"
+        assert isinstance(data[1], dict)
+        assert data[1]["key"] == "val"
+        assert isinstance(data[2], list)
+        assert data[2][0] == "n1"
+        assert data[2][1] == "n2"
+
+    def test_apply_basic_templating_mixed_placeholders(self, executor):
+        """Test applying templating with multiple placeholders in one string."""
+        from mcipy.models import FileExecutionConfig
+
+        config = FileExecutionConfig(path="{{env.BASE}}/{{props.dir}}/{{props.file}}.txt")
+        context = {
+            "props": {"dir": "data", "file": "output"},
+            "env": {"BASE": "/home/user"},
+            "input": {"dir": "data", "file": "output"},
+        }
+
+        executor._apply_basic_templating_to_config(config, context)
+
+        assert config.path == "/home/user/data/output.txt"
+
+    def test_apply_basic_templating_empty_values(self, executor):
+        """Test applying templating with empty string values."""
+        data: dict[str, Any] = {
+            "name": "{{props.empty}}",
+            "url": "https://api.example.com/{{props.path}}",
+        }
+        context = {
+            "props": {"empty": "", "path": ""},
+            "env": {},
+            "input": {"empty": "", "path": ""},
+        }
+
+        executor._apply_basic_templating_to_dict(data, context)
+
+        assert data["name"] == ""
+        assert data["url"] == "https://api.example.com/"
+
+    def test_apply_basic_templating_with_special_chars(self, executor):
+        """Test templating with special characters in values."""
+        data: dict[str, Any] = {
+            "path": "/data/{{props.name}}/file.txt",
+            "query": "?param={{props.value}}",
+        }
+        context = {
+            "props": {"name": "user@example.com", "value": "a&b=c"},
+            "env": {},
+            "input": {"name": "user@example.com", "value": "a&b=c"},
+        }
+
+        executor._apply_basic_templating_to_dict(data, context)
+
+        assert data["path"] == "/data/user@example.com/file.txt"
+        assert data["query"] == "?param=a&b=c"
+
+    def test_apply_basic_templating_preserves_non_string_types(self, executor):
+        """Test that non-string types are preserved during templating."""
+        data: dict[str, Any] = {
+            "string": "{{props.name}}",
+            "number": 42,
+            "boolean": True,
+            "none": None,
+            "list_of_numbers": [1, 2, 3],
+        }
+        context = {
+            "props": {"name": "alice"},
+            "env": {},
+            "input": {"name": "alice"},
+        }
+
+        executor._apply_basic_templating_to_dict(data, context)
+
+        assert data["string"] == "alice"
+        assert data["number"] == 42
+        assert data["boolean"] is True
+        assert data["none"] is None
+        assert data["list_of_numbers"] == [1, 2, 3]
+
+    def test_apply_basic_templating_handles_none_fields(self, executor):
+        """Test that None fields in config are handled gracefully."""
+        from mcipy.models import HTTPExecutionConfig
+
+        config = HTTPExecutionConfig(
+            url="https://api.example.com/{{props.endpoint}}",
+            headers=None,  # None field
+            params=None,  # None field
+        )
+        context = {
+            "props": {"endpoint": "data"},
+            "env": {},
+            "input": {"endpoint": "data"},
+        }
+
+        # Should not raise an error
+        executor._apply_basic_templating_to_config(config, context)
+
+        assert config.url == "https://api.example.com/data"
+        assert config.headers is None
+        assert config.params is None
+
+    def test_apply_basic_templating_input_alias(self, executor):
+        """Test that input alias works correctly in templating."""
+        data: dict[str, Any] = {
+            "from_props": "{{props.value}}",
+            "from_input": "{{input.value}}",
+        }
+        context = {
+            "props": {"value": "test"},
+            "env": {},
+            "input": {"value": "test"},
+        }
+
+        executor._apply_basic_templating_to_dict(data, context)
+
+        # Both should resolve to the same value
+        assert data["from_props"] == "test"
+        assert data["from_input"] == "test"
+
+    def test_apply_basic_templating_error_handling(self, executor):
+        """Test error handling when placeholder cannot be resolved."""
+        from mcipy.templating import TemplateError
+
+        data: dict[str, Any] = {"name": "{{props.missing}}"}
+        context = {"props": {}, "env": {}, "input": {}}
+
+        # Should raise TemplateError when trying to resolve missing placeholder
+        with pytest.raises(TemplateError):
+            executor._apply_basic_templating_to_dict(data, context)
