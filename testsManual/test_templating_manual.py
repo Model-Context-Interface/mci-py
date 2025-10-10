@@ -208,7 +208,7 @@ Target: ${{props.target}}
 
 @if(props.totalRevenue > props.target)
 ✓ TARGET EXCEEDED! Outstanding performance this quarter.
-  Exceeded target by ${{props.totalRevenue}}
+  Exceeded target by ${{props.totalRevenue - props.target}}
 @else
 ○ Target not met. Review strategy for next quarter.
 @endif
