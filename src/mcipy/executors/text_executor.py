@@ -8,7 +8,6 @@ It applies templating to text strings and returns the result.
 from typing import Any
 
 from ..models import ExecutionConfig, ExecutionResult, TextExecutionConfig
-from ..templating import TemplateEngine
 from .base import BaseExecutor
 
 
@@ -22,7 +21,7 @@ class TextExecutor(BaseExecutor):
 
     def __init__(self):
         """Initialize the text executor with a template engine."""
-        self.template_engine = TemplateEngine()
+        super().__init__()
 
     def execute(self, config: ExecutionConfig, context: dict[str, Any]) -> ExecutionResult:
         """

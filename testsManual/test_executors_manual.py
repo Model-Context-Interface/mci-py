@@ -203,8 +203,49 @@ API URL: {{env.API_URL}}
         print(f"   Content:       '{result3.content}'")
         print(f"   Status: {'✓ Success' if not result3.isError else '✗ Error'}\n")
 
-    # Test 4: Error handling - file not found
-    print("4. Error Handling (File Not Found):")
+    # Test 4: Config-level templating demonstration
+    print("4. Config-Level Templating (New Feature):")
+    print("   Testing that ALL execution config fields are templated automatically")
+
+    # Create a context with username
+    context_demo = {
+        "props": {"username": "john"},
+        "env": {"BASE_PATH": "/var/data"},
+        "input": {"username": "john"},
+    }
+
+    # The path will be automatically templated by the executor
+    config_demo = FileExecutionConfig(
+        path="{{env.BASE_PATH}}/users/{{props.username}}/data.txt", enableTemplating=False
+    )
+
+    # Create a temporary file to match the templated path
+    import os
+
+    templated_dir = f"/tmp/users/john"
+    os.makedirs(templated_dir, exist_ok=True)
+    templated_file = f"{templated_dir}/data.txt"
+    Path(templated_file).write_text("User data for john")
+
+    try:
+        # Note: We use a modified context to point to /tmp instead
+        context_demo["env"]["BASE_PATH"] = "/tmp"
+        result_demo = executor.execute(config_demo, context_demo)
+
+        print(f"   Original path: '{{{{env.BASE_PATH}}}}/users/{{{{props.username}}}}/data.txt'")
+        print(f"   Templated to:  '/tmp/users/john/data.txt'")
+        print(f"   Content:       '{result_demo.content}'")
+        print(f"   Status: {'✓ Success' if not result_demo.isError else '✗ Error'}")
+        print("   Note: Path templating happens automatically in the executor!\n")
+    finally:
+        # Cleanup
+        if Path(templated_file).exists():
+            Path(templated_file).unlink()
+        if Path(templated_dir).exists():
+            Path(templated_dir).rmdir()
+
+    # Test 5: Error handling - file not found
+    print("5. Error Handling (File Not Found):")
     config4 = FileExecutionConfig(path="/nonexistent/file.txt", enableTemplating=False)
     result4 = executor.execute(config4, context)
     print(f"   Path: '/nonexistent/file.txt'")

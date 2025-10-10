@@ -9,7 +9,6 @@ from pathlib import Path
 from typing import Any
 
 from ..models import ExecutionConfig, ExecutionResult, FileExecutionConfig
-from ..templating import TemplateEngine
 from .base import BaseExecutor
 
 
@@ -24,7 +23,7 @@ class FileExecutor(BaseExecutor):
 
     def __init__(self):
         """Initialize the file executor with a template engine."""
-        self.template_engine = TemplateEngine()
+        super().__init__()
 
     def execute(self, config: ExecutionConfig, context: dict[str, Any]) -> ExecutionResult:
         """
@@ -44,11 +43,11 @@ class FileExecutor(BaseExecutor):
             )
 
         try:
-            # Resolve the file path (may contain template placeholders)
-            resolved_path = self._resolve_path(config.path, context)
+            # Apply basic templating to all config fields (e.g., path)
+            self._apply_basic_templating_to_config(config, context)
 
             # Read the file content
-            content = self._read_file(resolved_path)
+            content = self._read_file(config.path)
 
             # Parse content with templating if enabled
             parsed_content = self._parse_content(content, context, config.enableTemplating)
@@ -61,25 +60,6 @@ class FileExecutor(BaseExecutor):
 
         except Exception as e:
             return self._format_error(e)
-
-    def _resolve_path(self, path: str, context: dict[str, Any]) -> str:
-        """
-        Resolve templated placeholders in the file path.
-
-        Applies basic template substitution to the path to support
-        dynamic file paths based on properties and environment variables.
-
-        Args:
-            path: File path that may contain {{props.x}} or {{env.Y}} placeholders
-            context: Context dictionary for template resolution
-
-        Returns:
-            Resolved file path with placeholders replaced
-
-        Raises:
-            TemplateError: If placeholder resolution fails
-        """
-        return self.template_engine.render_basic(path, context)
 
     def _read_file(self, path: str) -> str:
         """

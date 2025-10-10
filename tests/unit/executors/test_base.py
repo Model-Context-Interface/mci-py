@@ -137,3 +137,82 @@ class TestBaseExecutor:
         assert isinstance(result, ExecutionResult)
         assert result.isError is False
         assert result.content == "test"
+
+    def test_apply_basic_templating_to_config_string_fields(self, executor):
+        """Test applying basic templating to string fields in config."""
+        from mcipy.models import FileExecutionConfig
+
+        config = FileExecutionConfig(path="/data/{{props.username}}/file.txt")
+        context = {
+            "props": {"username": "alice"},
+            "env": {},
+            "input": {"username": "alice"},
+        }
+
+        executor._apply_basic_templating_to_config(config, context)
+
+        assert config.path == "/data/alice/file.txt"
+
+    def test_apply_basic_templating_to_config_multiple_fields(self, executor):
+        """Test applying basic templating to multiple fields."""
+        from mcipy.models import FileExecutionConfig
+
+        config = FileExecutionConfig(
+            path="{{env.BASE_DIR}}/{{props.filename}}.txt", enableTemplating=True
+        )
+        context = {
+            "props": {"filename": "config"},
+            "env": {"BASE_DIR": "/home/user"},
+            "input": {"filename": "config"},
+        }
+
+        executor._apply_basic_templating_to_config(config, context)
+
+        assert config.path == "/home/user/config.txt"
+
+    def test_apply_basic_templating_to_dict(self, executor):
+        """Test applying basic templating to dictionary values."""
+        data: dict[str, Any] = {
+            "name": "{{props.username}}",
+            "url": "https://api.example.com/{{env.API_VERSION}}",
+            "nested": {"key": "value-{{props.id}}"},
+        }
+        context = {
+            "props": {"username": "bob", "id": "123"},
+            "env": {"API_VERSION": "v2"},
+            "input": {"username": "bob", "id": "123"},
+        }
+
+        executor._apply_basic_templating_to_dict(data, context)
+
+        assert data["name"] == "bob"
+        assert data["url"] == "https://api.example.com/v2"
+        nested = data["nested"]
+        assert isinstance(nested, dict)
+        assert nested["key"] == "value-123"
+
+    def test_apply_basic_templating_to_list(self, executor):
+        """Test applying basic templating to list values."""
+        data = ["{{props.item1}}", "static", "{{env.ITEM2}}"]
+        context = {
+            "props": {"item1": "first"},
+            "env": {"ITEM2": "second"},
+            "input": {"item1": "first"},
+        }
+
+        executor._apply_basic_templating_to_list(data, context)
+
+        assert data[0] == "first"
+        assert data[1] == "static"
+        assert data[2] == "second"
+
+    def test_apply_basic_templating_no_placeholders(self, executor):
+        """Test that templating works when there are no placeholders."""
+        from mcipy.models import FileExecutionConfig
+
+        config = FileExecutionConfig(path="/static/path/file.txt")
+        context = {"props": {}, "env": {}, "input": {}}
+
+        executor._apply_basic_templating_to_config(config, context)
+
+        assert config.path == "/static/path/file.txt"

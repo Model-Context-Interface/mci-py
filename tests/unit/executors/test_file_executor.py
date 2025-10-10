@@ -66,24 +66,6 @@ class TestFileExecutor:
             with pytest.raises(OSError, match="Path is not a file"):
                 executor._read_file(temp_dir)
 
-    def test_resolve_path_no_placeholders(self, executor, context):
-        """Test resolving path without placeholders."""
-        path = "/home/user/file.txt"
-        resolved = executor._resolve_path(path, context)
-        assert resolved == path
-
-    def test_resolve_path_with_placeholders(self, executor, context):
-        """Test resolving path with placeholders."""
-        path = "/data/{{props.location}}/config.json"
-        resolved = executor._resolve_path(path, context)
-        assert resolved == "/data/Seattle/config.json"
-
-    def test_resolve_path_env_placeholder(self, executor, context):
-        """Test resolving path with environment variable placeholder."""
-        path = "/data/{{env.ENV}}/settings.txt"
-        resolved = executor._resolve_path(path, context)
-        assert resolved == "/data/production/settings.txt"
-
     def test_parse_content_no_templating(self, executor, context):
         """Test parsing content with templating disabled."""
         content = "Hello {{props.name}}!"
