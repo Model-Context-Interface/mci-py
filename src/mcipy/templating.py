@@ -55,7 +55,7 @@ class TemplateEngine:
                 value = self._resolve_placeholder(path, context)
                 return str(value)
             except Exception as e:
-                raise TemplateError(f"Failed to resolve placeholder '{{{{{{path}}}}}}: {e}") from e
+                raise TemplateError(f"Failed to resolve placeholder '{{{{path}}}}: {e}") from e
 
         return re.sub(pattern, replace_placeholder, template)
 
