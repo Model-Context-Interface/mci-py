@@ -1,15 +1,18 @@
 """Unit tests for BaseExecutor class."""
 
+from typing import Any
+
 import pytest
 
+from mcipy.enums import ExecutionType
 from mcipy.executors.base import BaseExecutor
-from mcipy.models import ExecutionConfig, ExecutionResult, ExecutionType
+from mcipy.models import ExecutionConfig, ExecutionResult
 
 
 class ConcreteExecutor(BaseExecutor):
     """Concrete implementation of BaseExecutor for testing."""
 
-    def execute(self, config: ExecutionConfig, context: dict) -> ExecutionResult:
+    def execute(self, config: ExecutionConfig, context: dict[str, Any]) -> ExecutionResult:
         """Simple execute implementation that returns success."""
         return ExecutionResult(isError=False, content="test", error=None)
 
@@ -24,8 +27,8 @@ class TestBaseExecutor:
 
     def test_cannot_instantiate_base_executor(self):
         """Test that BaseExecutor cannot be instantiated directly."""
-        with pytest.raises(TypeError):
-            BaseExecutor()  # type: ignore
+        with pytest.raises(TypeError, match="abstract"):
+            BaseExecutor()  # pyright: ignore[reportAbstractUsage]
 
     def test_build_context_basic(self, executor):
         """Test building context with props and env_vars."""

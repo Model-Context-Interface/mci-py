@@ -151,6 +151,7 @@ reportExplicitAny = false
 reportImplicitStringConcatenation = false
 reportUnreachable = false
 reportPrivateUsage = false
+reportImplicitOverride = false
 reportUnknownMemberType = false
 reportUnknownArgumentType = false
 reportUnknownVariableType = false
