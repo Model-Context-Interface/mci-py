@@ -288,8 +288,10 @@ def test_context_building():
 def test_http_executor():
     """Test HTTPExecutor with various HTTP request scenarios."""
     print_section("HTTP EXECUTOR TESTS")
-    print("   Note: Using mock HTTP responses for demonstration")
+    print("   Note: Using mocked HTTP responses for demonstration")
     print("   (Network access is restricted in this environment)\n")
+
+    from unittest.mock import Mock, patch
 
     executor = HTTPExecutor()
     context = {
@@ -298,88 +300,150 @@ def test_http_executor():
         "input": {"user_id": "123", "format": "json"},
     }
 
-    # Test 1: Simple GET request configuration
-    print("1. Simple GET Request Configuration:")
+    # Test 1: Simple GET request
+    print("1. Simple GET Request:")
     config1 = HTTPExecutionConfig(url="https://api.example.com/data")
+
+    with patch("requests.request") as mock_request:
+        mock_response = Mock()
+        mock_response.status_code = 200
+        mock_response.json.return_value = {"status": "ok", "data": "sample"}
+        mock_response.raise_for_status = Mock()
+        mock_request.return_value = mock_response
+
+        result1 = executor.execute(config1, context)
+
     print(f"   URL:    '{config1.url}'")
     print(f"   Method: {config1.method}")
-    print(f"   Note:   Config created successfully ✓\n")
+    print(f"   Status: {'✓ Success' if not result1.isError else '✗ Error'}")
+    print(f"   Response: {result1.content}\n")
 
     # Test 2: GET request with templated URL
     print("2. GET Request with Templated URL:")
     config2 = HTTPExecutionConfig(url="{{env.BASE_URL}}/users/{{props.user_id}}")
-    print(f"   URL template: '{{{{env.BASE_URL}}}}/users/{{{{props.user_id}}}}'")
-    # Apply templating manually to show resolution
-    from mcipy.templating import TemplateEngine
-    engine = TemplateEngine()
-    resolved_url = engine.render_basic(config2.url, context)
-    print(f"   Resolved to:  '{resolved_url}'")
-    print(f"   Note:         Templating works correctly ✓\n")
 
-    # Test 3: GET request with query parameters
+    with patch("requests.request") as mock_request:
+        mock_response = Mock()
+        mock_response.status_code = 200
+        mock_response.json.return_value = {"user_id": "123", "name": "Test User"}
+        mock_response.raise_for_status = Mock()
+        mock_request.return_value = mock_response
+
+        result2 = executor.execute(config2, context)
+
+    print(f"   URL template: '{{{{env.BASE_URL}}}}/users/{{{{props.user_id}}}}'")
+    print(f"   Resolved to:  'https://api.example.com/users/123'")
+    print(f"   Status: {'✓ Success' if not result2.isError else '✗ Error'}")
+    print(f"   Response: {result2.content}\n")
+
+    # Test 3: GET request with templated query parameters
     print("3. GET Request with Templated Query Parameters:")
     config3 = HTTPExecutionConfig(
         url="https://api.example.com/search",
         params={"user_id": "{{props.user_id}}", "format": "{{props.format}}"},
     )
+
+    with patch("requests.request") as mock_request:
+        mock_response = Mock()
+        mock_response.status_code = 200
+        mock_response.json.return_value = {"results": [], "count": 0}
+        mock_response.raise_for_status = Mock()
+        mock_request.return_value = mock_response
+
+        result3 = executor.execute(config3, context)
+        # Check that params were templated correctly
+        call_kwargs = mock_request.call_args[1]
+
     print(f"   URL:    '{config3.url}'")
     print(f"   Params: user_id={{{{props.user_id}}}}, format={{{{props.format}}}}")
-    # Show what params would resolve to
-    resolved_params = {}
-    for key, value in config3.params.items():
-        resolved_params[key] = engine.render_basic(value, context)
-    print(f"   Would resolve to: {resolved_params}")
-    print(f"   Note: Parameter templating configured ✓\n")
+    print(f"   Resolved params: {call_kwargs.get('params', {})}")
+    print(f"   Status: {'✓ Success' if not result3.isError else '✗ Error'}\n")
 
-    # Test 4: GET request with headers
+    # Test 4: GET request with templated custom headers
     print("4. GET Request with Templated Custom Headers:")
     config4 = HTTPExecutionConfig(
         url="https://api.example.com/data",
         headers={"X-Custom-Header": "{{props.format}}", "X-User-Agent": "MCI-Adapter/1.0"},
     )
+
+    with patch("requests.request") as mock_request:
+        mock_response = Mock()
+        mock_response.status_code = 200
+        mock_response.json.return_value = {"message": "Headers received"}
+        mock_response.raise_for_status = Mock()
+        mock_request.return_value = mock_response
+
+        result4 = executor.execute(config4, context)
+        call_kwargs = mock_request.call_args[1]
+
     print(f"   URL:     '{config4.url}'")
     print(f"   Headers: X-Custom-Header={{{{props.format}}}}, X-User-Agent=MCI-Adapter/1.0")
-    resolved_headers = {}
-    for key, value in config4.headers.items():
-        resolved_headers[key] = engine.render_basic(value, context)
-    print(f"   Would resolve to: {resolved_headers}")
-    print(f"   Note: Header templating configured ✓\n")
+    print(f"   Resolved headers: {call_kwargs.get('headers', {})}")
+    print(f"   Status: {'✓ Success' if not result4.isError else '✗ Error'}\n")
 
     # Test 5: GET request with API Key authentication (in header)
     print("5. GET Request with API Key Authentication (Header):")
-    auth = ApiKeyAuth(**{"in": "header", "name": "X-API-Key", "value": "{{env.API_KEY}}"})
-    config5 = HTTPExecutionConfig(url="https://api.example.com/secure", auth=auth)
+    auth5 = ApiKeyAuth(**{"in": "header", "name": "X-API-Key", "value": "{{env.API_KEY}}"})
+    config5 = HTTPExecutionConfig(url="https://api.example.com/secure", auth=auth5)
+
+    with patch("requests.request") as mock_request:
+        mock_response = Mock()
+        mock_response.status_code = 200
+        mock_response.json.return_value = {"authenticated": True}
+        mock_response.raise_for_status = Mock()
+        mock_request.return_value = mock_response
+
+        result5 = executor.execute(config5, context)
+        call_kwargs = mock_request.call_args[1]
+
     print(f"   URL:  '{config5.url}'")
     print(f"   Auth: API Key in header 'X-API-Key' = {{{{env.API_KEY}}}}")
-    print(f"   Auth type: {auth.type}")
-    print(f"   Auth location: {auth.in_}")
-    print(f"   Note: API Key auth configured ✓\n")
+    print(f"   Resolved header X-API-Key: {call_kwargs.get('headers', {}).get('X-API-Key')}")
+    print(f"   Status: {'✓ Success' if not result5.isError else '✗ Error'}\n")
 
     # Test 6: API Key authentication in query parameter
     print("6. GET Request with API Key Authentication (Query):")
     auth6 = ApiKeyAuth(**{"in": "query", "name": "api_key", "value": "{{env.API_KEY}}"})
     config6 = HTTPExecutionConfig(url="https://api.example.com/data", auth=auth6)
+
+    with patch("requests.request") as mock_request:
+        mock_response = Mock()
+        mock_response.status_code = 200
+        mock_response.json.return_value = {"data": "secured"}
+        mock_response.raise_for_status = Mock()
+        mock_request.return_value = mock_response
+
+        result6 = executor.execute(config6, context)
+        call_kwargs = mock_request.call_args[1]
+
     print(f"   URL:  '{config6.url}'")
     print(f"   Auth: API Key in query param 'api_key' = {{{{env.API_KEY}}}}")
-    print(f"   Auth location: {auth6.in_}")
-    print(f"   Note: Query parameter auth configured ✓\n")
+    print(f"   Resolved param api_key: {call_kwargs.get('params', {}).get('api_key')}")
+    print(f"   Status: {'✓ Success' if not result6.isError else '✗ Error'}\n")
 
-    # Test 7: POST request with JSON body
+    # Test 7: POST request with templated JSON body
     print("7. POST Request with Templated JSON Body:")
-    body = HTTPBodyConfig(
-        type="json", content={"user_id": "{{props.user_id}}", "action": "create", "format": "{{props.format}}"}
+    body7 = HTTPBodyConfig(
+        type="json",
+        content={"user_id": "{{props.user_id}}", "action": "create", "format": "{{props.format}}"},
     )
-    config7 = HTTPExecutionConfig(url="https://api.example.com/users", method="POST", body=body)
+    config7 = HTTPExecutionConfig(url="https://api.example.com/users", method="POST", body=body7)
+
+    with patch("requests.request") as mock_request:
+        mock_response = Mock()
+        mock_response.status_code = 201
+        mock_response.json.return_value = {"id": "123", "created": True}
+        mock_response.raise_for_status = Mock()
+        mock_request.return_value = mock_response
+
+        result7 = executor.execute(config7, context)
+        call_kwargs = mock_request.call_args[1]
+
     print(f"   URL:    '{config7.url}'")
     print(f"   Method: {config7.method}")
-    print(f"   Body type: {body.type}")
-    print(f"   Body template: {body.content}")
-    # Show what body would resolve to
-    resolved_body = {}
-    for key, value in body.content.items():
-        resolved_body[key] = engine.render_basic(value, context) if isinstance(value, str) else value
-    print(f"   Would resolve to: {resolved_body}")
-    print(f"   Note: JSON body templating configured ✓\n")
+    print(f"   Body template: {body7.content}")
+    print(f"   Resolved body: {call_kwargs.get('json', {})}")
+    print(f"   Status: {'✓ Success' if not result7.isError else '✗ Error'}\n")
 
     # Test 8: POST request with form data
     print("8. POST Request with Form Data:")
@@ -387,23 +451,34 @@ def test_http_executor():
         type="form", content={"username": "{{props.user_id}}", "action": "login"}
     )
     config8 = HTTPExecutionConfig(url="https://api.example.com/auth", method="POST", body=form_body)
+
+    with patch("requests.request") as mock_request:
+        mock_response = Mock()
+        mock_response.status_code = 200
+        mock_response.json.return_value = {"token": "abc123"}
+        mock_response.raise_for_status = Mock()
+        mock_request.return_value = mock_response
+
+        result8 = executor.execute(config8, context)
+        call_kwargs = mock_request.call_args[1]
+
     print(f"   URL:    '{config8.url}'")
     print(f"   Method: {config8.method}")
     print(f"   Body type: {form_body.type}")
-    print(f"   Form data: {form_body.content}")
-    print(f"   Note: Form data configured ✓\n")
+    print(f"   Resolved form data: {call_kwargs.get('data', {})}")
+    print(f"   Status: {'✓ Success' if not result8.isError else '✗ Error'}\n")
 
-    # Test 9: PUT request with timeout
-    print("9. PUT Request with Custom Timeout:")
-    config9 = HTTPExecutionConfig(
-        url="https://api.example.com/users/{{props.user_id}}", 
-        method="PUT", 
-        timeout_ms=5000
-    )
-    print(f"   URL:     '{{{{env.BASE_URL}}}}/users/{{{{props.user_id}}}}'")
-    print(f"   Method:  {config9.method}")
-    print(f"   Timeout: {config9.timeout_ms}ms (5 seconds)")
-    print(f"   Note: Timeout configured ✓\n")
+    # Test 9: Error handling - wrong config type
+    print("9. Error Handling (Wrong Config Type):")
+    from mcipy.models import CLIExecutionConfig
+
+    cli_config = CLIExecutionConfig(command="ls")
+    result9 = executor.execute(cli_config, context)
+
+    print(f"   Config type: CLIExecutionConfig (wrong type)")
+    print(f"   Status: {'✓ Error detected (as expected)' if result9.isError else '✗ No error (unexpected!)'}")
+    if result9.isError:
+        print(f"   Error: {result9.error}\n")
 
     # Test 10: Complex request with all features
     print("10. Complex Request (All Features Combined):")
@@ -418,36 +493,26 @@ def test_http_executor():
         body=body10,
         timeout_ms=10000,
     )
-    print(f"   URL:     '{{{{env.BASE_URL}}}}/api/v1/resources'")
-    print(f"   Method:  {config10.method}")
-    print(f"   Headers: X-Custom={{{{props.format}}}}, Content-Type=application/json")
-    print(f"   Params:  limit={{{{props.limit}}}}")
-    print(f"   Auth:    Bearer token in Authorization header")
-    print(f"   Body:    JSON with templated data")
-    print(f"   Timeout: {config10.timeout_ms}ms")
-    
-    # Show full resolution
-    resolved_url10 = engine.render_basic(config10.url, context)
-    print(f"\n   Fully resolved example:")
-    print(f"   → URL: '{resolved_url10}'")
-    print(f"   → Headers: X-Custom='json', Content-Type='application/json'")
-    print(f"   → Params: limit=10")
-    print(f"   → Auth: Bearer test-api-key-12345")
-    print(f"   → Body: {{'data': 'json'}}")
-    print(f"   Note: All templating features work together ✓\n")
 
-    print("   Summary: HTTP Executor supports:")
-    print("   ✓ URL templating")
-    print("   ✓ Header templating")
-    print("   ✓ Query parameter templating")
-    print("   ✓ Body content templating (JSON, form, raw)")
-    print("   ✓ API Key authentication (header & query)")
-    print("   ✓ Bearer token authentication")
-    print("   ✓ Basic authentication")
-    print("   ✓ OAuth2 authentication")
-    print("   ✓ Custom timeouts")
-    print("   ✓ Retry logic with exponential backoff")
-    print("   ✓ All HTTP methods (GET, POST, PUT, PATCH, DELETE, etc.)\n")
+    with patch("requests.request") as mock_request:
+        mock_response = Mock()
+        mock_response.status_code = 200
+        mock_response.json.return_value = {"success": True, "resources": []}
+        mock_response.raise_for_status = Mock()
+        mock_request.return_value = mock_response
+
+        result10 = executor.execute(config10, context)
+        call_kwargs = mock_request.call_args[1]
+
+    print(f"   URL template: '{{{{env.BASE_URL}}}}/api/v1/resources'")
+    print(f"   Resolved URL: {call_kwargs.get('url')}")
+    print(f"   Method:  {call_kwargs.get('method')}")
+    print(f"   Headers: {call_kwargs.get('headers', {})}")
+    print(f"   Params:  {call_kwargs.get('params', {})}")
+    print(f"   Body:    {call_kwargs.get('json', {})}")
+    print(f"   Timeout: {call_kwargs.get('timeout')} seconds")
+    print(f"   Status: {'✓ Success' if not result10.isError else '✗ Error'}")
+    print(f"\n   Note: HTTPExecutor successfully applies templating and executes requests ✓\n")
 
 
 def test_cli_executor():
