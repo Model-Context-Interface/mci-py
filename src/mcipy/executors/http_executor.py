@@ -160,7 +160,7 @@ class HTTPExecutor(BaseExecutor):
             self._handle_bearer_auth(auth, request_kwargs)
         elif isinstance(auth, BasicAuth):
             self._handle_basic_auth(auth, request_kwargs)
-        elif isinstance(auth, OAuth2Auth):  # pyright: ignore[reportUnnecessaryIsInstance]
+        elif isinstance(auth, OAuth2Auth):
             self._handle_oauth2_auth(auth, request_kwargs)
 
     def _handle_api_key_auth(self, auth: ApiKeyAuth, request_kwargs: dict[str, Any]) -> None:
