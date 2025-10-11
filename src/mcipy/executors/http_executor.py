@@ -76,7 +76,7 @@ class HTTPExecutor(BaseExecutor):
             if config.body:
                 if isinstance(config.body.content, dict):
                     self._apply_basic_templating_to_dict(config.body.content, context)
-                elif isinstance(config.body.content, str):  # pyright: ignore[reportUnnecessaryIsInstance]
+                elif isinstance(config.body.content, str):
                     config.body.content = self.template_engine.render_basic(
                         config.body.content, context
                     )
