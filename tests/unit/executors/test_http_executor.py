@@ -729,3 +729,24 @@ class TestHTTPExecutor:
             assert result.isError
             assert "Connection failed" in result.error
             assert mock_request.call_count == 2
+
+    def test_execute_returns_metadata_with_status_code(self, executor, context):
+        """Test that successful execution includes metadata with HTTP status code."""
+        config = HTTPExecutionConfig(
+            url="https://api.example.com/data",
+            method="GET",
+        )
+
+        with patch("requests.request") as mock_request:
+            mock_response = Mock()
+            mock_response.status_code = 201
+            mock_response.json.return_value = {"created": True}
+            mock_response.raise_for_status = Mock()
+            mock_request.return_value = mock_response
+
+            result = executor.execute(config, context)
+
+            assert not result.isError
+            assert result.metadata is not None
+            assert "status_code" in result.metadata
+            assert result.metadata["status_code"] == 201

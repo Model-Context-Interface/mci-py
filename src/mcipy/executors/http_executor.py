@@ -138,6 +138,7 @@ class HTTPExecutor(BaseExecutor):
                 isError=False,
                 content=content,
                 error=None,
+                metadata={"status_code": response.status_code},
             )
 
         except Exception as e:

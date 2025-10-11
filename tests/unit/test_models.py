@@ -409,3 +409,21 @@ class TestExecutionResult:
         # None content
         result4 = ExecutionResult(isError=False, content=None)
         assert result4.content is None
+
+    def test_execution_result_with_metadata(self):
+        """Test execution result with metadata field."""
+        result = ExecutionResult(
+            isError=False,
+            content={"data": "value"},
+            metadata={"status_code": 200, "execution_time_ms": 150},
+        )
+        assert result.isError is False
+        assert result.content == {"data": "value"}
+        assert result.metadata == {"status_code": 200, "execution_time_ms": 150}
+
+    def test_execution_result_without_metadata(self):
+        """Test execution result without metadata (backward compatibility)."""
+        result = ExecutionResult(isError=False, content="test")
+        assert result.isError is False
+        assert result.content == "test"
+        assert result.metadata is None
