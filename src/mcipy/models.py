@@ -205,3 +205,4 @@ class ExecutionResult(BaseModel):
     isError: bool
     content: Any | None = None
     error: str | None = None
+    metadata: dict[str, Any] | None = None
