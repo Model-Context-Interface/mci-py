@@ -116,7 +116,7 @@ class TestTextExecutor:
             "env": {},
             "input": {"debug": False},
         }
-        config = TextExecutionConfig(text="@if(props.debug)Debug Mode@else@Production Mode@endif")
+        config = TextExecutionConfig(text="@if(props.debug)Debug Mode @else Production Mode @endif")
 
         result = executor.execute(config, context)
 
@@ -151,7 +151,7 @@ Your tasks:
 ⚠️ High priority tasks require immediate attention!
 @endif
 
-Summary: {{props.user}} has completed @for(i in range(0, 2)){{i}} @endfortasks."""
+Summary: {{props.user}} has completed @for(i in range(0, 2)){{i}} @endfor tasks."""
 
         config = TextExecutionConfig(text=text)
         result = executor.execute(config, context)

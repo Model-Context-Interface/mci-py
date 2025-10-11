@@ -123,7 +123,7 @@ class BaseExecutor(ABC):
             This method modifies the config object in-place.
         """
         # Get all fields from the config model
-        for field_name, field_value in config:
+        for field_name, field_value in config.__dict__.items():
             if field_value is None:
                 continue
 
