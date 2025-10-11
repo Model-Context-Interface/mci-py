@@ -76,7 +76,7 @@ class HTTPExecutor(BaseExecutor):
             if config.body:
                 if isinstance(config.body.content, dict):
                     self._apply_basic_templating_to_dict(config.body.content, context)
-                elif isinstance(config.body.content, str):
+                elif isinstance(config.body.content, str):  # pyright: ignore[reportUnnecessaryIsInstance]
                     config.body.content = self.template_engine.render_basic(
                         config.body.content, context
                     )
@@ -160,7 +160,7 @@ class HTTPExecutor(BaseExecutor):
             self._handle_bearer_auth(auth, request_kwargs)
         elif isinstance(auth, BasicAuth):
             self._handle_basic_auth(auth, request_kwargs)
-        elif isinstance(auth, OAuth2Auth):
+        elif isinstance(auth, OAuth2Auth):  # pyright: ignore[reportUnnecessaryIsInstance]
             self._handle_oauth2_auth(auth, request_kwargs)
 
     def _handle_api_key_auth(self, auth: ApiKeyAuth, request_kwargs: dict[str, Any]) -> None:
@@ -265,7 +265,7 @@ class HTTPExecutor(BaseExecutor):
     def _build_body(
         self,
         body_config: HTTPBodyConfig,
-        _context: dict[str, Any],
+        _context: dict[str, Any],  # pyright: ignore[reportUnusedParameter]
     ) -> tuple[Any, str | None]:
         """
         Build the request body from the body configuration.
