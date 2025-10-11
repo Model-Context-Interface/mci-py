@@ -265,7 +265,7 @@ class HTTPExecutor(BaseExecutor):
     def _build_body(
         self,
         body_config: HTTPBodyConfig,
-        context: dict[str, Any],  # pyright: ignore[reportUnusedParameter]
+        _context: dict[str, Any],
     ) -> tuple[Any, str | None]:
         """
         Build the request body from the body configuration.
