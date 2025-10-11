@@ -8,6 +8,7 @@ and implements the execute() method according to its execution type.
 
 from .base import BaseExecutor
 from .file_executor import FileExecutor
+from .http_executor import HTTPExecutor
 from .text_executor import TextExecutor
 
-__all__ = ["BaseExecutor", "FileExecutor", "TextExecutor"]
+__all__ = ["BaseExecutor", "FileExecutor", "HTTPExecutor", "TextExecutor"]
