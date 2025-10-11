@@ -2,17 +2,18 @@
 """
 Manual test for executor implementations.
 
-This test demonstrates the BaseExecutor, FileExecutor, and TextExecutor classes
+This test demonstrates the BaseExecutor, CLIExecutor, FileExecutor, and TextExecutor classes
 working with various templating features including @for, @foreach, and @if directives.
 
 Run with: uv run python testsManual/test_executors_manual.py
 """
 
+import sys
 import tempfile
 from pathlib import Path
 
-from mcipy.executors import FileExecutor, TextExecutor
-from mcipy.models import FileExecutionConfig, TextExecutionConfig
+from mcipy.executors import CLIExecutor, FileExecutor, TextExecutor
+from mcipy.models import CLIExecutionConfig, FlagConfig, FileExecutionConfig, TextExecutionConfig
 
 
 def print_section(title: str):
@@ -275,6 +276,129 @@ def test_context_building():
     print(f"   Note: 'input' is an alias for 'props' (same object reference)\n")
 
 
+def test_cli_executor():
+    """Test CLIExecutor with various command execution scenarios."""
+    print_section("CLI EXECUTOR TESTS")
+
+    executor = CLIExecutor()
+    context = {
+        "props": {"filename": "test.txt", "count": 3, "verbose": True, "quiet": False},
+        "env": {"HOME": "/home/user", "USER": "testuser"},
+        "input": {"filename": "test.txt", "count": 3},
+    }
+
+    # Test 1: Simple command
+    print("1. Simple Command:")
+    if sys.platform == "win32":
+        config1 = CLIExecutionConfig(command="cmd", args=["/c", "echo", "Hello from CLI!"])
+    else:
+        config1 = CLIExecutionConfig(command="echo", args=["Hello from CLI!"])
+
+    result1 = executor.execute(config1, context)
+    print(f"   Command: {'cmd /c echo Hello from CLI!' if sys.platform == 'win32' else 'echo Hello from CLI!'}")
+    print(f"   Output:  '{result1.content.strip()}'")
+    print(f"   Status:  {'✓ Success' if not result1.isError else '✗ Error'}\n")
+
+    # Test 2: Command with templated arguments
+    print("2. Command with Templated Arguments:")
+    if sys.platform == "win32":
+        config2 = CLIExecutionConfig(
+            command="cmd", args=["/c", "echo", "File: {{props.filename}}"]
+        )
+    else:
+        config2 = CLIExecutionConfig(command="echo", args=["File: {{props.filename}}"])
+
+    result2 = executor.execute(config2, context)
+    print(f"   Template: 'echo File: {{{{props.filename}}}}'")
+    print(f"   Output:   '{result2.content.strip()}'")
+    print(f"   Status:   {'✓ Success' if not result2.isError else '✗ Error'}\n")
+
+    # Test 3: Command with boolean flags
+    print("3. Command with Boolean Flags:")
+    print("   Note: Boolean flags are only included if the property is truthy")
+    flags = {
+        "-v": FlagConfig(**{"from": "props.verbose", "type": "boolean"}),
+        "-q": FlagConfig(**{"from": "props.quiet", "type": "boolean"}),
+    }
+
+    if sys.platform == "win32":
+        config3 = CLIExecutionConfig(
+            command="cmd", args=["/c", "echo", "Flags test"], flags=flags
+        )
+    else:
+        config3 = CLIExecutionConfig(command="echo", args=["Flags test"], flags=flags)
+
+    result3 = executor.execute(config3, context)
+    print(f"   verbose={context['props']['verbose']}, quiet={context['props']['quiet']}")
+    print(f"   Expected flags: -v (verbose is True), no -q (quiet is False)")
+    print(f"   Output:  '{result3.content.strip()}'")
+    print(f"   Status:  {'✓ Success' if not result3.isError else '✗ Error'}\n")
+
+    # Test 4: Command with value flags
+    print("4. Command with Value Flags:")
+    value_flags = {
+        "--count": FlagConfig(**{"from": "props.count", "type": "value"}),
+    }
+
+    if sys.platform == "win32":
+        config4 = CLIExecutionConfig(
+            command="cmd", args=["/c", "echo", "Count test"], flags=value_flags
+        )
+    else:
+        config4 = CLIExecutionConfig(command="echo", args=["Count test"], flags=value_flags)
+
+    result4 = executor.execute(config4, context)
+    print(f"   Flag: --count {{{{props.count}}}} (value={context['props']['count']})")
+    print(f"   Output: '{result4.content.strip()}'")
+    print(f"   Status: {'✓ Success' if not result4.isError else '✗ Error'}\n")
+
+    # Test 5: Command with working directory
+    print("5. Command with Working Directory:")
+    with tempfile.TemporaryDirectory() as tmpdir:
+        if sys.platform == "win32":
+            config5 = CLIExecutionConfig(command="cmd", args=["/c", "cd"], cwd=tmpdir)
+        else:
+            config5 = CLIExecutionConfig(command="pwd", cwd=tmpdir)
+
+        result5 = executor.execute(config5, context)
+        print(f"   Working directory: {tmpdir}")
+        print(f"   Command: {'cd' if sys.platform == 'win32' else 'pwd'}")
+        print(f"   Output contains temp dir: {Path(tmpdir).name in result5.content or tmpdir in result5.content}")
+        print(f"   Status: {'✓ Success' if not result5.isError else '✗ Error'}\n")
+
+    # Test 6: Command failure handling
+    print("6. Command Failure Handling:")
+    if sys.platform == "win32":
+        config6 = CLIExecutionConfig(command="cmd", args=["/c", "exit", "1"])
+    else:
+        config6 = CLIExecutionConfig(command="sh", args=["-c", "exit 1"])
+
+    result6 = executor.execute(config6, context)
+    print(f"   Command: exit with code 1")
+    print(f"   Status:  {'✓ Error detected (as expected)' if result6.isError else '✗ No error (unexpected!)'}")
+    print(f"   Error:   '{result6.error}'")
+    print(f"   Metadata: returncode={result6.metadata.get('returncode') if result6.metadata else 'N/A'}\n")
+
+    # Test 7: Templated working directory
+    print("7. Templated Working Directory:")
+    with tempfile.TemporaryDirectory() as tmpdir:
+        context_with_dir = context.copy()
+        context_with_dir["env"]["WORKDIR"] = tmpdir
+
+        if sys.platform == "win32":
+            config7 = CLIExecutionConfig(
+                command="cmd", args=["/c", "cd"], cwd="{{env.WORKDIR}}"
+            )
+        else:
+            config7 = CLIExecutionConfig(command="pwd", cwd="{{env.WORKDIR}}")
+
+        result7 = executor.execute(config7, context_with_dir)
+        print(f"   CWD template: '{{{{env.WORKDIR}}}}'")
+        print(f"   Resolved to:  '{tmpdir}'")
+        print(f"   Output contains temp dir: {Path(tmpdir).name in result7.content or tmpdir in result7.content}")
+        print(f"   Status: {'✓ Success' if not result7.isError else '✗ Error'}\n")
+
+
 def main():
     """Run all manual tests."""
     print("\n" + "=" * 60)
@@ -283,6 +407,7 @@ def main():
 
     try:
         test_context_building()
+        test_cli_executor()
         test_text_executor()
         test_file_executor()
 
