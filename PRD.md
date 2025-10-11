@@ -309,6 +309,8 @@ Successful:
 }
 ```
 
+Note: Include metadata field for infos like http status code, CLI exit code, etc.
+
 ---
 
 ## Templating

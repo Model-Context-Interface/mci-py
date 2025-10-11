@@ -204,7 +204,7 @@ Implement a decoupled templating engine with:
 3. Get appropriate executor from factory
 4. Apply templating to execution config
 5. Execute via executor
-6. Return structured result
+6. Return structured result (with meta data field)
 
 **Error Handling**:
 
