@@ -201,7 +201,8 @@ class ExecutionResult(BaseModel):
     an error occurred and the content or error message.
     This provides a consistent format for all execution results.
     """
-
+    # TODO: Add Metadata field for HTTP status code for HTTP executions
+    # and possibly other metadata like execution time, etc for other execution types as well.
     isError: bool
     content: Any | None = None
     error: str | None = None
