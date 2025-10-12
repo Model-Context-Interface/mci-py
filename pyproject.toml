@@ -162,7 +162,7 @@ reportMissingParameterType = false
 # reportPrivateImportUsage = false
 # reportPrivateLocalImportUsage = false
 # reportMissingImports = false
-# reportUnnecessaryIsInstance = false
+reportUnnecessaryIsInstance = false
 # reportUnknownVariableType = false
 # reportUnknownArgumentType = false
 

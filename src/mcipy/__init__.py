@@ -16,6 +16,7 @@ from .models import (
     TextExecutionConfig,
     Tool,
 )
+from .parser import SchemaParser, SchemaParserError
 
 __all__ = (
     # Enums
@@ -36,4 +37,7 @@ __all__ = (
     "RetryConfig",
     "TextExecutionConfig",
     "Tool",
+    # Parser
+    "SchemaParser",
+    "SchemaParserError",
 )
