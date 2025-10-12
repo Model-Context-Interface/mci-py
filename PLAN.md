@@ -169,7 +169,7 @@ Implement a decoupled templating engine with:
 - `__init__(schema: MCISchema)`
 - `get_tool(name: str) -> Tool | None` - Retrieve tool by name
 - `list_tools() -> list[Tool]` - List all available tools
-- `filter_tools(only: list[str] | None, except_: list[str] | None) -> list[Tool]` - Filter tools by inclusion/exclusion
+- `filter_tools(only: list[str] | None, without: list[str] | None) -> list[Tool]` - Filter tools by inclusion/exclusion
 
 ---
 
@@ -192,7 +192,7 @@ Implement a decoupled templating engine with:
 **Methods**:
 
 - `only(tool_names: list[str]) -> MCIAdapter` - Filter to include only specified tools
-- `except_(tool_names: list[str]) -> MCIAdapter` - Filter to exclude specified tools
+- `without(tool_names: list[str]) -> MCIAdapter` - Filter to exclude specified tools
 - `execute(tool_name: str, properties: dict) -> ExecutionResult` - Execute a tool
 - `list_tools() -> list[str]` - List available tool names
 - `get_tool_schema(tool_name: str) -> dict` - Return tool's input schema
@@ -237,7 +237,7 @@ print(f"Only weather tools: {all_tools}")
 weather_tools = client.only(["get_weather", "get_forecast"])
 
 # Filter to exclude specific tools
-restricted_tools = client.except_(["delete_data", "admin_tools"])
+restricted_tools = client.without(["delete_data", "admin_tools"])
 
 # Execute a tool with properties
 result = client.execute(

@@ -53,7 +53,7 @@ print(f"Only weather tools: {all_tools}")
 weather_tools = client.only(["get_weather", "get_forecast"])
 
 # Filter to exclude specific tools
-restricted_tools = client.except_(["delete_data", "admin_tools"])
+restricted_tools = client.without(["delete_data", "admin_tools"])
 
 # Execute a tool with properties
 result = client.execute(
@@ -331,7 +331,7 @@ Loops and Control blocks should be applied in large text parts, like text execut
 
 ### Adapter API
 
-Python package should support reading JSON file, filtering it with `except` and `only` methods. ENV variables should be passed on initialization alongside with JSON file path. Properties should be passed via `execute` method.
+Python package should support reading JSON file, filtering it with `without` and `only` methods. ENV variables should be passed on initialization alongside with JSON file path. Properties should be passed via `execute` method.
 
 ## Testing Strategy
 
