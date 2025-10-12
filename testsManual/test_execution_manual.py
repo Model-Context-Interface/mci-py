@@ -222,7 +222,7 @@ def test_http_execution_e2e():
     }
 
     # Get executor via factory
-    executor = ExecutorFactory.get_executor(ExecutionType.CLI)  # We'll patch it
+    executor = ExecutorFactory.get_executor(ExecutionType.HTTP)  # We'll patch it
 
     # Test 1: HTTP GET request with mocking
     print("1. HTTP GET Request (mocked):")
