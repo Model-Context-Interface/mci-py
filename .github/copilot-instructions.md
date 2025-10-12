@@ -3,9 +3,10 @@
 ## Project Context
 
 - **Check `PRD.md`** for overall project context, goals, and requirements
+- **Check `PLAN.md`** for full implementation plan and design decisions
+- **Check `example.mci.json`** for example tool definitions and schema of MCI
 - **Check `development.md`** for testing and linting commands
 - **Check `installation.md`** for setup and installation instructions
-- **Check `PLAN.md`** for full implementation plan and design decisions
 
 ## Code Documentation Standards
 

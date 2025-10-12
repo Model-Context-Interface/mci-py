@@ -175,11 +175,11 @@ Implement a decoupled templating engine with:
 
 ## Stage 5: Main Adapter API
 
-### 5.1 MCI Adapter
+### 5.1 MCI Client
 
-**File**: `src/mcipy/adapter.py`
+**File**: `src/mcipy/client.py`
 
-**Class**: `MCIAdapter`
+**Class**: `MCIClient`
 
 **Initialization**:
 
@@ -211,6 +211,48 @@ Implement a decoupled templating engine with:
 - Tool not found → `ExecutionResult(isError=True, error="Tool not found")`
 - Invalid properties → `ExecutionResult(isError=True, error="Invalid input")`
 - Execution error → `ExecutionResult(isError=True, error=<error message>)`
+
+**Example**:
+
+```python
+from mcipy import MCIClient
+
+# Initialize adapter with JSON file and environment variables
+client = MCIClient(
+    json_file_path="example.mci.json",
+    env_vars={"API_KEY": "your-secret-key", "USERNAME": "user"}
+)
+
+# List all available tools
+all_tools = client.list_tools()
+print(f"Available tools: {all_tools}")
+
+# List all available tools
+weather_tools = client.list_tools(
+  only=["get_weather", "get_forecast"]
+)
+print(f"Only weather tools: {all_tools}")
+
+# Filter to include only specific tools
+weather_tools = client.only(["get_weather", "get_forecast"])
+
+# Filter to exclude specific tools
+restricted_tools = client.except_(["delete_data", "admin_tools"])
+
+# Execute a tool with properties
+result = client.execute(
+    tool_name="get_weather",
+    properties={"location": "New York", "unit": "celsius"}
+)
+
+# Handle result
+if result.isError:
+    print(f"Error: {result.error}")
+else:
+    for content in result.content:
+        if content.type == "text":
+            print(content.text)
+```
 
 ---
 
