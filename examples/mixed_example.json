@@ -1,0 +1,241 @@
+{
+  "schemaVersion": "1.0",
+  "metadata": {
+    "name": "Mixed Execution Examples",
+    "description": "Example MCI tools demonstrating all execution types (HTTP, CLI, File, Text)",
+    "version": "1.0.0",
+    "license": "MIT",
+    "authors": [
+      "MCI Development Team"
+    ]
+  },
+  "tools": [
+    {
+      "name": "get_weather",
+      "title": "Get Weather Information",
+      "description": "Fetch current weather information using HTTP GET request",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "location": {
+            "type": "string",
+            "description": "City name or location"
+          }
+        },
+        "required": [
+          "location"
+        ]
+      },
+      "execution": {
+        "type": "http",
+        "method": "GET",
+        "url": "https://api.example.com/weather",
+        "params": {
+          "location": "{{props.location}}",
+          "units": "metric"
+        },
+        "headers": {
+          "Accept": "application/json"
+        },
+        "timeout_ms": 5000
+      }
+    },
+    {
+      "name": "create_report",
+      "title": "Create Report",
+      "description": "Create a new report using HTTP POST with authentication",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "title": {
+            "type": "string",
+            "description": "Report title"
+          },
+          "content": {
+            "type": "string",
+            "description": "Report content"
+          }
+        },
+        "required": [
+          "title",
+          "content"
+        ]
+      },
+      "execution": {
+        "type": "http",
+        "method": "POST",
+        "url": "https://api.example.com/reports",
+        "auth": {
+          "type": "bearer",
+          "token": "{{env.BEARER_TOKEN}}"
+        },
+        "headers": {
+          "Content-Type": "application/json"
+        },
+        "body": {
+          "type": "json",
+          "content": {
+            "title": "{{props.title}}",
+            "content": "{{props.content}}"
+          }
+        },
+        "timeout_ms": 10000
+      }
+    },
+    {
+      "name": "search_files",
+      "title": "Search Files",
+      "description": "Search for text in files using grep command",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "pattern": {
+            "type": "string",
+            "description": "Search pattern"
+          },
+          "directory": {
+            "type": "string",
+            "description": "Directory to search in"
+          },
+          "ignore_case": {
+            "type": "boolean",
+            "description": "Ignore case when searching"
+          }
+        },
+        "required": [
+          "pattern",
+          "directory"
+        ]
+      },
+      "execution": {
+        "type": "cli",
+        "command": "grep",
+        "args": [
+          "-r",
+          "-n",
+          "{{props.pattern}}"
+        ],
+        "flags": {
+          "-i": {
+            "from": "props.ignore_case",
+            "type": "boolean"
+          }
+        },
+        "cwd": "{{props.directory}}",
+        "timeout_ms": 8000
+      }
+    },
+    {
+      "name": "list_files",
+      "title": "List Files",
+      "description": "List files in a directory",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "directory": {
+            "type": "string",
+            "description": "Directory path to list"
+          }
+        },
+        "required": [
+          "directory"
+        ]
+      },
+      "execution": {
+        "type": "cli",
+        "command": "ls",
+        "args": [
+          "-l",
+          "{{props.directory}}"
+        ],
+        "timeout_ms": 5000
+      }
+    },
+    {
+      "name": "load_template",
+      "title": "Load Template File",
+      "description": "Load content from a text file with placeholder substitution",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "username": {
+            "type": "string",
+            "description": "Username for placeholder substitution"
+          }
+        },
+        "required": [
+          "username"
+        ]
+      },
+      "execution": {
+        "type": "file",
+        "path": "./text.txt",
+        "enableTemplating": true
+      }
+    },
+    {
+      "name": "load_config",
+      "title": "Load Configuration File",
+      "description": "Load a raw configuration file without template processing",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "config_name": {
+            "type": "string",
+            "description": "Name of the configuration file"
+          }
+        },
+        "required": [
+          "config_name"
+        ]
+      },
+      "execution": {
+        "type": "file",
+        "path": "./configs/{{props.config_name}}.json",
+        "enableTemplating": false
+      }
+    },
+    {
+      "name": "generate_message",
+      "title": "Generate Message",
+      "description": "Generate a simple text message with placeholder substitution",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "username": {
+            "type": "string",
+            "description": "Username to include in the message"
+          }
+        },
+        "required": [
+          "username"
+        ]
+      },
+      "execution": {
+        "type": "text",
+        "text": "Hello {{props.username}}! This message was generated on {{env.CURRENT_DATE}}."
+      }
+    },
+    {
+      "name": "generate_welcome",
+      "title": "Generate Welcome Message",
+      "description": "Generate a personalized welcome message",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "username": {
+            "type": "string",
+            "description": "User's name"
+          }
+        },
+        "required": [
+          "username"
+        ]
+      },
+      "execution": {
+        "type": "text",
+        "text": "Welcome {{props.username}}! Your account has been created successfully."
+      }
+    }
+  ]
+}

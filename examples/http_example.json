@@ -1,0 +1,169 @@
+{
+  "schemaVersion": "1.0",
+  "metadata": {
+    "name": "HTTP Execution Examples",
+    "description": "Example MCI tools demonstrating HTTP execution with various authentication methods",
+    "version": "1.0.0",
+    "license": "MIT",
+    "authors": [
+      "MCI Development Team"
+    ]
+  },
+  "tools": [
+    {
+      "name": "get_weather",
+      "title": "Get Weather Information",
+      "description": "Fetch current weather information for a location using HTTP GET request",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "location": {
+            "type": "string",
+            "description": "City name or location"
+          }
+        },
+        "required": [
+          "location"
+        ]
+      },
+      "execution": {
+        "type": "http",
+        "method": "GET",
+        "url": "https://api.example.com/weather",
+        "params": {
+          "location": "{{props.location}}",
+          "units": "metric"
+        },
+        "headers": {
+          "Accept": "application/json"
+        },
+        "timeout_ms": 5000
+      }
+    },
+    {
+      "name": "create_report",
+      "title": "Create Report",
+      "description": "Create a new report using HTTP POST request with Bearer token authentication",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "title": {
+            "type": "string",
+            "description": "Report title"
+          },
+          "content": {
+            "type": "string",
+            "description": "Report content"
+          }
+        },
+        "required": [
+          "title",
+          "content"
+        ]
+      },
+      "execution": {
+        "type": "http",
+        "method": "POST",
+        "url": "https://api.example.com/reports",
+        "auth": {
+          "type": "bearer",
+          "token": "{{env.BEARER_TOKEN}}"
+        },
+        "headers": {
+          "Content-Type": "application/json",
+          "Accept": "application/json"
+        },
+        "body": {
+          "type": "json",
+          "content": {
+            "title": "{{props.title}}",
+            "content": "{{props.content}}",
+            "timestamp": "{{env.CURRENT_TIMESTAMP}}"
+          }
+        },
+        "timeout_ms": 10000
+      }
+    },
+    {
+      "name": "github_api",
+      "title": "GitHub API Client",
+      "description": "Query GitHub repository information using API key authentication",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "owner": {
+            "type": "string",
+            "description": "Repository owner"
+          },
+          "repo": {
+            "type": "string",
+            "description": "Repository name"
+          }
+        },
+        "required": [
+          "owner",
+          "repo"
+        ]
+      },
+      "execution": {
+        "type": "http",
+        "method": "GET",
+        "url": "https://api.github.com/repos/{{props.owner}}/{{props.repo}}",
+        "auth": {
+          "type": "apiKey",
+          "in": "header",
+          "name": "Authorization",
+          "value": "token {{env.GITHUB_TOKEN}}"
+        },
+        "headers": {
+          "Accept": "application/vnd.github.v3+json",
+          "User-Agent": "MCI-Adapter/1.0"
+        },
+        "timeout_ms": 8000,
+        "retries": {
+          "attempts": 3,
+          "backoff_ms": 1000
+        }
+      }
+    },
+    {
+      "name": "update_user",
+      "title": "Update User Profile",
+      "description": "Update user profile using HTTP PUT with Basic authentication",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "user_id": {
+            "type": "string",
+            "description": "User ID"
+          },
+          "email": {
+            "type": "string",
+            "description": "Email address"
+          }
+        },
+        "required": [
+          "user_id",
+          "email"
+        ]
+      },
+      "execution": {
+        "type": "http",
+        "method": "PUT",
+        "url": "https://api.example.com/users/{{props.user_id}}",
+        "auth": {
+          "type": "basic",
+          "username": "{{env.USERNAME}}",
+          "password": "{{env.PASSWORD}}"
+        },
+        "body": {
+          "type": "json",
+          "content": {
+            "email": "{{props.email}}"
+          }
+        },
+        "timeout_ms": 5000
+      }
+    }
+  ]
+}

@@ -1,0 +1,151 @@
+{
+  "schemaVersion": "1.0",
+  "metadata": {
+    "name": "CLI Execution Examples",
+    "description": "Example MCI tools demonstrating command-line execution with various configurations",
+    "version": "1.0.0",
+    "license": "MIT",
+    "authors": [
+      "MCI Development Team"
+    ]
+  },
+  "tools": [
+    {
+      "name": "search_files",
+      "title": "Search Files",
+      "description": "Search for text in files using grep command with optional case-insensitive flag",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "pattern": {
+            "type": "string",
+            "description": "Search pattern"
+          },
+          "directory": {
+            "type": "string",
+            "description": "Directory to search in"
+          },
+          "ignore_case": {
+            "type": "boolean",
+            "description": "Ignore case when searching"
+          }
+        },
+        "required": [
+          "pattern",
+          "directory"
+        ]
+      },
+      "execution": {
+        "type": "cli",
+        "command": "grep",
+        "args": [
+          "-r",
+          "-n",
+          "{{props.pattern}}"
+        ],
+        "flags": {
+          "-i": {
+            "from": "props.ignore_case",
+            "type": "boolean"
+          }
+        },
+        "cwd": "{{props.directory}}",
+        "timeout_ms": 8000
+      }
+    },
+    {
+      "name": "list_files",
+      "title": "List Files",
+      "description": "List files in a directory with detailed information",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "directory": {
+            "type": "string",
+            "description": "Directory path to list"
+          },
+          "show_hidden": {
+            "type": "boolean",
+            "description": "Show hidden files"
+          }
+        },
+        "required": [
+          "directory"
+        ]
+      },
+      "execution": {
+        "type": "cli",
+        "command": "ls",
+        "args": [
+          "-l"
+        ],
+        "flags": {
+          "-a": {
+            "from": "props.show_hidden",
+            "type": "boolean"
+          }
+        },
+        "cwd": "{{props.directory}}",
+        "timeout_ms": 5000
+      }
+    },
+    {
+      "name": "count_lines",
+      "title": "Count Lines in File",
+      "description": "Count the number of lines in a file using wc command",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "file_path": {
+            "type": "string",
+            "description": "Path to the file"
+          }
+        },
+        "required": [
+          "file_path"
+        ]
+      },
+      "execution": {
+        "type": "cli",
+        "command": "wc",
+        "args": [
+          "-l",
+          "{{props.file_path}}"
+        ],
+        "timeout_ms": 3000
+      }
+    },
+    {
+      "name": "find_files",
+      "title": "Find Files by Name",
+      "description": "Find files matching a pattern in a directory using the find command",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "directory": {
+            "type": "string",
+            "description": "Directory to search in"
+          },
+          "name_pattern": {
+            "type": "string",
+            "description": "File name pattern to match"
+          }
+        },
+        "required": [
+          "directory",
+          "name_pattern"
+        ]
+      },
+      "execution": {
+        "type": "cli",
+        "command": "find",
+        "args": [
+          "{{props.directory}}",
+          "-name",
+          "{{props.name_pattern}}"
+        ],
+        "timeout_ms": 10000
+      }
+    }
+  ]
+}
