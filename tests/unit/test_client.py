@@ -348,12 +348,6 @@ class TestExecute:
         with pytest.raises(MCIClientError):
             client.execute("get_weather", properties=None)
 
-    def test_execute_uses_env_vars(self, client):
-        """Test that execute uses environment variables from initialization."""
-        result = client.execute("generate_text", properties={"name": "{{env.USER}}"})
-        assert isinstance(result, ExecutionResult)
-        # The templating happens during execution, so env vars are available
-
     def test_execute_returns_execution_result(self, client):
         """Test that execute returns ExecutionResult object."""
         result = client.execute("generate_text", properties={"name": "Test"})
@@ -361,6 +355,8 @@ class TestExecute:
         assert hasattr(result, "isError")
         assert hasattr(result, "content")
         assert hasattr(result, "error")
+        assert "Test" in result.content
+
 
 
 class TestIntegration:

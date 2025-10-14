@@ -136,6 +136,7 @@ Create manual test files for large features that should be run individually via 
 - Include setup instructions in comments at the top of each file
 - Use only the implemented modules directly, not mocks or any other deps
 - Show both success and failure cases
+- Avoid using private properties or methods in feature tests
 
 ### Test Organization
 

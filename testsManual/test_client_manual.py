@@ -7,9 +7,7 @@ human-readable output. Run this file directly to see the MCIClient in action.
 Usage:
     uv run python testsManual/test_client_manual.py
 """
-
-import os
-import tempfile
+import sys
 from pathlib import Path
 
 from mcipy import MCIClient, MCIClientError
@@ -344,4 +342,4 @@ def main():
 
 
 if __name__ == "__main__":
-    exit(main())
+    sys.exit(main())
