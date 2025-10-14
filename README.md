@@ -4,6 +4,8 @@ ToDo: Brief description of MCIPY
 
 ---
 
+# Development
+
 ## Development setup
 
 To quickly set up your development environment, run:
