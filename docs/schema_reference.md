@@ -30,6 +30,7 @@ This document provides a complete reference for the Model Context Interface (MCI
 ## Overview
 
 MCI (Model Context Interface) uses a JSON schema to define tools that AI agents can execute. Each tool specifies:
+
 - What it does (metadata and description)
 - What inputs it accepts (JSON Schema)
 - How to execute it (execution configuration)
@@ -44,11 +45,11 @@ The schema is designed to be platform-agnostic, secure (secrets via environment 
 
 The root MCI context file has three main fields:
 
-| Field | Type | Required | Description |
-|-------|------|----------|-------------|
-| `schemaVersion` | string | **Required** | MCI schema version (e.g., `"1.0"`) |
-| `metadata` | object | Optional | Descriptive metadata about the tool collection |
-| `tools` | array | **Required** | Array of tool definitions |
+| Field           | Type   | Required     | Description                                    |
+| --------------- | ------ | ------------ | ---------------------------------------------- |
+| `schemaVersion` | string | **Required** | MCI schema version (e.g., `"1.0"`)             |
+| `metadata`      | object | Optional     | Descriptive metadata about the tool collection |
+| `tools`         | array  | **Required** | Array of tool definitions                      |
 
 ### Example
 
@@ -72,13 +73,13 @@ The root MCI context file has three main fields:
 
 Optional metadata about the tool collection.
 
-| Field | Type | Required | Description |
-|-------|------|----------|-------------|
-| `name` | string | Optional | Name of the tool collection |
-| `description` | string | Optional | Description of the tool collection |
-| `version` | string | Optional | Version of the tool collection (e.g., SemVer) |
-| `license` | string | Optional | License identifier (e.g., `"MIT"`, `"Apache-2.0"`) |
-| `authors` | array | Optional | Array of author names |
+| Field         | Type   | Required | Description                                        |
+| ------------- | ------ | -------- | -------------------------------------------------- |
+| `name`        | string | Optional | Name of the tool collection                        |
+| `description` | string | Optional | Description of the tool collection                 |
+| `version`     | string | Optional | Version of the tool collection (e.g., SemVer)      |
+| `license`     | string | Optional | License identifier (e.g., `"MIT"`, `"Apache-2.0"`) |
+| `authors`     | array  | Optional | Array of author names                              |
 
 ### Example
 
@@ -98,13 +99,13 @@ Optional metadata about the tool collection.
 
 Each tool in the `tools` array represents a single executable operation.
 
-| Field | Type | Required | Description |
-|-------|------|----------|-------------|
-| `name` | string | **Required** | Unique identifier for the tool |
-| `title` | string | Optional | Human-readable title |
-| `description` | string | Optional | Description of what the tool does |
-| `inputSchema` | object | Optional | JSON Schema describing expected inputs |
-| `execution` | object | **Required** | Execution configuration (see [Execution Types](#execution-types)) |
+| Field         | Type   | Required     | Description                                                       |
+| ------------- | ------ | ------------ | ----------------------------------------------------------------- |
+| `name`        | string | **Required** | Unique identifier for the tool                                    |
+| `title`       | string | Optional     | Human-readable title                                              |
+| `description` | string | Optional     | Description of what the tool does                                 |
+| `inputSchema` | object | Optional     | JSON Schema describing expected inputs                            |
+| `execution`   | object | **Required** | Execution configuration (see [Execution Types](#execution-types)) |
 
 ### Example
 
@@ -154,35 +155,35 @@ Execute HTTP requests to external APIs.
 
 #### Fields
 
-| Field | Type | Required | Default | Description |
-|-------|------|----------|---------|-------------|
-| `type` | string | **Required** | - | Must be `"http"` |
-| `method` | string | Optional | `"GET"` | HTTP method: `GET`, `POST`, `PUT`, `PATCH`, `DELETE`, `HEAD`, `OPTIONS` |
-| `url` | string | **Required** | - | Target URL (supports templating) |
-| `headers` | object | Optional | - | HTTP headers as key-value pairs (supports templating) |
-| `auth` | object | Optional | - | Authentication configuration (see [Authentication](#authentication)) |
-| `params` | object | Optional | - | Query parameters as key-value pairs (supports templating) |
-| `body` | object | Optional | - | Request body configuration |
-| `timeout_ms` | integer | Optional | `30000` | Request timeout in milliseconds (must be ≥ 0) |
-| `retries` | object | Optional | - | Retry configuration |
+| Field        | Type    | Required     | Default | Description                                                             |
+| ------------ | ------- | ------------ | ------- | ----------------------------------------------------------------------- |
+| `type`       | string  | **Required** | -       | Must be `"http"`                                                        |
+| `method`     | string  | Optional     | `"GET"` | HTTP method: `GET`, `POST`, `PUT`, `PATCH`, `DELETE`, `HEAD`, `OPTIONS` |
+| `url`        | string  | **Required** | -       | Target URL (supports templating)                                        |
+| `headers`    | object  | Optional     | -       | HTTP headers as key-value pairs (supports templating)                   |
+| `auth`       | object  | Optional     | -       | Authentication configuration (see [Authentication](#authentication))    |
+| `params`     | object  | Optional     | -       | Query parameters as key-value pairs (supports templating)               |
+| `body`       | object  | Optional     | -       | Request body configuration                                              |
+| `timeout_ms` | integer | Optional     | `30000` | Request timeout in milliseconds (must be ≥ 0)                           |
+| `retries`    | object  | Optional     | -       | Retry configuration                                                     |
 
 #### Body Configuration
 
 The `body` field defines the request body:
 
-| Field | Type | Required | Description |
-|-------|------|----------|-------------|
-| `type` | string | **Required** | Body type: `"json"`, `"form"`, or `"raw"` |
+| Field     | Type          | Required     | Description                                         |
+| --------- | ------------- | ------------ | --------------------------------------------------- |
+| `type`    | string        | **Required** | Body type: `"json"`, `"form"`, or `"raw"`           |
 | `content` | object/string | **Required** | Body content (object for json/form, string for raw) |
 
 #### Retry Configuration
 
 The `retries` field configures retry behavior:
 
-| Field | Type | Required | Default | Description |
-|-------|------|----------|---------|-------------|
-| `attempts` | integer | Optional | `1` | Number of retry attempts (must be ≥ 1) |
-| `backoff_ms` | integer | Optional | `500` | Backoff delay in milliseconds (must be ≥ 0) |
+| Field        | Type    | Required | Default | Description                                 |
+| ------------ | ------- | -------- | ------- | ------------------------------------------- |
+| `attempts`   | integer | Optional | `1`     | Number of retry attempts (must be ≥ 1)      |
+| `backoff_ms` | integer | Optional | `500`   | Backoff delay in milliseconds (must be ≥ 0) |
 
 #### Examples
 
@@ -268,23 +269,23 @@ Execute command-line tools and scripts.
 
 #### Fields
 
-| Field | Type | Required | Default | Description |
-|-------|------|----------|---------|-------------|
-| `type` | string | **Required** | - | Must be `"cli"` |
-| `command` | string | **Required** | - | Command to execute |
-| `args` | array | Optional | - | Fixed positional arguments |
-| `flags` | object | Optional | - | Dynamic flags mapped from properties |
-| `cwd` | string | Optional | - | Working directory (supports templating) |
-| `timeout_ms` | integer | Optional | `30000` | Execution timeout in milliseconds (must be ≥ 0) |
+| Field        | Type    | Required     | Default | Description                                     |
+| ------------ | ------- | ------------ | ------- | ----------------------------------------------- |
+| `type`       | string  | **Required** | -       | Must be `"cli"`                                 |
+| `command`    | string  | **Required** | -       | Command to execute                              |
+| `args`       | array   | Optional     | -       | Fixed positional arguments                      |
+| `flags`      | object  | Optional     | -       | Dynamic flags mapped from properties            |
+| `cwd`        | string  | Optional     | -       | Working directory (supports templating)         |
+| `timeout_ms` | integer | Optional     | `30000` | Execution timeout in milliseconds (must be ≥ 0) |
 
 #### Flag Configuration
 
 Each flag in the `flags` object has:
 
-| Field | Type | Required | Description |
-|-------|------|----------|-------------|
+| Field  | Type   | Required     | Description                                 |
+| ------ | ------ | ------------ | ------------------------------------------- |
 | `from` | string | **Required** | Property path (e.g., `"props.ignore_case"`) |
-| `type` | string | **Required** | Flag type: `"boolean"` or `"value"` |
+| `type` | string | **Required** | Flag type: `"boolean"` or `"value"`         |
 
 - **`boolean`**: Flag is included only if the property is truthy (e.g., `-i`)
 - **`value`**: Flag is included with the property value (e.g., `--file=myfile.txt`)
@@ -340,11 +341,11 @@ Read and parse file contents with optional templating.
 
 #### Fields
 
-| Field | Type | Required | Default | Description |
-|-------|------|----------|---------|-------------|
-| `type` | string | **Required** | - | Must be `"file"` |
-| `path` | string | **Required** | - | File path (supports templating) |
-| `enableTemplating` | boolean | Optional | `true` | Whether to process templates in file content |
+| Field              | Type    | Required     | Default | Description                                  |
+| ------------------ | ------- | ------------ | ------- | -------------------------------------------- |
+| `type`             | string  | **Required** | -       | Must be `"file"`                             |
+| `path`             | string  | **Required** | -       | File path (supports templating)              |
+| `enableTemplating` | boolean | Optional     | `true`  | Whether to process templates in file content |
 
 When `enableTemplating` is `true`, the file contents are processed with the full templating engine (basic placeholders, loops, and conditionals).
 
@@ -380,9 +381,9 @@ Return templated text directly.
 
 #### Fields
 
-| Field | Type | Required | Description |
-|-------|------|----------|-------------|
-| `type` | string | **Required** | Must be `"text"` |
+| Field  | Type   | Required     | Description                         |
+| ------ | ------ | ------------ | ----------------------------------- |
+| `type` | string | **Required** | Must be `"text"`                    |
 | `text` | string | **Required** | Text template (supports templating) |
 
 The text is processed with the full templating engine (basic placeholders, loops, and conditionals).
@@ -403,7 +404,7 @@ The text is processed with the full templating engine (basic placeholders, loops
 ```json
 {
   "type": "text",
-  "text": "Report for {{props.username}}\n@if(props.premium)Premium features enabled@else@endif"
+  "text": "Report for {{props.username}}\n@if(props.premium)Premium features enabled@else Standard features available @endif"
 }
 ```
 
@@ -421,11 +422,11 @@ Pass an API key in headers or query parameters.
 
 #### Fields
 
-| Field | Type | Required | Description |
-|-------|------|----------|-------------|
-| `type` | string | **Required** | Must be `"apiKey"` |
-| `in` | string | **Required** | Where to send the key: `"header"` or `"query"` |
-| `name` | string | **Required** | Header/query parameter name |
+| Field   | Type   | Required     | Description                                                      |
+| ------- | ------ | ------------ | ---------------------------------------------------------------- |
+| `type`  | string | **Required** | Must be `"apiKey"`                                               |
+| `in`    | string | **Required** | Where to send the key: `"header"` or `"query"`                   |
+| `name`  | string | **Required** | Header/query parameter name                                      |
 | `value` | string | **Required** | API key value (supports templating, typically `{{env.API_KEY}}`) |
 
 #### Examples
@@ -472,9 +473,9 @@ Pass a bearer token in the `Authorization` header.
 
 #### Fields
 
-| Field | Type | Required | Description |
-|-------|------|----------|-------------|
-| `type` | string | **Required** | Must be `"bearer"` |
+| Field   | Type   | Required     | Description                                                          |
+| ------- | ------ | ------------ | -------------------------------------------------------------------- |
+| `type`  | string | **Required** | Must be `"bearer"`                                                   |
 | `token` | string | **Required** | Bearer token (supports templating, typically `{{env.BEARER_TOKEN}}`) |
 
 #### Example
@@ -507,9 +508,9 @@ Use HTTP Basic Authentication with username and password.
 
 #### Fields
 
-| Field | Type | Required | Description |
-|-------|------|----------|-------------|
-| `type` | string | **Required** | Must be `"basic"` |
+| Field      | Type   | Required     | Description                                                  |
+| ---------- | ------ | ------------ | ------------------------------------------------------------ |
+| `type`     | string | **Required** | Must be `"basic"`                                            |
 | `username` | string | **Required** | Username (supports templating, typically `{{env.USERNAME}}`) |
 | `password` | string | **Required** | Password (supports templating, typically `{{env.PASSWORD}}`) |
 
@@ -538,14 +539,14 @@ Authenticate using OAuth2 client credentials flow.
 
 #### Fields
 
-| Field | Type | Required | Description |
-|-------|------|----------|-------------|
-| `type` | string | **Required** | Must be `"oauth2"` |
-| `flow` | string | **Required** | OAuth2 flow type (e.g., `"clientCredentials"`) |
-| `tokenUrl` | string | **Required** | Token endpoint URL |
-| `clientId` | string | **Required** | OAuth2 client ID (supports templating) |
-| `clientSecret` | string | **Required** | OAuth2 client secret (supports templating) |
-| `scopes` | array | Optional | Array of scope strings |
+| Field          | Type   | Required     | Description                                    |
+| -------------- | ------ | ------------ | ---------------------------------------------- |
+| `type`         | string | **Required** | Must be `"oauth2"`                             |
+| `flow`         | string | **Required** | OAuth2 flow type (e.g., `"clientCredentials"`) |
+| `tokenUrl`     | string | **Required** | Token endpoint URL                             |
+| `clientId`     | string | **Required** | OAuth2 client ID (supports templating)         |
+| `clientSecret` | string | **Required** | OAuth2 client secret (supports templating)     |
+| `scopes`       | array  | Optional     | Array of scope strings                         |
 
 #### Example
 
@@ -570,6 +571,7 @@ Authenticate using OAuth2 client credentials flow.
 ## Templating Syntax
 
 The MCI templating engine supports placeholder substitution, loops, and conditional blocks. Templating is available in:
+
 - Execution configurations (URLs, headers, params, body, etc.)
 - File contents (when `enableTemplating: true`)
 - Text execution
@@ -687,8 +689,8 @@ Iterate over arrays or objects from the context.
 {
   "props": {
     "users": [
-      {"name": "Alice", "age": 30},
-      {"name": "Bob", "age": 25}
+      { "name": "Alice", "age": 30 },
+      { "name": "Bob", "age": 25 }
     ]
   }
 }
@@ -715,7 +717,8 @@ Name: Bob, Age: 25
 
 Execute code conditionally based on values in the context.
 
-**Syntax**: 
+**Syntax**:
+
 ```
 @if(condition)
 ...
@@ -774,12 +777,12 @@ Restricted content
 
 All tool executions return a consistent result format.
 
-| Field | Type | Description |
-|-------|------|-------------|
-| `isError` | boolean | Whether an error occurred during execution |
-| `content` | any | Result content (if successful) |
-| `error` | string | Error message (if `isError: true`) |
-| `metadata` | object | Optional metadata (e.g., HTTP status code, CLI exit code) |
+| Field      | Type    | Description                                               |
+| ---------- | ------- | --------------------------------------------------------- |
+| `isError`  | boolean | Whether an error occurred during execution                |
+| `content`  | any     | Result content (if successful)                            |
+| `error`    | string  | Error message (if `isError: true`)                        |
+| `metadata` | object  | Optional metadata (e.g., HTTP status code, CLI exit code) |
 
 ### Successful Result
 
@@ -835,7 +838,7 @@ Here's a complete MCI context file demonstrating all features:
       "inputSchema": {
         "type": "object",
         "properties": {
-          "location": {"type": "string"}
+          "location": { "type": "string" }
         },
         "required": ["location"]
       },
@@ -861,8 +864,8 @@ Here's a complete MCI context file demonstrating all features:
       "inputSchema": {
         "type": "object",
         "properties": {
-          "pattern": {"type": "string"},
-          "directory": {"type": "string"}
+          "pattern": { "type": "string" },
+          "directory": { "type": "string" }
         },
         "required": ["pattern", "directory"]
       },
@@ -890,7 +893,7 @@ Here's a complete MCI context file demonstrating all features:
       "inputSchema": {
         "type": "object",
         "properties": {
-          "name": {"type": "string"}
+          "name": { "type": "string" }
         },
         "required": ["name"]
       },
