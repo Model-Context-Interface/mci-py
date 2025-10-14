@@ -192,6 +192,7 @@ class TestEnvironmentVariableSecurity:
         )
 
         executor._apply_basic_templating_to_config(config_with_auth, context)
+        assert config_with_auth.headers is not None
         assert config_with_auth.headers["Authorization"] == "Bearer correct_secret_key"
 
     def test_cli_executor_env_var_isolation(self):
@@ -216,6 +217,7 @@ class TestEnvironmentVariableSecurity:
         executor._apply_basic_templating_to_config(config, context)
 
         # Should use env.SECRET and props.public correctly
+        assert config.args is not None
         assert config.args[0] == "actual_secret"
         assert config.args[1] == "public_value"
 
@@ -309,6 +311,7 @@ class TestEnvironmentVariableSecurity:
 
         # Should use env.API_KEY, not props.API_KEY
         assert not result.isError
+        assert result.content is not None
         assert "secret_from_env" in result.content
         assert "malicious_override" not in result.content
 
