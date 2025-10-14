@@ -1236,7 +1236,7 @@ result = client.execute(
 
 - All methods are synchronous (blocking) - execution waits for completion
 - Environment variables should be provided during initialization, not at execution time
-- Templates are processed before execution using the Jinja2-style syntax
+- Templates are processed before execution using a simple `{{}}` placeholder substitution system (not full Jinja2 syntax)
 - HTTP responses are automatically parsed as JSON when possible
 - CLI commands capture both stdout and stderr
 - File paths can be relative or absolute
