@@ -1203,8 +1203,9 @@ MCI supports template placeholders for dynamic value substitution:
 
 - `{{props.fieldName}}` - Access properties passed to execute()
 - `{{env.VARIABLE_NAME}}` - Access environment variables
-- `{{input.fieldName}}` - Alias for props (backward compatibility)
+- `{{input.fieldName}}` - **Deprecated** alias for props (use `props` instead)
 
+> **Note:** `{{input.fieldName}}` is supported for backward compatibility but is deprecated. Use `{{props.fieldName}}` in all new code.
 **Example:**
 
 ```json
