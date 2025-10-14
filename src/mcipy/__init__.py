@@ -1,3 +1,4 @@
+from .client import MCIClient, MCIClientError
 from .enums import ExecutionType
 from .models import (
     ApiKeyAuth,
@@ -20,6 +21,9 @@ from .parser import SchemaParser, SchemaParserError
 from .tool_manager import ToolManager, ToolManagerError
 
 __all__ = (
+    # Client
+    "MCIClient",
+    "MCIClientError",
     # Enums
     "ExecutionType",
     # Models
