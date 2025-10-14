@@ -35,7 +35,7 @@ def test_loading_and_initialization():
     # Initialize ToolManager
     manager = ToolManager(schema)
     print(f"✓ ToolManager initialized")
-    print(f"  Tool map contains {len(manager._tool_map)} tools")
+    print(f"  Manager contains {len(manager.list_tools())} tools")
 
 
 def test_get_tool():

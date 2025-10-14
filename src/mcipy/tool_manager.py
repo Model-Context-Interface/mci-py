@@ -123,6 +123,8 @@ class ToolManager:
             raise ToolManagerError(f"Tool not found: {tool_name}")
 
         # Validate input schema if present
+        # Check both: not None (schema exists) and not empty dict (schema has content)
+        # This handles three cases: None (no schema), {} (empty schema), and {...} (schema with properties)
         if tool.inputSchema is not None and tool.inputSchema:
             self._validate_input_properties(tool, properties)
 

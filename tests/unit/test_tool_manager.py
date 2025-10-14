@@ -98,12 +98,17 @@ class TestToolManagerInit:
         """Test initialization with valid schema."""
         manager = ToolManager(sample_schema)
         assert manager.schema == sample_schema
-        assert len(manager._tool_map) == 5
-        assert "get_weather" in manager._tool_map
-        assert "create_report" in manager._tool_map
+        # Verify all tools are accessible
+        assert len(manager.list_tools()) == 5
+        assert manager.get_tool("get_weather") is not None
+        assert manager.get_tool("create_report") is not None
 
     def test_init_creates_tool_map(self, sample_schema):
-        """Test that initialization creates a tool mapping."""
+        """Test that initialization creates a tool mapping.
+
+        Note: This test accesses the private _tool_map to verify internal structure.
+        This is acceptable for testing implementation details that affect performance.
+        """
         manager = ToolManager(sample_schema)
         assert isinstance(manager._tool_map, dict)
         assert all(isinstance(k, str) for k in manager._tool_map.keys())
@@ -390,7 +395,10 @@ class TestEdgeCases:
         manager2 = ToolManager(sample_schema)
 
         assert manager1.schema is manager2.schema
-        assert manager1._tool_map.keys() == manager2._tool_map.keys()
+        # Verify both managers have access to the same tools
+        tools1 = {tool.name for tool in manager1.list_tools()}
+        tools2 = {tool.name for tool in manager2.list_tools()}
+        assert tools1 == tools2
 
     def test_with_real_schema_file(self):
         """Test ToolManager with schema loaded from file."""
