@@ -1,0 +1,107 @@
+{
+  "schemaVersion": "1.0",
+  "metadata": {
+    "name": "File Execution Examples",
+    "description": "Example MCI tools demonstrating file reading with and without template processing",
+    "version": "1.0.0",
+    "license": "MIT",
+    "authors": [
+      "MCI Development Team"
+    ]
+  },
+  "tools": [
+    {
+      "name": "load_template",
+      "title": "Load Template File",
+      "description": "Load content from a text file with placeholder substitution enabled",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "username": {
+            "type": "string",
+            "description": "Username for placeholder substitution"
+          }
+        },
+        "required": [
+          "username"
+        ]
+      },
+      "execution": {
+        "type": "file",
+        "path": "./text.txt",
+        "enableTemplating": true
+      }
+    },
+    {
+      "name": "read_report",
+      "title": "Read Report Template",
+      "description": "Read a report template file with dynamic placeholder substitution",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "report_id": {
+            "type": "string",
+            "description": "Report ID to load"
+          }
+        },
+        "required": [
+          "report_id"
+        ]
+      },
+      "execution": {
+        "type": "file",
+        "path": "./templates/report-{{props.report_id}}.txt",
+        "enableTemplating": true
+      }
+    },
+    {
+      "name": "load_config",
+      "title": "Load Configuration File",
+      "description": "Load a raw configuration file without template processing",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "config_name": {
+            "type": "string",
+            "description": "Name of the configuration file"
+          }
+        },
+        "required": [
+          "config_name"
+        ]
+      },
+      "execution": {
+        "type": "file",
+        "path": "./configs/{{props.config_name}}.json",
+        "enableTemplating": false
+      }
+    },
+    {
+      "name": "read_email_template",
+      "title": "Read Email Template",
+      "description": "Read an email template with user and environment variable substitution",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "template_type": {
+            "type": "string",
+            "description": "Type of email template (welcome, notification, etc.)"
+          },
+          "recipient_name": {
+            "type": "string",
+            "description": "Recipient name"
+          }
+        },
+        "required": [
+          "template_type",
+          "recipient_name"
+        ]
+      },
+      "execution": {
+        "type": "file",
+        "path": "./templates/email/{{props.template_type}}.txt",
+        "enableTemplating": true
+      }
+    }
+  ]
+}

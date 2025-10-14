@@ -1,0 +1,107 @@
+{
+  "schemaVersion": "1.0",
+  "metadata": {
+    "name": "Text Execution Examples",
+    "description": "Example MCI tools demonstrating text template execution with placeholder substitution",
+    "version": "1.0.0",
+    "license": "MIT",
+    "authors": [
+      "MCI Development Team"
+    ]
+  },
+  "tools": [
+    {
+      "name": "generate_message",
+      "title": "Generate Message",
+      "description": "Generate a simple text message with placeholder substitution",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "username": {
+            "type": "string",
+            "description": "Username to include in the message"
+          }
+        },
+        "required": [
+          "username"
+        ]
+      },
+      "execution": {
+        "type": "text",
+        "text": "Hello {{props.username}}! This message was generated on {{env.CURRENT_DATE}}."
+      }
+    },
+    {
+      "name": "generate_welcome",
+      "title": "Generate Welcome Message",
+      "description": "Generate a personalized welcome message with user details",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "username": {
+            "type": "string",
+            "description": "User's name"
+          },
+          "email": {
+            "type": "string",
+            "description": "User's email address"
+          }
+        },
+        "required": [
+          "username"
+        ]
+      },
+      "execution": {
+        "type": "text",
+        "text": "Welcome {{props.username}}! Your account has been created successfully. We've sent a confirmation email to {{props.email}}."
+      }
+    },
+    {
+      "name": "status_message",
+      "title": "Generate Status Message",
+      "description": "Generate a status message with timestamp from environment",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "status": {
+            "type": "string",
+            "description": "Status to report"
+          }
+        },
+        "required": [
+          "status"
+        ]
+      },
+      "execution": {
+        "type": "text",
+        "text": "Status: {{props.status}} at {{env.TIMESTAMP}}"
+      }
+    },
+    {
+      "name": "generate_report_summary",
+      "title": "Generate Report Summary",
+      "description": "Generate a formatted report summary with multiple placeholders",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "report_name": {
+            "type": "string",
+            "description": "Name of the report"
+          },
+          "author": {
+            "type": "string",
+            "description": "Report author"
+          }
+        },
+        "required": [
+          "report_name",
+          "author"
+        ]
+      },
+      "execution": {
+        "type": "text",
+        "text": "Report: {{props.report_name}}\nAuthor: {{props.author}}\nGenerated: {{env.CURRENT_DATE}}\nVersion: {{env.APP_VERSION}}"
+      }
+    }
+  ]
+}
