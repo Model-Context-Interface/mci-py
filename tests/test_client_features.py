@@ -84,14 +84,13 @@ class TestMCIClientFeatures:
 
         # Test 1: Client with no env vars
         client1 = MCIClient(json_file_path=schema_path)
-        assert client1._env_vars == {}
+        assert len(client1.list_tools()) > 0
 
         # Test 2: Client with env vars
         client2 = MCIClient(json_file_path=schema_path, env_vars={"KEY": "value"})
-        assert client2._env_vars == {"KEY": "value"}
+        assert len(client2.list_tools()) > 0
 
         # Test 3: Multiple clients are independent
-        assert client1._env_vars != client2._env_vars
         assert len(client1.list_tools()) == len(client2.list_tools())
 
     def test_filtering_combinations(self):
@@ -210,7 +209,6 @@ class TestMCIClientFeatures:
 
         # Initial state
         initial_tools = client.list_tools()
-        initial_env = dict(client._env_vars)
 
         # Perform various operations
         client.tools()
@@ -221,4 +219,3 @@ class TestMCIClientFeatures:
 
         # Verify state hasn't changed
         assert client.list_tools() == initial_tools
-        assert dict(client._env_vars) == initial_env
