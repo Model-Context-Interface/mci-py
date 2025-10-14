@@ -17,6 +17,7 @@ from .models import (
     Tool,
 )
 from .parser import SchemaParser, SchemaParserError
+from .tool_manager import ToolManager, ToolManagerError
 
 __all__ = (
     # Enums
@@ -40,4 +41,7 @@ __all__ = (
     # Parser
     "SchemaParser",
     "SchemaParserError",
+    # Tool Manager
+    "ToolManager",
+    "ToolManagerError",
 )

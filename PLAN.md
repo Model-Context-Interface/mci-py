@@ -82,7 +82,7 @@ Implement a decoupled templating engine with:
 - `_handle_timeout(timeout_ms: int) -> int` - Convert timeout to seconds, apply defaults
 - `_format_error(error: Exception) -> ExecutionResult` - Standardize error responses
 
-### 3.2 HTTP Executor
+### 3.2 HTTP Executor ✔️
 
 **File**: `src/mcipy/executors/http_executor.py`
 
@@ -99,7 +99,7 @@ Implement a decoupled templating engine with:
 
 **Dependencies**: `requests` library
 
-### 3.3 CLI Executor
+### 3.3 CLI Executor ✔️
 
 **File**: `src/mcipy/executors/cli_executor.py`
 
@@ -132,7 +132,7 @@ Implement a decoupled templating engine with:
 - `execute(config: TextExecutionConfig, context: dict) -> ExecutionResult`
 - Simple implementation that applies templating to text string
 
-### 3.6 Executor Factory
+### 3.6 Executor Factory ✔️
 
 **File**: `src/mcipy/executors/__init__.py`
 
@@ -146,7 +146,7 @@ Implement a decoupled templating engine with:
 
 ## Stage 4: JSON Parser and Tool Manager
 
-### 4.1 Schema Parser
+### 4.1 Schema Parser ✔️
 
 **File**: `src/mcipy/parser.py`
 
@@ -160,7 +160,7 @@ Implement a decoupled templating engine with:
 
 **Dependencies**: Pydantic for validation
 
-### 4.2 Tool Manager
+### 4.2 Tool Manager ✔️
 
 **File**: `src/mcipy/tool_manager.py`
 
@@ -191,8 +191,9 @@ Implement a decoupled templating engine with:
 
 **Methods**:
 
-- `only(tool_names: list[str]) -> MCIAdapter` - Filter to include only specified tools
-- `without(tool_names: list[str]) -> MCIAdapter` - Filter to exclude specified tools
+- `tools() -> list[Tool]` - Get all available tools
+- `only(tool_names: list[str]) -> list[Tool]` - Filter to include only specified tools
+- `without(tool_names: list[str]) -> list[Tool]` - Filter to exclude specified tools
 - `execute(tool_name: str, properties: dict) -> ExecutionResult` - Execute a tool
 - `list_tools() -> list[str]` - List available tool names
 - `get_tool_schema(tool_name: str) -> dict` - Return tool's input schema
