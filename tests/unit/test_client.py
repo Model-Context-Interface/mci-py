@@ -355,13 +355,13 @@ class TestExecute:
 
     def test_execute_returns_execution_result(self, client):
         """Test that execute returns ExecutionResult object."""
-        result = client.execute("generate_text", properties={"name": "Test"})
+        result = client.execute("generate_text", properties={"name": "test"})
         assert isinstance(result, ExecutionResult)
         assert hasattr(result, "isError")
         assert hasattr(result, "content")
         assert hasattr(result, "error")
-        assert "Test" in result.content
-
+        assert isinstance(result.content, str)
+        assert "test" in result.content
 
 
 class TestIntegration:
