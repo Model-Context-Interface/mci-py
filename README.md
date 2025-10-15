@@ -1,22 +1,59 @@
 # mci-py
 
-**MCI Python Adapter** - A lightweight, synchronous Python adapter for the Model Context Interface (MCI), enabling AI agents to execute tools defined in JSON schemas.
+**MCI Python Adapter** - A lightweight, Python adapter for the Model Context Interface (MCI), enabling AI agents to execute tools defined in JSON schemas.
 
-The Model Context Interface (MCI) is an open-source, platform-agnostic system for defining and executing AI agent tools through standardized JSON schemas. The `mci-py` Python adapter allows you to load tool definitions from JSON files and execute them synchronously with full control over authentication, templating, and error handling.
+The **Model Context Interface (MCI)** is an open-source, platform-agnostic system for defining and executing AI agent tools through standardized JSON schemas.
+
+Using the basic features that are supported in **every programming language**, MCI makes it easier to define collections of AI Tools, filter, execute and maintain. Making it a strong alternative or supplement of MCP, which lives right in your project repo and fits in single JSON file. (Check [example.mci.json](https://github.com/Model-Context-Interface/mci-py/blob/main/example.mci.json) & [example.py](https://github.com/Model-Context-Interface/mci-py/blob/main/example.py))
+
+The `mci-py` Python adapter allows you to load tool definitions from JSON files and execute them with full control over authentication, templating, and error handling.
 
 ---
 
 ## Features
 
 - 🚀 **Simple API** - Load and execute tools with just a few lines of Python code
-- 📝 **JSON Schema-Based** - Define tools declaratively in JSON files
+- 📝 **JSON Schema-Based** - Define tools declaratively and statically in JSON files
 - 🔄 **Multiple Execution Types** - Support for HTTP, CLI, File, and Text execution
+- ✔️ **Easy to build** - Share MCI Schema reference and documentation of any REST API or CLI application to LLM to build your favorite tools in minute
 - 🔐 **Built-in Authentication** - API Key, Bearer Token, Basic Auth, and OAuth2 support
-- 🎯 **Template Engine** - Dynamic value substitution for environment variables and properties
-- ⚡ **Synchronous Execution** - Direct, predictable tool execution without async complexity
-- 🔒 **Security First** - Environment-based secrets management
+- 🔁 **Easy to share** - All you need to move your toolset to another project, or share it to the world is a single JSON file.
+- 🎯 **Template Engine** - Dynamic value substitution for environment variables and properties, as well as advanced templating directives like "@if", "@foreach", etc. to support complex prompting.
+- 🔒 **Secure by design** - All you need is adapter and JSON file, which is easy to review, even by an LLM, compared to the whole servers. No more third-party code or servers accessing your data.
+- 💔 **Flexible separation** - You can have one ".mci.json" file for whole project and filter tools out, or you can have 1 file per agent to include whole toolset of agent, or you can have 1 file per API wrapped, you can even have 10 files from different authors and use only 1 tool from each - you can do anything: it doesn't matter, it's not 10 MCP servers to initialize, it's just 10 files in your repo 🤷
 - 🎨 **Type Safe** - Full type hints and Pydantic validation
-- 🧪 **Well Tested** - 90%+ test coverage with comprehensive test suite
+- 🧪 **Well Tested** - 92%+ test coverage with comprehensive test suite
+
+### Planned
+
+- **Switch template engine** - Now `mci-py` have built-in basic template engine supporting variables, @if, @for & @foreach blocks. We are planning to add implement Jinja for more robust templating options and update JSON schema to define template engine
+- **Include** - Add `@include("path/to/file.md")` directive to simplify reusing the prompt parts
+
+---
+
+## Usage example
+
+```python
+from mcipy import MCIClient
+
+# Initialize with your schema file
+client = MCIClient(
+    json_file_path="my-tools.mci.json",
+    env_vars={
+        "API_KEY": "your-secret-key",
+    }
+)
+
+# Get all tool objects
+tools = client.tools()
+
+# Execute the tool with properties
+result = client.execute(
+    tool_name="greet_user",
+    properties={"username": "Alice"}
+)
+
+```
 
 ---
 

@@ -121,6 +121,24 @@ class TemplateEngine:
 
         return current
 
+    def _replace_placeholders_with_whitespace_support(self, content: str, replacements: dict[str, str]) -> str:
+        """
+        Replace placeholders in content, supporting optional whitespace around variable names.
+
+        Args:
+            content: The content containing placeholders
+            replacements: Dictionary mapping variable paths to replacement values
+
+        Returns:
+            Content with placeholders replaced
+        """
+        result = content
+        for var_path, replacement in replacements.items():
+            # Pattern to match {{var_path}} with optional whitespace
+            pattern = rf"\{{\{{\s*{re.escape(var_path)}\s*\}}\}}"
+            result = re.sub(pattern, replacement, result)
+        return result
+
     def _parse_for_loop(self, content: str, context: dict[str, Any]) -> str:
         """
         Parse and process @for loops.
@@ -151,8 +169,9 @@ class TemplateEngine:
 
                 # Process the body with the loop variable available
                 processed_body = body
-                # Replace {{var_name}} with the current value
-                processed_body = processed_body.replace(f"{{{{{var_name}}}}}", str(i))
+                # Replace {{var_name}} with the current value, supporting whitespace
+                replacements = {var_name: str(i)}
+                processed_body = self._replace_placeholders_with_whitespace_support(processed_body, replacements)
 
                 result.append(processed_body)
 
@@ -202,15 +221,16 @@ class TemplateEngine:
 
                     # Process the body
                     processed_body = body
-                    # Replace {{var_name}} with the current value
+                    # Replace {{var_name}} with the current value, supporting whitespace
                     if isinstance(item, dict):
                         # For objects, allow {{var_name.property}} access
+                        replacements = {}
                         for key, value in item.items():
-                            processed_body = processed_body.replace(
-                                f"{{{{{var_name}.{key}}}}}", str(value)
-                            )
+                            replacements[f"{var_name}.{key}"] = str(value)
+                        processed_body = self._replace_placeholders_with_whitespace_support(processed_body, replacements)
                     else:
-                        processed_body = processed_body.replace(f"{{{{{var_name}}}}}", str(item))
+                        replacements = {var_name: str(item)}
+                        processed_body = self._replace_placeholders_with_whitespace_support(processed_body, replacements)
 
                     result.append(processed_body)
             else:  # dict
@@ -221,10 +241,12 @@ class TemplateEngine:
 
                     # Process the body
                     processed_body = body
-                    # Replace {{var_name}} with value and {{var_name.key}} with key
-                    processed_body = processed_body.replace(f"{{{{{var_name}}}}}", str(value))
-                    key_pattern = f"{{{{{var_name}.key}}}}"
-                    processed_body = processed_body.replace(key_pattern, str(key))
+                    # Replace {{var_name}} with value and {{var_name.key}} with key, supporting whitespace
+                    replacements = {
+                        var_name: str(value),
+                        f"{var_name}.key": str(key)
+                    }
+                    processed_body = self._replace_placeholders_with_whitespace_support(processed_body, replacements)
 
                     result.append(processed_body)
 

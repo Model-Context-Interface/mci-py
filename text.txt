@@ -1,1 +1,7 @@
 this is text from file for {{ props.username }}
+
+@foreach(item in props.new_prop) 
+
+- {{ item }}
+
+@endforeach

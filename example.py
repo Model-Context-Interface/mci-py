@@ -61,7 +61,11 @@ def main():
     print("4. Executing 'load_template' tool...")
     print("   Input: username='Bob'")
     print("   Note: This tool reads from ./text.txt with template substitution")
-    result = client.execute(tool_name="load_template", properties={"username": "Bob"})
+    # Note that new_prop is an array to demonstrate iteration in the template
+    # And it is not a part of input schema, showing flexibility
+    # That you can pass extra properties not defined in the schema
+    # And allows direct passing of inputSchema to LLMs
+    result = client.execute(tool_name="load_template", properties={"username": "Bob", "new_prop": [1, 2, 3]})
 
     if result.isError:
         print(f"   ✗ Error: {result.error}")
