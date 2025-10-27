@@ -156,12 +156,34 @@ Each tool in the `tools` array represents a single executable operation.
 | Field                | Type    | Required     | Description                                                       |
 | -------------------- | ------- | ------------ | ----------------------------------------------------------------- |
 | `name`               | string  | **Required** | Unique identifier for the tool                                    |
-| `title`              | string  | Optional     | Human-readable title                                              |
+| `disabled`           | boolean | Optional     | If true, the tool is ignored (default: `false`)                   |
+| `annotations`        | object  | Optional     | Metadata and behavioral hints (see [Annotations](#annotations))  |
 | `description`        | string  | Optional     | Description of what the tool does                                 |
 | `inputSchema`        | object  | Optional     | JSON Schema describing expected inputs                            |
 | `execution`          | object  | **Required** | Execution configuration (see [Execution Types](#execution-types)) |
 | `enableAnyPaths`     | boolean | Optional     | Override schema-level path restriction (default: `false`)         |
 | `directoryAllowList` | array   | Optional     | Override schema-level allowed directories (default: `[]`)         |
+
+### Disabled Tools
+
+**`disabled`** (boolean, default: `false`)
+- When `true`, the tool is excluded from all listing, filtering, and lookup operations
+- Disabled tools cannot be executed and behave as if they do not exist
+- Useful for temporarily deactivating tools without removing them from the schema
+
+### Annotations
+
+The `annotations` object provides optional metadata and behavioral hints about the tool. All fields are optional.
+
+| Field              | Type    | Description                                                  |
+| ------------------ | ------- | ------------------------------------------------------------ |
+| `title`            | string  | Human-readable title for the tool                            |
+| `readOnlyHint`     | boolean | If true, the tool does not modify its environment            |
+| `destructiveHint`  | boolean | If true, the tool may perform destructive updates            |
+| `idempotentHint`   | boolean | If true, repeated calls with same args have no additional effect |
+| `openWorldHint`    | boolean | If true, the tool interacts with external entities          |
+
+**Note:** These hints are advisory and do not enforce any behavior. They help AI agents understand the tool's characteristics for better decision-making.
 
 ### Security Fields (Per-Tool)
 
@@ -181,7 +203,11 @@ Each tool in the `tools` array represents a single executable operation.
 ```json
 {
   "name": "get_weather",
-  "title": "Get Weather Information",
+  "annotations": {
+    "title": "Get Weather Information",
+    "readOnlyHint": true,
+    "openWorldHint": true
+  },
   "description": "Fetch current weather for a location",
   "inputSchema": {
     "type": "object",
@@ -210,6 +236,23 @@ Each tool in the `tools` array represents a single executable operation.
 }
 ```
 
+### Example with Disabled Tool (JSON)
+
+```json
+{
+  "name": "legacy_api",
+  "disabled": true,
+  "annotations": {
+    "title": "Legacy API Tool (Deprecated)"
+  },
+  "description": "This tool is disabled and will not be available",
+  "execution": {
+    "type": "http",
+    "url": "https://api.example.com/legacy"
+  }
+}
+```
+
 ### Example with Security Overrides (JSON)
 
 ```json
@@ -229,12 +272,32 @@ Each tool in the `tools` array represents a single executable operation.
 ```yaml
 name: read_config
 description: Read configuration from allowed directories
+annotations:
+  title: Read Config
+  readOnlyHint: true
 directoryAllowList:
   - /etc/myapp
   - ./configs
 execution:
   type: file
   path: "{{props.config_path}}"
+```
+
+### Example with All Annotation Hints (YAML)
+
+```yaml
+name: delete_resource
+annotations:
+  title: Delete Resource
+  readOnlyHint: false
+  destructiveHint: true
+  idempotentHint: false
+  openWorldHint: true
+description: Delete a resource from the remote server
+execution:
+  type: http
+  method: DELETE
+  url: "https://api.example.com/resources/{{props.id}}"
 ```
 
 ---

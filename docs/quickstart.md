@@ -81,7 +81,15 @@ Create a file named `my-tools.mci.json` (or `my-tools.mci.yaml` for YAML format)
   "tools": [
     {
       "name": "greet_user",
-      "title": "User Greeting",
+      "annotations": {
+        "annotations": {
+
+          "title": "User Greeting"
+
+        },
+        "readOnlyHint": true,
+        "idempotentHint": true
+      },
       "description": "Generate a personalized greeting message",
       "inputSchema": {
         "type": "object",
@@ -111,7 +119,10 @@ metadata:
   version: 1.0.0
 tools:
   - name: greet_user
-    title: User Greeting
+    annotations:
+      title: User Greeting
+      readOnlyHint: true
+      idempotentHint: true
     description: Generate a personalized greeting message
     inputSchema:
       type: object
@@ -169,7 +180,8 @@ print(f"Available tools: {tool_names}")
 # Get full tool objects
 tools = client.tools()
 for tool in tools:
-    print(f"- {tool.name}: {tool.title}")
+    title = tool.annotations.title if tool.annotations else tool.name
+    print(f"- {tool.name}: {title}")
 ```
 
 ### 5. Execute a Tool
@@ -214,7 +226,9 @@ All tools in MCI follow a standard JSON schema structure. Here's the complete an
 ```json
 {
   "name": "tool_identifier",
-  "title": "Human-Readable Tool Name",
+  "annotations": { "annotations": {
+   "title": "Human-Readable Tool Name"
+ } },
   "description": "What this tool does",
   "inputSchema": {
     "type": "object",
@@ -258,7 +272,11 @@ Return static or templated text directly. Perfect for simple messages, templates
 ```json
 {
   "name": "generate_welcome",
-  "title": "Welcome Message Generator",
+  "annotations": {
+
+    "title": "Welcome Message Generator"
+
+  },
   "description": "Generate a welcome message with current date",
   "inputSchema": {
     "type": "object",
@@ -303,7 +321,11 @@ Read and return file contents with optional template substitution. Useful for lo
 ```json
 {
   "name": "load_config",
-  "title": "Load Configuration File",
+  "annotations": {
+
+    "title": "Load Configuration File"
+
+  },
   "description": "Load a configuration file with template substitution",
   "inputSchema": {
     "type": "object",
@@ -368,7 +390,11 @@ Execute command-line programs and capture their output. Great for running system
 ```json
 {
   "name": "search_files",
-  "title": "Search Files with Grep",
+  "annotations": {
+
+    "title": "Search Files with Grep"
+
+  },
   "description": "Search for text patterns in files",
   "inputSchema": {
     "type": "object",
@@ -445,7 +471,11 @@ Make HTTP requests to APIs with full support for authentication, headers, query 
 ```json
 {
   "name": "get_weather",
-  "title": "Get Weather Information",
+  "annotations": {
+
+    "title": "Get Weather Information"
+
+  },
   "description": "Fetch current weather for a location",
   "inputSchema": {
     "type": "object",
@@ -480,7 +510,11 @@ Make HTTP requests to APIs with full support for authentication, headers, query 
 ```json
 {
   "name": "create_report",
-  "title": "Create Report",
+  "annotations": {
+
+    "title": "Create Report"
+
+  },
   "description": "Create a new report via API",
   "inputSchema": {
     "type": "object",
@@ -504,7 +538,11 @@ Make HTTP requests to APIs with full support for authentication, headers, query 
     "body": {
       "type": "json",
       "content": {
-        "title": "{{props.title}}",
+        "annotations": {
+
+          "title": "{{props.title}}"
+
+        },
         "content": "{{props.content}}",
         "timestamp": "{{env.CURRENT_TIMESTAMP}}"
       }
@@ -672,7 +710,11 @@ if not weather_result.isError:
 report_result = client.execute(
     tool_name="create_report",
     properties={
-        "title": "Q1 Sales Report",
+        "annotations": {
+
+          "title": "Q1 Sales Report"
+
+        },
         "content": "Sales increased by 15%"
     }
 )

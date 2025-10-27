@@ -88,7 +88,11 @@ Each tool is defined as:
 ```json
 {
   "name": "get_weather",
-  "title": "Weather Information Provider",
+  "annotations": {
+    "title": "Weather Information Provider",
+    "readOnlyHint": true,
+    "openWorldHint": true
+  },
   "description": "Get current weather information for a location",
   "inputSchema": {
     "type": "object",
