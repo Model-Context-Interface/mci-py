@@ -286,6 +286,18 @@ When referencing a directory-based toolset:
 }
 ```
 
+**Important notes for directory-based toolsets:**
+- Only tools are merged from toolset files; metadata is not merged
+- All files in a directory must use the same schema version
+- Schema version mismatch will raise an error to ensure compatibility
+
+**Metadata in toolset files:**
+- Metadata in toolset files is for demonstration and documentation purposes only
+- It helps credit toolset authors and provides human-friendly descriptions
+- Metadata is never merged into the main schema from toolset files
+}
+```
+
 ---
 
 ## Metadata

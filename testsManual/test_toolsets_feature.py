@@ -11,6 +11,7 @@ This test demonstrates real-world usage of toolsets including:
 """
 
 import json
+import shutil
 import sys
 from pathlib import Path
 
@@ -380,7 +381,6 @@ def main():
     
     # Cleanup
     print("\n7. Cleaning up test files...")
-    import shutil
     shutil.rmtree(test_dir)
     print("   ✓ Cleaned up test directory")
     

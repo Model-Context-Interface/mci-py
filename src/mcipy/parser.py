@@ -370,22 +370,29 @@ class SchemaParser:
                 raise SchemaParserError(
                     f"No .mci.json files found in toolset directory: {dir_path}"
                 )
-            # For simplicity, merge all tools from all files in the directory
+            # Merge all tools from all files in the directory.
+            # Metadata is not merged - it's only for demonstration purposes in toolset files.
+            # Schema version is validated to ensure compatibility for future parser extensibility.
             all_tools: list[Tool] = []
-            metadata = None
             schema_version = None
             for toolset_file in toolset_files:
                 schema = SchemaParser._parse_toolset_file(toolset_file)
                 all_tools.extend(schema.tools)
+                # Validate schema version consistency across all files in directory
                 if schema_version is None:
                     schema_version = schema.schemaVersion
-                if metadata is None:
-                    metadata = schema.metadata
+                elif schema.schemaVersion != schema_version:
+                    raise SchemaParserError(
+                        f"Schema version mismatch in toolset directory '{dir_path}': "
+                        f"File '{toolset_file.name}' has schemaVersion '{schema.schemaVersion}', "
+                        f"but expected '{schema_version}' (from first file in directory). "
+                        f"All files in a toolset directory must use the same schema version."
+                    )
 
-            # Return combined schema
+            # Return combined schema with only tools (no metadata from toolset files)
             return ToolsetSchema(
                 schemaVersion=schema_version or "1.0",
-                metadata=metadata,
+                metadata=None,  # Don't merge metadata from toolset files
                 tools=all_tools,
             )
 
