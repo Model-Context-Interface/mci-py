@@ -55,9 +55,49 @@ The root MCI context file has these main fields:
 | --------------------- | ------- | ------------ | -------------------------------------------------- |
 | `schemaVersion`       | string  | **Required** | MCI schema version (e.g., `"1.0"`)                 |
 | `metadata`            | object  | Optional     | Descriptive metadata about the tool collection     |
-| `tools`               | array   | **Required** | Array of tool definitions                          |
+| `tools`               | array   | Optional*    | Array of tool definitions                          |
+| `toolsets`            | array   | Optional*    | Array of toolset references to load from library   |
+| `libraryDir`          | string  | Optional     | Directory to find toolset files (default: `"./mci"`) |
 | `enableAnyPaths`      | boolean | Optional     | Allow any file path (default: `false`)             |
 | `directoryAllowList`  | array   | Optional     | Additional allowed directories (default: `[]`)     |
+
+**\* Note**: Either `tools` or `toolsets` (or both) must be provided.
+
+### Toolsets
+
+**`toolsets`** (array, optional)
+- Array of toolset definitions that reference tool collections in the library directory
+- Each toolset can optionally apply schema-level filtering to control which tools are loaded
+- Allows organizing tools into reusable, modular collections
+
+**`libraryDir`** (string, default: `"./mci"`)
+- Directory path where toolset files are located, relative to the main schema file
+- Can be customized to use a different directory structure
+
+#### Toolset Object
+
+Each toolset object supports these fields:
+
+| Field         | Type   | Required     | Description                                          |
+| ------------- | ------ | ------------ | ---------------------------------------------------- |
+| `name`        | string | **Required** | Name of toolset file/directory in `libraryDir`       |
+| `filter`      | string | Optional     | Filter type: `"only"`, `"except"`, `"tags"`, or `"withoutTags"` |
+| `filterValue` | string | Required*    | Comma-separated list of tool names or tags           |
+
+**\* Required when `filter` is specified**
+
+**Toolset Name Resolution**:
+- First checks for a directory: `{libraryDir}/{name}/`
+  - If found, loads all `.mci.json` files in the directory
+- Then checks for direct file: `{libraryDir}/{name}`
+- Then checks with extension: `{libraryDir}/{name}.mci.json`
+- Also supports `.mci.yaml` and `.mci.yml` extensions
+
+**Schema-Level Filters**:
+- `only`: Include only tools with specified names
+- `except`: Exclude tools with specified names
+- `tags`: Include only tools with at least one matching tag
+- `withoutTags`: Exclude tools with any matching tag
 
 ### Security Fields
 
@@ -91,6 +131,44 @@ The root MCI context file has these main fields:
 }
 ```
 
+### Example with Toolsets (JSON)
+
+```json
+{
+  "schemaVersion": "1.0",
+  "metadata": {
+    "name": "My Application",
+    "description": "Main application with multiple tool libraries"
+  },
+  "libraryDir": "./mci",
+  "tools": [
+    {
+      "name": "main_tool",
+      "description": "Main application tool",
+      "execution": {
+        "type": "text",
+        "text": "Main tool output"
+      }
+    }
+  ],
+  "toolsets": [
+    {
+      "name": "weather",
+      "filter": "only",
+      "filterValue": "get_weather, get_forecast"
+    },
+    {
+      "name": "database",
+      "filter": "withoutTags",
+      "filterValue": "destructive"
+    },
+    {
+      "name": "github"
+    }
+  ]
+}
+```
+
 ### Example (YAML)
 
 ```yaml
@@ -107,6 +185,105 @@ directoryAllowList:
   - /home/user/data
   - ./configs
 tools: []
+```
+
+---
+
+## Toolset Schema Files
+
+Toolset files are MCI schema files stored in the library directory (default: `./mci`). They provide a way to organize and reuse tool collections across different main schemas.
+
+### Toolset File Structure
+
+Toolset files have a simplified structure compared to main schemas:
+
+| Field           | Type   | Required     | Description                                    |
+| --------------- | ------ | ------------ | ---------------------------------------------- |
+| `schemaVersion` | string | **Required** | MCI schema version (must match main schema)    |
+| `metadata`      | object | Optional     | Descriptive metadata about the toolset         |
+| `tools`         | array  | **Required** | Array of tool definitions                      |
+
+**Important Differences from Main Schema**:
+- `tools` field is **required** in toolset files (optional in main schema)
+- Cannot contain `toolsets`, `libraryDir`, `enableAnyPaths`, or `directoryAllowList` fields
+- These are purely tool definition files, not configuration files
+
+### Example Toolset File (JSON)
+
+**File**: `./mci/weather.mci.json`
+
+```json
+{
+  "schemaVersion": "1.0",
+  "metadata": {
+    "name": "Weather Toolset",
+    "description": "Tools for weather information",
+    "version": "1.0.0"
+  },
+  "tools": [
+    {
+      "name": "get_weather",
+      "description": "Get current weather",
+      "tags": ["weather", "read"],
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "location": {
+            "type": "string",
+            "description": "City name or location"
+          }
+        },
+        "required": ["location"]
+      },
+      "execution": {
+        "type": "http",
+        "method": "GET",
+        "url": "https://api.weather.com/current",
+        "params": {
+          "location": "{{props.location}}"
+        }
+      }
+    },
+    {
+      "name": "get_forecast",
+      "description": "Get weather forecast",
+      "tags": ["weather", "read"],
+      "execution": {
+        "type": "http",
+        "method": "GET",
+        "url": "https://api.weather.com/forecast",
+        "params": {
+          "location": "{{props.location}}",
+          "days": "{{props.days}}"
+        }
+      }
+    }
+  ]
+}
+```
+
+### Toolset Directory Structure
+
+You can organize related toolsets in subdirectories:
+
+```
+project/
+├── main.mci.json          # Main schema
+└── mci/                   # Library directory
+    ├── weather.mci.json   # Single-file toolset
+    ├── database.mci.json  # Single-file toolset
+    └── github/            # Directory-based toolset
+        ├── prs.mci.json   # GitHub PR tools
+        └── issues.mci.json # GitHub issue tools
+```
+
+When referencing a directory-based toolset:
+```json
+{
+  "toolsets": [
+    {"name": "github"}  // Loads all .mci.json files in mci/github/
+  ]
+}
 ```
 
 ---
