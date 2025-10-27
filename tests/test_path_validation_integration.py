@@ -88,19 +88,22 @@ class TestFileExecutorPathValidation:
 
     def test_file_executor_blocks_outside_context(self, schema_with_file_tool_outside_context):
         """Test that file executor blocks access to files outside context directory."""
-        schema_file, outside_file = schema_with_file_tool_outside_context
+        schema_file, _outside_file = schema_with_file_tool_outside_context
         client = MCIClient(schema_file_path=str(schema_file))
 
         result = client.execute("read_outside_file")
 
         assert result.isError is True
-        assert "File path access outside context directory" in result.error
+        assert (
+            result.error is not None
+            and "File path access outside context directory" in result.error
+        )
 
     def test_file_executor_allows_with_enable_any_paths_tool_level(
-        self, temp_schema_dir, schema_with_file_tool_outside_context
+        self, schema_with_file_tool_outside_context
     ):
         """Test that file executor allows any path when tool has enableAnyPaths=True."""
-        schema_file, outside_file = schema_with_file_tool_outside_context
+        schema_file, _outside_file = schema_with_file_tool_outside_context
 
         # Update schema to add enableAnyPaths at tool level
         import json
@@ -116,10 +119,10 @@ class TestFileExecutorPathValidation:
         assert result.content == "Outside content"
 
     def test_file_executor_allows_with_enable_any_paths_schema_level(
-        self, temp_schema_dir, schema_with_file_tool_outside_context
+        self, schema_with_file_tool_outside_context
     ):
         """Test that file executor allows any path when schema has enableAnyPaths=True."""
-        schema_file, outside_file = schema_with_file_tool_outside_context
+        schema_file, _outside_file = schema_with_file_tool_outside_context
 
         # Update schema to add enableAnyPaths at schema level
         import json
@@ -135,7 +138,7 @@ class TestFileExecutorPathValidation:
         assert result.content == "Outside content"
 
     def test_file_executor_allows_with_directory_allow_list(
-        self, temp_schema_dir, schema_with_file_tool_outside_context
+        self, schema_with_file_tool_outside_context
     ):
         """Test that file executor allows paths in directoryAllowList."""
         schema_file, outside_file = schema_with_file_tool_outside_context
@@ -224,7 +227,7 @@ class TestCLIExecutorPathValidation:
 
         # Should succeed and list files
         assert result.isError is False
-        assert "test.txt" in result.content
+        assert result.content is not None and "test.txt" in result.content
 
     def test_cli_executor_blocks_outside_context_cwd(self, temp_schema_dir):
         """Test that CLI executor blocks cwd outside context directory."""
@@ -249,7 +252,10 @@ class TestCLIExecutorPathValidation:
             result = client.execute("list_outside")
 
             assert result.isError is True
-            assert "File path access outside context directory" in result.error
+            assert (
+                result.error is not None
+                and "File path access outside context directory" in result.error
+            )
 
     def test_cli_executor_allows_with_enable_any_paths(self, temp_schema_dir):
         """Test that CLI executor allows any cwd when enableAnyPaths=True."""
@@ -279,7 +285,7 @@ class TestCLIExecutorPathValidation:
             result = client.execute("list_outside")
 
             assert result.isError is False
-            assert "outside.txt" in result.content
+            assert result.content is not None and "outside.txt" in result.content
 
     def test_cli_executor_allows_with_directory_allow_list(self, temp_schema_dir):
         """Test that CLI executor allows cwd in directoryAllowList."""
@@ -309,14 +315,19 @@ class TestCLIExecutorPathValidation:
             result = client.execute("list_allowed")
 
             assert result.isError is False
-            assert "allowed.txt" in result.content
+            assert result.content is not None and "allowed.txt" in result.content
 
     def test_cli_executor_no_cwd_specified(self, temp_schema_dir):
         """Test that CLI executor works when no cwd is specified."""
         # Create schema with CLI tool without cwd
         schema = {
             "schemaVersion": "1.0",
-            "tools": [{"name": "echo_test", "execution": {"type": "cli", "command": "echo", "args": ["hello"]}}],
+            "tools": [
+                {
+                    "name": "echo_test",
+                    "execution": {"type": "cli", "command": "echo", "args": ["hello"]},
+                }
+            ],
         }
 
         schema_file = temp_schema_dir / "schema.json"
@@ -329,4 +340,4 @@ class TestCLIExecutorPathValidation:
 
         # Should succeed - no path validation needed
         assert result.isError is False
-        assert "hello" in result.content
+        assert result.content is not None and "hello" in result.content

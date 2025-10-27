@@ -733,6 +733,137 @@ client = MCIClient(
 )
 ```
 
+### Security: Path Restrictions
+
+**Important Security Feature**: By default, MCI restricts file and directory access to protect against arbitrary file access vulnerabilities.
+
+#### Default Behavior
+
+When executing file-based tools or CLI tools with a working directory (`cwd`), MCI validates that all paths are within the directory containing the schema file:
+
+```python
+# This works - accessing file in schema directory
+client = MCIClient(schema_file_path="/project/tools.mci.json")
+result = client.execute("read_config", {"file": "/project/config.json"})
+# ✓ Allowed: /project/config.json is in same directory as schema
+```
+
+```python
+# This fails - accessing file outside schema directory
+result = client.execute("read_secret", {"file": "/etc/passwd"})
+# ✗ Blocked: Path outside schema directory
+```
+
+#### Allowing Specific Directories
+
+You can allow additional directories using `directoryAllowList`:
+
+**JSON Format:**
+```json
+{
+  "schemaVersion": "1.0",
+  "directoryAllowList": ["/home/user/data", "./configs"],
+  "tools": [
+    {
+      "name": "read_data",
+      "execution": {
+        "type": "file",
+        "path": "/home/user/data/file.txt"
+      }
+    }
+  ]
+}
+```
+
+**YAML Format:**
+```yaml
+schemaVersion: "1.0"
+directoryAllowList:
+  - /home/user/data
+  - ./configs
+tools:
+  - name: read_data
+    execution:
+      type: file
+      path: /home/user/data/file.txt
+```
+
+#### Per-Tool Configuration
+
+You can override security settings for individual tools:
+
+**JSON Format:**
+```json
+{
+  "schemaVersion": "1.0",
+  "tools": [
+    {
+      "name": "read_any_file",
+      "enableAnyPaths": true,
+      "execution": {
+        "type": "file",
+        "path": "{{props.file_path}}"
+      }
+    },
+    {
+      "name": "read_from_allowed_dirs",
+      "directoryAllowList": ["/tmp", "/var/data"],
+      "execution": {
+        "type": "file",
+        "path": "{{props.file_path}}"
+      }
+    }
+  ]
+}
+```
+
+**YAML Format:**
+```yaml
+schemaVersion: "1.0"
+tools:
+  - name: read_any_file
+    enableAnyPaths: true
+    execution:
+      type: file
+      path: "{{props.file_path}}"
+  
+  - name: read_from_allowed_dirs
+    directoryAllowList:
+      - /tmp
+      - /var/data
+    execution:
+      type: file
+      path: "{{props.file_path}}"
+```
+
+#### CLI Working Directory Validation
+
+The same restrictions apply to CLI tools with a working directory (`cwd`):
+
+**JSON Format:**
+```json
+{
+  "schemaVersion": "1.0",
+  "tools": [
+    {
+      "name": "safe_ls",
+      "execution": {
+        "type": "cli",
+        "command": "ls",
+        "cwd": "/project/data"
+      }
+    }
+  ]
+}
+```
+
+**Important Notes:**
+
+1. **Tool-level settings override schema-level settings** - If both are defined, the tool's settings take precedence
+2. **Relative paths are resolved relative to the schema directory** - `./data` means relative to where your `.mci.json`/`.mci.yaml` file is located
+3. **`enableAnyPaths` disables all path validation** - Use with extreme caution
+4. **Subdirectories are automatically allowed** - If schema is in `/project`, all files under `/project/**` are allowed
+
 ### Complete Example
 
 Here's a complete example putting it all together:

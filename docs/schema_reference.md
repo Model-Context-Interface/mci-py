@@ -49,13 +49,29 @@ The schema is designed to be platform-agnostic, secure (secrets via environment 
 
 ## Top-Level Schema Structure
 
-The root MCI context file has three main fields:
+The root MCI context file has these main fields:
 
-| Field           | Type   | Required     | Description                                    |
-| --------------- | ------ | ------------ | ---------------------------------------------- |
-| `schemaVersion` | string | **Required** | MCI schema version (e.g., `"1.0"`)             |
-| `metadata`      | object | Optional     | Descriptive metadata about the tool collection |
-| `tools`         | array  | **Required** | Array of tool definitions                      |
+| Field                 | Type    | Required     | Description                                        |
+| --------------------- | ------- | ------------ | -------------------------------------------------- |
+| `schemaVersion`       | string  | **Required** | MCI schema version (e.g., `"1.0"`)                 |
+| `metadata`            | object  | Optional     | Descriptive metadata about the tool collection     |
+| `tools`               | array   | **Required** | Array of tool definitions                          |
+| `enableAnyPaths`      | boolean | Optional     | Allow any file path (default: `false`)             |
+| `directoryAllowList`  | array   | Optional     | Additional allowed directories (default: `[]`)     |
+
+### Security Fields
+
+**`enableAnyPaths`** (boolean, default: `false`)
+- When `true`, disables all path validation for file and CLI execution
+- When `false` (default), restricts access to schema directory and allowed directories
+- Can be overridden per-tool
+- **Use with caution** - enables access to any file on the system
+
+**`directoryAllowList`** (array of strings, default: `[]`)
+- List of additional directories to allow for file/CLI access
+- Can be absolute paths (e.g., `/home/user/data`) or relative to schema directory (e.g., `./configs`)
+- Schema directory is always allowed by default
+- Can be overridden per-tool
 
 ### Example (JSON)
 
@@ -69,6 +85,8 @@ The root MCI context file has three main fields:
     "license": "MIT",
     "authors": ["John Doe"]
   },
+  "enableAnyPaths": false,
+  "directoryAllowList": ["/home/user/data", "./configs"],
   "tools": []
 }
 ```
@@ -84,6 +102,10 @@ metadata:
   license: MIT
   authors:
     - John Doe
+enableAnyPaths: false
+directoryAllowList:
+  - /home/user/data
+  - ./configs
 tools: []
 ```
 
@@ -131,15 +153,30 @@ authors:
 
 Each tool in the `tools` array represents a single executable operation.
 
-| Field         | Type   | Required     | Description                                                       |
-| ------------- | ------ | ------------ | ----------------------------------------------------------------- |
-| `name`        | string | **Required** | Unique identifier for the tool                                    |
-| `title`       | string | Optional     | Human-readable title                                              |
-| `description` | string | Optional     | Description of what the tool does                                 |
-| `inputSchema` | object | Optional     | JSON Schema describing expected inputs                            |
-| `execution`   | object | **Required** | Execution configuration (see [Execution Types](#execution-types)) |
+| Field                | Type    | Required     | Description                                                       |
+| -------------------- | ------- | ------------ | ----------------------------------------------------------------- |
+| `name`               | string  | **Required** | Unique identifier for the tool                                    |
+| `title`              | string  | Optional     | Human-readable title                                              |
+| `description`        | string  | Optional     | Description of what the tool does                                 |
+| `inputSchema`        | object  | Optional     | JSON Schema describing expected inputs                            |
+| `execution`          | object  | **Required** | Execution configuration (see [Execution Types](#execution-types)) |
+| `enableAnyPaths`     | boolean | Optional     | Override schema-level path restriction (default: `false`)         |
+| `directoryAllowList` | array   | Optional     | Override schema-level allowed directories (default: `[]`)         |
 
-### Example
+### Security Fields (Per-Tool)
+
+**`enableAnyPaths`** (boolean, default: `false`)
+- Overrides schema-level setting for this specific tool
+- When `true`, disables path validation for this tool
+- Takes precedence over schema-level `enableAnyPaths`
+
+**`directoryAllowList`** (array of strings, default: `[]`)
+- Overrides schema-level setting for this specific tool
+- List of additional directories allowed for this tool only
+- Takes precedence over schema-level `directoryAllowList`
+- Can be absolute or relative paths
+
+### Example (JSON)
 
 ```json
 {
@@ -171,6 +208,33 @@ Each tool in the `tools` array represents a single executable operation.
     }
   }
 }
+```
+
+### Example with Security Overrides (JSON)
+
+```json
+{
+  "name": "read_system_file",
+  "description": "Read a file with unrestricted access",
+  "enableAnyPaths": true,
+  "execution": {
+    "type": "file",
+    "path": "{{props.file_path}}"
+  }
+}
+```
+
+### Example with Directory Allow List (YAML)
+
+```yaml
+name: read_config
+description: Read configuration from allowed directories
+directoryAllowList:
+  - /etc/myapp
+  - ./configs
+execution:
+  type: file
+  path: "{{props.config_path}}"
 ```
 
 ---

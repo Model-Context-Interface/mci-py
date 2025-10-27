@@ -81,9 +81,7 @@ class TestPathValidator:
         with pytest.raises(PathValidationError, match="File path access outside context directory"):
             validator.validate_path(str(temp_file_outside_context))
 
-    def test_validate_path_with_enable_any_paths(
-        self, temp_context_dir, temp_file_outside_context
-    ):
+    def test_validate_path_with_enable_any_paths(self, temp_context_dir, temp_file_outside_context):
         """Test validating any path when enableAnyPaths=True."""
         validator = PathValidator(context_dir=temp_context_dir, enable_any_paths=True)
         # Should not raise even for outside paths
