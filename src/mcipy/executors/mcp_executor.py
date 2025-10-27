@@ -126,11 +126,7 @@ class MCPExecutor(BaseExecutor):
         # Connect and call tool
         try:
             async with transport_ctx as context_result:
-                # Handle different return types from context managers
-                if len(context_result) == 2:
-                    read, write = context_result[0], context_result[1]
-                else:
-                    read, write = context_result[0], context_result[1]
+                read, write = context_result[0], context_result[1]
 
                 async with ClientSession(read, write) as session:
                     await session.initialize()
@@ -146,13 +142,26 @@ class MCPExecutor(BaseExecutor):
                     for content_item in result.content:
                         if content_item.type == "text":
                             content_objects.append(TextContent(text=content_item.text))
-                        # Handle other content types if needed
-                        # For now, we only support text content
+                        elif content_item.type == "image":
+                            from ..models import ImageContent
+
+                            content_objects.append(
+                                ImageContent(data=content_item.data, mimeType=content_item.mimeType)
+                            )
+                        elif content_item.type == "audio":
+                            from ..models import AudioContent
+
+                            content_objects.append(
+                                AudioContent(data=content_item.data, mimeType=content_item.mimeType)
+                            )
+                        else:
+                            # Default to text if type is unknown
+                            content_objects.append(TextContent(text=str(content_item)))
 
                     return ExecutionResult(
                         result=ExecutionResultContent(
                             content=content_objects,
-                            isError=result.isError if hasattr(result, "isError") else False,
+                            isError=getattr(result, "isError", False),
                             metadata={"mcp_server": config.serverName, "mcp_tool": config.toolName},
                         )
                     )

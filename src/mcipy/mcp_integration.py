@@ -116,11 +116,7 @@ class MCPIntegration:
         # Connect and fetch tools
         try:
             async with transport_ctx as context_result:
-                # Handle different return types from context managers
-                if len(context_result) == 2:
-                    read, write = context_result[0], context_result[1]
-                else:
-                    read, write = context_result[0], context_result[1]
+                read, write = context_result[0], context_result[1]
 
                 async with ClientSession(read, write) as session:
                     await session.initialize()

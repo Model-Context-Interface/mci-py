@@ -68,7 +68,10 @@ def test_mcp_toolset_caching():
     if mcp_dir.exists():
         for file in mcp_dir.glob("*.mci.json"):
             print(f"Removing old cache file: {file}")
-            file.unlink()
+            try:
+                file.unlink()
+            except OSError as e:
+                print(f"[yellow]⚠ Failed to remove cache file {file}: {e}[/yellow]")
 
     try:
         client = MCIClient(schema_file_path=str(schema_path), env_vars={})

@@ -13,6 +13,7 @@ MCI schema files. It handles:
 """
 
 import json
+import os
 from datetime import UTC, datetime
 from pathlib import Path
 from typing import Any
@@ -635,8 +636,6 @@ class SchemaParser:
             if should_fetch:
                 # Apply templating to server config (for env variables)
                 template_engine = TemplateEngine()
-                import os
-
                 env_context = {"env": dict(os.environ)}
 
                 try:
