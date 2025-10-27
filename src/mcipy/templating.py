@@ -121,7 +121,9 @@ class TemplateEngine:
 
         return current
 
-    def _replace_placeholders_with_whitespace_support(self, content: str, replacements: dict[str, str]) -> str:
+    def _replace_placeholders_with_whitespace_support(
+        self, content: str, replacements: dict[str, str]
+    ) -> str:
         """
         Replace placeholders in content, supporting optional whitespace around variable names.
 
@@ -171,7 +173,9 @@ class TemplateEngine:
                 processed_body = body
                 # Replace {{var_name}} with the current value, supporting whitespace
                 replacements = {var_name: str(i)}
-                processed_body = self._replace_placeholders_with_whitespace_support(processed_body, replacements)
+                processed_body = self._replace_placeholders_with_whitespace_support(
+                    processed_body, replacements
+                )
 
                 result.append(processed_body)
 
@@ -227,10 +231,14 @@ class TemplateEngine:
                         replacements = {}
                         for key, value in item.items():
                             replacements[f"{var_name}.{key}"] = str(value)
-                        processed_body = self._replace_placeholders_with_whitespace_support(processed_body, replacements)
+                        processed_body = self._replace_placeholders_with_whitespace_support(
+                            processed_body, replacements
+                        )
                     else:
                         replacements = {var_name: str(item)}
-                        processed_body = self._replace_placeholders_with_whitespace_support(processed_body, replacements)
+                        processed_body = self._replace_placeholders_with_whitespace_support(
+                            processed_body, replacements
+                        )
 
                     result.append(processed_body)
             else:  # dict
@@ -242,11 +250,10 @@ class TemplateEngine:
                     # Process the body
                     processed_body = body
                     # Replace {{var_name}} with value and {{var_name.key}} with key, supporting whitespace
-                    replacements = {
-                        var_name: str(value),
-                        f"{var_name}.key": str(key)
-                    }
-                    processed_body = self._replace_placeholders_with_whitespace_support(processed_body, replacements)
+                    replacements = {var_name: str(value), f"{var_name}.key": str(key)}
+                    processed_body = self._replace_placeholders_with_whitespace_support(
+                        processed_body, replacements
+                    )
 
                     result.append(processed_body)
 

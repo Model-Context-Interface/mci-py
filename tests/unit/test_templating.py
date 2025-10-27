@@ -385,17 +385,17 @@ Production mode active
         }
         template = "@foreach(item in props.items){{ item }},{{item}};@endforeach"
         result = engine.render_advanced(template, context)
-        
+
         # Should produce: "apple,apple;banana,banana;"
         assert result == "apple,apple;banana,banana;"
 
-        # Test @for with whitespace around variable names  
+        # Test @for with whitespace around variable names
         template2 = "@for(i in range(1, 3)){{ i }}-{{i}};@endfor"
         result2 = engine.render_advanced(template2, context)
-        
+
         # Should produce: "1-1;2-2;"
         assert result2 == "1-1;2-2;"
-        
+
         # Test with object properties and whitespace
         context_objects = {
             "props": {"users": [{"name": "Alice"}, {"name": "Bob"}]},
@@ -404,6 +404,6 @@ Production mode active
         }
         template3 = "@foreach(user in props.users){{ user.name }},{{user.name}};@endforeach"
         result3 = engine.render_advanced(template3, context_objects)
-        
+
         # Should produce: "Alice,Alice;Bob,Bob;"
         assert result3 == "Alice,Alice;Bob,Bob;"
