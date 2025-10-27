@@ -103,7 +103,7 @@ class TestBaseExecutor:
         result = executor._format_error(error)
 
         assert isinstance(result, ExecutionResult)
-        assert result.isError is True
+        assert result.result.isError is True
         assert result.error == "Something went wrong"
         assert result.content is None
 
@@ -135,8 +135,9 @@ class TestBaseExecutor:
         result = executor.execute(config, context)
 
         assert isinstance(result, ExecutionResult)
-        assert result.isError is False
-        assert result.content == "test"
+        assert result.result.isError is False
+        assert len(result.result.content) == 1
+        assert result.result.content[0].text == "test"
 
     def test_apply_basic_templating_to_config_string_fields(self, executor):
         """Test applying basic templating to string fields in config."""

@@ -30,45 +30,50 @@ class TestTextExecutor:
 
         result = executor.execute(config, context)
 
-        assert result.isError is False
-        assert result.content == "Hello, World!"
-        assert result.error is None
+        assert result.result.isError is False
+        assert len(result.result.content) == 1
+        assert result.result.content[0].text == "Hello, World!"
+        
 
     def test_execute_with_props_placeholder(self, executor, context):
         """Test executing with props placeholders."""
         config = TextExecutionConfig(text="Hello {{props.name}}!")
         result = executor.execute(config, context)
 
-        assert result.isError is False
-        assert result.content == "Hello Alice!"
-        assert result.error is None
+        assert result.result.isError is False
+        assert len(result.result.content) == 1
+        assert result.result.content[0].text == "Hello Alice!"
+        
 
     def test_execute_with_env_placeholder(self, executor, context):
         """Test executing with environment variable placeholders."""
         config = TextExecutionConfig(text="API Key: {{env.API_KEY}}")
         result = executor.execute(config, context)
 
-        assert result.isError is False
-        assert result.content == "API Key: secret123"
-        assert result.error is None
+        assert result.result.isError is False
+        assert len(result.result.content) == 1
+        assert result.result.content[0].text == "API Key: secret123"
+        
 
     def test_execute_with_input_placeholder(self, executor, context):
         """Test executing with input placeholders (alias for props)."""
         config = TextExecutionConfig(text="User: {{input.name}}, Age: {{input.age}}")
         result = executor.execute(config, context)
 
-        assert result.isError is False
-        assert result.content == "User: Alice, Age: 30"
-        assert result.error is None
+        assert result.result.isError is False
+        assert len(result.result.content) == 1
+        assert result.result.content[0].text == "User: Alice, Age: 30"
+        
 
     def test_execute_with_multiple_placeholders(self, executor, context):
         """Test executing with multiple placeholders."""
         config = TextExecutionConfig(text="{{props.name}} lives in {{props.city}} ({{env.ENV}})")
         result = executor.execute(config, context)
 
-        assert result.isError is False
-        assert result.content == "Alice lives in Seattle (production)"
-        assert result.error is None
+        assert result.result.isError is False
+        assert len(result.result.content) == 1
+        assert result.result.content[0].text == "Alice lives in Seattle (production)"
+        
 
     def test_execute_with_for_loop(self, executor):
         """Test executing with @for loop."""
@@ -77,10 +82,10 @@ class TestTextExecutor:
 
         result = executor.execute(config, context)
 
-        assert result.isError is False
-        assert "Item 0" in result.content
-        assert "Item 1" in result.content
-        assert "Item 2" in result.content
+        assert result.result.isError is False
+        assert "Item 0" in result.result.content[0].text
+        assert "Item 1" in result.result.content[0].text
+        assert "Item 2" in result.result.content[0].text
 
     def test_execute_with_foreach_loop(self, executor):
         """Test executing with @foreach loop."""
@@ -93,10 +98,10 @@ class TestTextExecutor:
 
         result = executor.execute(config, context)
 
-        assert result.isError is False
-        assert "- apple" in result.content
-        assert "- banana" in result.content
-        assert "- cherry" in result.content
+        assert result.result.isError is False
+        assert "- apple" in result.result.content[0].text
+        assert "- banana" in result.result.content[0].text
+        assert "- cherry" in result.result.content[0].text
 
     def test_execute_with_if_directive(self, executor, context):
         """Test executing with @if directive."""
@@ -106,8 +111,8 @@ class TestTextExecutor:
 
         result = executor.execute(config, context)
 
-        assert result.isError is False
-        assert "Production Environment" in result.content
+        assert result.result.isError is False
+        assert "Production Environment" in result.result.content[0].text
 
     def test_execute_with_if_else_directive(self, executor):
         """Test executing with @if/@else directive."""
@@ -120,9 +125,9 @@ class TestTextExecutor:
 
         result = executor.execute(config, context)
 
-        assert result.isError is False
-        assert "Production Mode" in result.content
-        assert "Debug Mode" not in result.content
+        assert result.result.isError is False
+        assert "Production Mode" in result.result.content[0].text
+        assert "Debug Mode" not in result.result.content[0].text
 
     def test_execute_complex_template(self, executor):
         """Test executing with complex template combining all features."""
@@ -156,11 +161,11 @@ Summary: {{props.user}} has completed @for(i in range(0, 2)){{i}} @endfor tasks.
         config = TextExecutionConfig(text=text)
         result = executor.execute(config, context)
 
-        assert result.isError is False
-        assert "Welcome to TaskManager, Bob!" in result.content
-        assert "- task1" in result.content
-        assert "- task2" in result.content
-        assert "High priority tasks require immediate attention!" in result.content
+        assert result.result.isError is False
+        assert "Welcome to TaskManager, Bob!" in result.result.content[0].text
+        assert "- task1" in result.result.content[0].text
+        assert "- task2" in result.result.content[0].text
+        assert "High priority tasks require immediate attention!" in result.result.content[0].text
 
     def test_execute_missing_placeholder_error(self, executor):
         """Test executing with missing placeholder returns error."""
@@ -169,9 +174,9 @@ Summary: {{props.user}} has completed @for(i in range(0, 2)){{i}} @endfor tasks.
 
         result = executor.execute(config, context)
 
-        assert result.isError is True
-        assert "missing" in result.error.lower()
-        assert result.content is None
+        assert result.result.isError is True
+        assert len(result.result.content) == 1
+        assert "missing" in result.result.content[0].text.lower()
 
     def test_execute_nested_placeholders(self, executor):
         """Test executing with nested object placeholders."""
@@ -186,8 +191,9 @@ Summary: {{props.user}} has completed @for(i in range(0, 2)){{i}} @endfor tasks.
 
         result = executor.execute(config, context)
 
-        assert result.isError is False
-        assert result.content == "User: Charlie, Role: admin"
+        assert result.result.isError is False
+        assert len(result.result.content) == 1
+        assert result.result.content[0].text == "User: Charlie, Role: admin"
 
     def test_execute_empty_text(self, executor):
         """Test executing with empty text."""
@@ -196,9 +202,10 @@ Summary: {{props.user}} has completed @for(i in range(0, 2)){{i}} @endfor tasks.
 
         result = executor.execute(config, context)
 
-        assert result.isError is False
-        assert result.content == ""
-        assert result.error is None
+        assert result.result.isError is False
+        assert len(result.result.content) == 1
+        assert result.result.content[0].text == ""
+        
 
     def test_execute_whitespace_preservation(self, executor, context):
         """Test that whitespace is preserved in output."""
@@ -206,8 +213,8 @@ Summary: {{props.user}} has completed @for(i in range(0, 2)){{i}} @endfor tasks.
 
         result = executor.execute(config, context)
 
-        assert result.isError is False
-        assert "Line 1\n  Line 2 with indent\n\nLine 4 after blank" == result.content
+        assert result.result.isError is False
+        assert "Line 1\n  Line 2 with indent\n\nLine 4 after blank" == result.result.content[0].text
 
     def test_execute_all_templating_directives(self, executor):
         """Test executing with all templating directives working together."""
@@ -248,15 +255,15 @@ Numbered Summary:
         config = TextExecutionConfig(text=text)
         result = executor.execute(config, context)
 
-        assert result.isError is False
+        assert result.result.isError is False
         # Check all features work
-        assert "ACME Corp - Sales Report 2024" in result.content
-        assert "- Q1: Analysis" in result.content
-        assert "- Q2: Analysis" in result.content
-        assert "- Q3: Analysis" in result.content
-        assert "0. Quarter 0 data" in result.content
-        assert "3. Quarter 3 data" in result.content
-        assert "✓ Report is complete and verified" in result.content
+        assert "ACME Corp - Sales Report 2024" in result.result.content[0].text
+        assert "- Q1: Analysis" in result.result.content[0].text
+        assert "- Q2: Analysis" in result.result.content[0].text
+        assert "- Q3: Analysis" in result.result.content[0].text
+        assert "0. Quarter 0 data" in result.result.content[0].text
+        assert "3. Quarter 3 data" in result.result.content[0].text
+        assert "✓ Report is complete and verified" in result.result.content[0].text
 
     def test_execute_wrong_config_type(self, executor):
         """Test executing with wrong config type returns error."""
@@ -267,6 +274,6 @@ Numbered Summary:
 
         result = executor.execute(config, context)
 
-        assert result.isError is True
-        assert "Expected TextExecutionConfig" in result.error
-        assert result.content is None
+        assert result.result.isError is True
+        assert len(result.result.content) == 1
+        assert "Expected TextExecutionConfig" in result.result.content[0].text
