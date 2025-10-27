@@ -209,5 +209,5 @@ Test mode active
         result = executor.execute(config, context)
 
         assert result.result.isError is True
-        assert "Expected FileExecutionConfig" in result.error
-        assert result.content is None
+        assert "Expected FileExecutionConfig" in result.result.content[0].text
+        assert not result.result.content or len(result.result.content) == 0
