@@ -169,6 +169,22 @@ class MCIClient:
         """
         return self._tool_manager.withoutTags(tags)
 
+    def toolsets(self, toolset_names: list[str]) -> list[Tool]:
+        """
+        Filter tools to include only those from specified toolsets (excluding disabled tools).
+
+        Returns tools that were loaded from any of the specified toolsets.
+        Uses OR logic: a tool is included if it came from any of the specified toolsets.
+        Only tools that were registered by their toolset's schema-level filter are included.
+
+        Args:
+            toolset_names: List of toolset names to filter by
+
+        Returns:
+            Filtered list of enabled Tool objects from the specified toolsets
+        """
+        return self._tool_manager.toolsets(toolset_names)
+
     def execute(self, tool_name: str, properties: dict[str, Any] | None = None) -> ExecutionResult:
         """
         Execute a tool by name with the provided properties.
