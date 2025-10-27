@@ -8,7 +8,13 @@ It reads files from disk and optionally applies templating to the content.
 from pathlib import Path
 from typing import Any
 
-from ..models import ExecutionConfig, ExecutionResult, FileExecutionConfig
+from ..models import (
+    ExecutionConfig,
+    ExecutionResult,
+    ExecutionResultContent,
+    FileExecutionConfig,
+    TextContent,
+)
 from .base import BaseExecutor
 
 
@@ -63,9 +69,10 @@ class FileExecutor(BaseExecutor):
             parsed_content = self._parse_content(content, context, config.enableTemplating)
 
             return ExecutionResult(
-                isError=False,
-                content=parsed_content,
-                error=None,
+                result=ExecutionResultContent(
+                    isError=False,
+                    content=[TextContent(text=parsed_content)],
+                )
             )
 
         except Exception as e:

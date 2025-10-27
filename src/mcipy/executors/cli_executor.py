@@ -10,7 +10,14 @@ differences in command execution.
 import subprocess
 from typing import Any
 
-from ..models import CLIExecutionConfig, ExecutionConfig, ExecutionResult, FlagConfig
+from ..models import (
+    CLIExecutionConfig,
+    ExecutionConfig,
+    ExecutionResult,
+    ExecutionResultContent,
+    FlagConfig,
+    TextContent,
+)
 from .base import BaseExecutor
 
 
@@ -77,18 +84,20 @@ class CLIExecutor(BaseExecutor):
                 if stderr:
                     error_msg += f": {stderr}"
                 return ExecutionResult(
-                    isError=True,
-                    error=error_msg,
-                    content=None,
-                    metadata={"returncode": returncode, "stderr": stderr, "stdout": stdout},
+                    result=ExecutionResultContent(
+                        isError=True,
+                        content=[TextContent(text=error_msg)],
+                        metadata={"returncode": returncode, "stderr": stderr, "stdout": stdout},
+                    )
                 )
 
             # Command succeeded - return stdout
             return ExecutionResult(
-                isError=False,
-                content=stdout,
-                error=None,
-                metadata={"returncode": returncode, "stderr": stderr},
+                result=ExecutionResultContent(
+                    isError=False,
+                    content=[TextContent(text=stdout)],
+                    metadata={"returncode": returncode, "stderr": stderr},
+                )
             )
 
         except Exception as e:

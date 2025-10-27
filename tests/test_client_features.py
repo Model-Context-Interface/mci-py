@@ -71,10 +71,10 @@ class TestMCIClientFeatures:
         # Execute a text generation tool (doesn't require network/filesystem)
         result = client.execute("generate_message", properties={"username": "TestUser"})
         assert result is not None
-        assert result.isError is False
-        assert result.content is not None
-        assert isinstance(result.content, str)
-        assert "TestUser" in result.content
+        assert result.result.isError is False
+        assert len(result.result.content) == 1
+        assert isinstance(result.result.content[0].text, str)
+        assert "TestUser" in result.result.content[0].text
 
     def test_client_with_multiple_env_var_scenarios(self):
         """Test client behavior with different environment variable scenarios."""
