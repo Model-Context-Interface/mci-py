@@ -127,8 +127,6 @@ tools:
 ```
 
 > **Note:** MCI supports both JSON (`.json`) and YAML (`.yaml`, `.yml`) formats interchangeably. Choose the format that best suits your preferences!
-}
-```
 
 ### 3. Initialize the Client
 
