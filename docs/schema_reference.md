@@ -6,6 +6,7 @@ This document provides a complete reference for the Model Context Interface (MCI
 
 - [Overview](#overview)
 - [Top-Level Schema Structure](#top-level-schema-structure)
+- [Toolset Files](#toolset-files)
 - [Metadata](#metadata)
 - [Tool Definition](#tool-definition)
 - [Execution Types](#execution-types)
@@ -55,9 +56,61 @@ The root MCI context file has these main fields:
 | --------------------- | ------- | ------------ | -------------------------------------------------- |
 | `schemaVersion`       | string  | **Required** | MCI schema version (e.g., `"1.0"`)                 |
 | `metadata`            | object  | Optional     | Descriptive metadata about the tool collection     |
-| `tools`               | array   | **Required** | Array of tool definitions                          |
+| `tools`               | array   | Conditional* | Array of tool definitions                          |
+| `toolsets`            | array   | Conditional* | Array of toolset references                        |
+| `libraryDir`          | string  | Optional     | Directory for toolset files (default: `"./mci"`)   |
 | `enableAnyPaths`      | boolean | Optional     | Allow any file path (default: `false`)             |
 | `directoryAllowList`  | array   | Optional     | Additional allowed directories (default: `[]`)     |
+
+*Either `tools` or `toolsets` (or both) must be provided.
+
+### Toolsets
+
+**`toolsets`** (array of objects, optional)
+- References to external toolset files to load
+- Allows organizing tools into reusable collections
+- Each toolset can have filters applied when loading
+- Toolsets are loaded from the `libraryDir` directory
+
+**`libraryDir`** (string, default: `"./mci"`)
+- Directory relative to the schema file where toolset files are located
+- Toolset files must end with `.mci.json`, `.mci.yaml`, or `.mci.yml`
+- Default is `./mci` (looks for an `mci` directory next to the schema file)
+
+Each toolset object has:
+
+| Field         | Type   | Required | Description                                          |
+| ------------- | ------ | -------- | ---------------------------------------------------- |
+| `name`        | string | **Required** | Name of toolset file/directory in `libraryDir`   |
+| `filter`      | string | Optional | Filter type: `"only"`, `"except"`, `"tags"`, `"withoutTags"` |
+| `filterValue` | string | Required if `filter` is set | Comma-separated list of tool names or tags |
+
+**Filter types:**
+- `only` - Include only the specified tools
+- `except` - Include all tools except the specified ones
+- `tags` - Include only tools with at least one matching tag
+- `withoutTags` - Include only tools without any matching tags
+
+**Example with toolsets:**
+
+```json
+{
+  "schemaVersion": "1.0",
+  "libraryDir": "./mci",
+  "toolsets": [
+    {
+      "name": "github_prs",
+      "filter": "tags",
+      "filterValue": "read"
+    },
+    {
+      "name": "file_ops",
+      "filter": "except",
+      "filterValue": "delete_file"
+    }
+  ]
+}
+```
 
 ### Security Fields
 
@@ -107,6 +160,135 @@ directoryAllowList:
   - /home/user/data
   - ./configs
 tools: []
+```
+
+---
+
+## Toolset Files
+
+Toolset files are separate MCI schema files that contain collections of tools. They use a restricted schema that only allows:
+
+- `schemaVersion` (required)
+- `metadata` (optional)
+- `tools` (required)
+
+Toolset files **cannot** contain:
+- `toolsets` (no nested toolsets)
+- `libraryDir`
+- `enableAnyPaths`
+- `directoryAllowList`
+
+### Toolset File Structure
+
+| Field           | Type   | Required     | Description                                        |
+| --------------- | ------ | ------------ | -------------------------------------------------- |
+| `schemaVersion` | string | **Required** | MCI schema version (e.g., `"1.0"`)                 |
+| `metadata`      | object | Optional     | Descriptive metadata about the toolset             |
+| `tools`         | array  | **Required** | Array of tool definitions                          |
+
+### Example Toolset File (JSON)
+
+**File: `./mci/github_prs.mci.json`**
+
+```json
+{
+  "schemaVersion": "1.0",
+  "metadata": {
+    "name": "GitHub Pull Requests",
+    "description": "Tools for managing GitHub pull requests",
+    "version": "1.0.0"
+  },
+  "tools": [
+    {
+      "name": "list_prs",
+      "description": "List pull requests",
+      "tags": ["github", "read"],
+      "execution": {
+        "type": "http",
+        "method": "GET",
+        "url": "https://api.github.com/repos/{{props.repo}}/pulls"
+      }
+    },
+    {
+      "name": "create_pr",
+      "description": "Create a pull request",
+      "tags": ["github", "write"],
+      "execution": {
+        "type": "http",
+        "method": "POST",
+        "url": "https://api.github.com/repos/{{props.repo}}/pulls"
+      }
+    }
+  ]
+}
+```
+
+### Using Toolsets in Main Schema
+
+**File: `schema.mci.json`**
+
+```json
+{
+  "schemaVersion": "1.0",
+  "libraryDir": "./mci",
+  "toolsets": [
+    {
+      "name": "github_prs",
+      "filter": "tags",
+      "filterValue": "read"
+    }
+  ]
+}
+```
+
+This loads only the tools with the "read" tag from `./mci/github_prs.mci.json`.
+
+### Toolset Name Resolution
+
+The `name` field in a toolset reference is resolved in this order:
+
+1. **Directory**: If `./mci/github_prs/` is a directory, look for the first `.mci.json` file inside
+2. **Exact file**: If `./mci/github_prs` is a file, use it
+3. **With extension**: Try `./mci/github_prs.mci.json`, `.mci.yaml`, or `.mci.yml`
+
+### Toolset Filters
+
+Filters are applied when **loading** the toolset (schema-level filtering). Only tools that pass the filter are registered.
+
+**Example: Only specific tools**
+```json
+{
+  "name": "github_prs",
+  "filter": "only",
+  "filterValue": "list_prs, create_pr"
+}
+```
+
+**Example: Exclude specific tools**
+```json
+{
+  "name": "github_prs",
+  "filter": "except",
+  "filterValue": "delete_pr"
+}
+```
+
+**Example: Only tools with specific tags**
+```json
+{
+  "name": "github_prs",
+  "filter": "tags",
+  "filterValue": "read, safe"
+}
+```
+
+**Example: Exclude tools with specific tags**
+```json
+{
+  "name": "github_prs",
+  "filter": "withoutTags",
+  "filterValue": "admin, destructive"
+}
 ```
 
 ---

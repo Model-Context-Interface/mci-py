@@ -13,6 +13,11 @@ Welcome to the MCI Python Adapter! This guide will help you get started quickly 
   - [CLI Execution](#cli-execution)
   - [HTTP Execution](#http-execution)
 - [Advanced Features](#advanced-features)
+  - [Error Handling](#error-handling)
+  - [Multiple Clients](#multiple-clients)
+  - [Environment Variables](#environment-variables)
+  - [Toolsets: Organizing Tools into Libraries](#toolsets-organizing-tools-into-libraries)
+  - [Security: Path Restrictions](#security-path-restrictions)
 - [Next Steps](#next-steps)
 
 ## Installation
@@ -749,6 +754,129 @@ client = MCIClient(
         "ENVIRONMENT": "production"
     }
 )
+```
+
+### Toolsets: Organizing Tools into Libraries
+
+Toolsets allow you to organize tools into reusable libraries stored in separate files. This is useful for:
+
+- Sharing tools across multiple projects
+- Organizing large tool collections
+- Applying different filters to different toolsets
+- Maintaining clean separation of concerns
+
+#### Creating a Toolset File
+
+Create toolset files in a `mci` directory (or any custom directory):
+
+**File: `./mci/github_tools.mci.json`**
+```json
+{
+  "schemaVersion": "1.0",
+  "metadata": {
+    "name": "GitHub Tools",
+    "description": "Tools for GitHub operations",
+    "version": "1.0.0"
+  },
+  "tools": [
+    {
+      "name": "list_repos",
+      "description": "List repositories",
+      "tags": ["github", "read"],
+      "execution": {
+        "type": "http",
+        "method": "GET",
+        "url": "https://api.github.com/user/repos"
+      }
+    },
+    {
+      "name": "create_repo",
+      "description": "Create repository",
+      "tags": ["github", "write"],
+      "execution": {
+        "type": "http",
+        "method": "POST",
+        "url": "https://api.github.com/user/repos"
+      }
+    }
+  ]
+}
+```
+
+#### Using Toolsets in Main Schema
+
+**File: `schema.mci.json`**
+```json
+{
+  "schemaVersion": "1.0",
+  "libraryDir": "./mci",
+  "toolsets": [
+    {
+      "name": "github_tools",
+      "filter": "tags",
+      "filterValue": "read"
+    }
+  ]
+}
+```
+
+This loads only the tools with the "read" tag from the toolset.
+
+#### Filtering by Toolset at Runtime
+
+```python
+from mcipy import MCIClient
+
+client = MCIClient(schema_file_path="schema.mci.json")
+
+# Get all tools from a specific toolset
+github_tools = client.toolsets(["github_tools"])
+
+for tool in github_tools:
+    print(f"GitHub tool: {tool.name}")
+
+# Get tools from multiple toolsets
+api_tools = client.toolsets(["github_tools", "gitlab_tools"])
+```
+
+#### Toolset Filters
+
+Apply filters when loading toolsets:
+
+**Filter by specific tools:**
+```json
+{
+  "name": "github_tools",
+  "filter": "only",
+  "filterValue": "list_repos, create_repo"
+}
+```
+
+**Exclude specific tools:**
+```json
+{
+  "name": "github_tools",
+  "filter": "except",
+  "filterValue": "delete_repo"
+}
+```
+
+**Filter by tags:**
+```json
+{
+  "name": "github_tools",
+  "filter": "tags",
+  "filterValue": "read, safe"
+}
+```
+
+**Exclude by tags:**
+```json
+{
+  "name": "github_tools",
+  "filter": "withoutTags",
+  "filterValue": "admin, destructive"
+}
 ```
 
 ### Security: Path Restrictions

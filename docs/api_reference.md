@@ -12,6 +12,7 @@ This document provides a comprehensive API reference for the Python MCI Adapter 
     - [without()](#without)
     - [tags()](#tags)
     - [withoutTags()](#withouttags)
+    - [toolsets()](#toolsets)
     - [execute()](#execute)
     - [list_tools()](#list_tools)
     - [get_tool_schema()](#get_tool_schema)
@@ -20,6 +21,8 @@ This document provides a comprehensive API reference for the Python MCI Adapter 
   - [Tool](#tool)
   - [ExecutionResult](#executionresult)
   - [Metadata](#metadata)
+  - [Toolset](#toolset)
+  - [ToolsetFile](#toolsetfile)
 - [Execution Configurations](#execution-configurations)
   - [HTTPExecutionConfig](#httpexecutionconfig)
   - [CLIExecutionConfig](#cliexecutionconfig)
@@ -430,6 +433,82 @@ No errors - returns all tools if none have any of the specified tags.
 - Uses OR logic for exclusion: a tool is excluded if it has ANY of the specified tags
 - Tools without tags are always included (they don't have the excluded tags)
 - Empty tag list returns all tools
+
+---
+
+#### `toolsets()`
+
+Filter tools to include only those from specified toolsets.
+
+**Method Signature:**
+
+```python
+def toolsets(self, toolset_names: list[str]) -> list[Tool]
+```
+
+**Parameters:**
+
+| Name | Type | Required | Description |
+|------|------|----------|-------------|
+| `toolset_names` | `list[str]` | Yes | List of toolset names to filter by |
+
+**Returns:**
+
+| Type | Description |
+|------|-------------|
+| `list[Tool]` | Filtered list of Tool objects that were loaded from the specified toolsets |
+
+**Example:**
+
+```python
+from mcipy import MCIClient
+
+client = MCIClient(schema_file_path="example.mci.json")
+
+# Get all tools from the "github_prs" toolset
+github_tools = client.toolsets(["github_prs"])
+
+for tool in github_tools:
+    print(f"GitHub tool: {tool.name}")
+
+# Get tools from multiple toolsets
+api_tools = client.toolsets(["github_prs", "gitlab_api"])
+
+for tool in api_tools:
+    print(f"API tool: {tool.name}")
+```
+
+**Success Response:**
+
+```python
+[
+    Tool(
+        name="list_prs",
+        description="List pull requests",
+        tags=["github", "read"],
+        execution=HTTPExecutionConfig(...)
+    ),
+    Tool(
+        name="create_pr",
+        description="Create pull request",
+        tags=["github", "write"],
+        execution=HTTPExecutionConfig(...)
+    )
+    # Only tools from specified toolsets
+]
+```
+
+**Error Response:**
+
+No errors - returns empty list if no tools from specified toolsets.
+
+**Notes:**
+
+- Only returns tools that were loaded from toolsets, not tools defined directly in the main schema
+- Only includes tools that were registered by the toolset (after schema-level filters)
+- Works in combination with other filter methods (tags, only, without)
+- Empty list returns no tools
+- Toolset names are case-sensitive and must match the `name` field in the toolsets array
 
 ---
 
