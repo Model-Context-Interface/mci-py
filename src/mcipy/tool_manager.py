@@ -264,7 +264,9 @@ class ToolManager:
         context["path_validation"] = path_context
 
         # Get the appropriate executor based on execution type
-        executor = ExecutorFactory.get_executor(tool.execution.type)
+        executor = ExecutorFactory.get_executor(
+            tool.execution.type, mcp_servers=self.schema.mcp_servers
+        )
 
         # Execute the tool
         result = executor.execute(tool.execution, context)
