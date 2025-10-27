@@ -1542,6 +1542,310 @@ result = client.execute(
 
 ---
 
+## LiteMcpClient Class
+
+The `LiteMcpClient` class provides a lightweight integration with MCP (Model Context Protocol) servers using the official `mcp` package. It allows connecting to MCP tool servers via STDIO (e.g., uvx, npx) and HTTP/SSE endpoints.
+
+### Configuration Models
+
+#### `StdioCfg`
+
+Configuration for STDIO-based MCP servers (local servers via command-line).
+
+**Fields:**
+
+| Name | Type | Required | Description |
+|------|------|----------|-------------|
+| `type` | `Literal["stdio"]` | Yes | Must be "stdio" |
+| `command` | `str` | Yes | Command to run (e.g., "uvx", "npx") |
+| `args` | `List[str]` | No | Arguments to pass to the command (default: `[]`) |
+| `env` | `Dict[str, str]` | No | Environment variables for the server process (default: `{}`) |
+
+**Example:**
+
+```python
+from mcipy import StdioCfg
+
+# STDIO configuration for uvx
+stdio_cfg = StdioCfg(
+    command="uvx",
+    args=["mcp-server-memory"],
+    env={"API_KEY": "secret"}
+)
+
+# STDIO configuration for npx
+stdio_cfg = StdioCfg(
+    command="npx",
+    args=["-y", "@modelcontextprotocol/server-memory"]
+)
+```
+
+#### `SseCfg`
+
+Configuration for HTTP/SSE-based MCP servers (web-based servers).
+
+**Fields:**
+
+| Name | Type | Required | Description |
+|------|------|----------|-------------|
+| `type` | `Literal["http"]` | Yes | Must be "http" |
+| `url` | `HttpUrl` | Yes | Server URL (e.g., "http://localhost:8000/mcp") |
+| `headers` | `Dict[str, str]` | No | HTTP headers for authentication (default: `{}`) |
+
+**Example:**
+
+```python
+from mcipy import SseCfg
+
+# HTTP configuration with authentication
+http_cfg = SseCfg(
+    url="https://api.example.com/mcp",
+    headers={"Authorization": "Bearer token123"}
+)
+
+# HTTP configuration without authentication
+http_cfg = SseCfg(url="http://localhost:8000/mcp")
+```
+
+#### `ClientCfg`
+
+Complete configuration for the LiteMcpClient.
+
+**Fields:**
+
+| Name | Type | Required | Description |
+|------|------|----------|-------------|
+| `server` | `StdioCfg \| SseCfg` | Yes | Server connection configuration |
+| `request_timeout` | `Optional[float]` | No | Request timeout in seconds (default: 60.0) |
+
+**Example:**
+
+```python
+from mcipy import ClientCfg, StdioCfg
+
+# Client configuration with STDIO server
+client_cfg = ClientCfg(
+    server=StdioCfg(command="uvx", args=["mcp-server"]),
+    request_timeout=120.0
+)
+```
+
+### Initialization
+
+#### `LiteMcpClient(cfg: ClientCfg)`
+
+Initialize the LiteMcpClient with configuration.
+
+**Parameters:**
+
+| Name | Type | Required | Description |
+|------|------|----------|-------------|
+| `cfg` | `ClientCfg` | Yes | Client configuration specifying server type and connection details |
+
+**Example:**
+
+```python
+from mcipy import LiteMcpClient, ClientCfg, StdioCfg
+
+cfg = ClientCfg(
+    server=StdioCfg(command="uvx", args=["mcp-server-memory"])
+)
+client = LiteMcpClient(cfg)
+```
+
+### Usage
+
+The `LiteMcpClient` must be used as an async context manager to properly manage the connection lifecycle.
+
+**Example:**
+
+```python
+import asyncio
+from mcipy import LiteMcpClient, ClientCfg, StdioCfg
+
+async def main():
+    cfg = ClientCfg(
+        server=StdioCfg(
+            command="npx",
+            args=["-y", "@modelcontextprotocol/server-memory"]
+        )
+    )
+    
+    async with LiteMcpClient(cfg) as client:
+        # List available tools
+        tools = await client.list_tools()
+        print(f"Available tools: {tools}")
+        
+        # Call a tool
+        result = await client.call_tool("store_memory", key="test", value="data")
+        print(f"Result: {result}")
+
+asyncio.run(main())
+```
+
+### Methods
+
+#### `async list_tools() -> List[str]`
+
+List all available tools from the MCP server.
+
+**Returns:**
+
+- `List[str]` - List of tool names available on the server
+
+**Raises:**
+
+- `RuntimeError` - If session is not initialized (client not used as context manager)
+
+**Example:**
+
+```python
+async with LiteMcpClient(cfg) as client:
+    tools = await client.list_tools()
+    # Returns: ["store_memory", "retrieve_memory", "list_memories"]
+```
+
+#### `async call_tool(name: str, **arguments: Any) -> Any`
+
+Call a tool on the MCP server with the provided arguments.
+
+**Parameters:**
+
+| Name | Type | Required | Description |
+|------|------|----------|-------------|
+| `name` | `str` | Yes | Name of the tool to call |
+| `**arguments` | `Any` | No | Keyword arguments to pass to the tool |
+
+**Returns:**
+
+- `Any` - The tool execution result from the server (typically containing `content` and metadata)
+
+**Raises:**
+
+- `RuntimeError` - If session is not initialized (client not used as context manager)
+
+**Example:**
+
+```python
+async with LiteMcpClient(cfg) as client:
+    # Call tool with arguments
+    result = await client.call_tool(
+        "store_memory",
+        key="user_preference",
+        value="dark_mode"
+    )
+    print(result.content)  # Access result content
+```
+
+### Complete Examples
+
+#### STDIO Example (uvx)
+
+```python
+import asyncio
+from mcipy import LiteMcpClient, ClientCfg, StdioCfg
+
+async def main():
+    cfg = ClientCfg(
+        server=StdioCfg(
+            command="uvx",
+            args=["mcp-server-memory"],
+            env={}
+        )
+    )
+    
+    async with LiteMcpClient(cfg) as client:
+        tools = await client.list_tools()
+        print(f"Available tools: {tools}")
+        
+        if "store_memory" in tools:
+            await client.call_tool(
+                "store_memory",
+                key="greeting",
+                value="Hello, World!"
+            )
+
+asyncio.run(main())
+```
+
+#### STDIO Example (npx)
+
+```python
+import asyncio
+from mcipy import LiteMcpClient, ClientCfg, StdioCfg
+
+async def main():
+    cfg = ClientCfg(
+        server=StdioCfg(
+            command="npx",
+            args=["-y", "@modelcontextprotocol/server-filesystem", "/path/to/dir"]
+        )
+    )
+    
+    async with LiteMcpClient(cfg) as client:
+        tools = await client.list_tools()
+        print(f"Filesystem tools: {tools}")
+
+asyncio.run(main())
+```
+
+#### HTTP Example
+
+```python
+import asyncio
+from mcipy import LiteMcpClient, ClientCfg, SseCfg
+
+async def main():
+    cfg = ClientCfg(
+        server=SseCfg(
+            url="https://api.githubcopilot.com/mcp/",
+            headers={"Authorization": "Bearer YOUR_TOKEN"}
+        )
+    )
+    
+    async with LiteMcpClient(cfg) as client:
+        tools = await client.list_tools()
+        print(f"GitHub MCP tools: {tools}")
+
+asyncio.run(main())
+```
+
+### Error Handling
+
+**RuntimeError**: Raised when attempting to use methods outside of context manager:
+
+```python
+cfg = ClientCfg(server=StdioCfg(command="uvx"))
+client = LiteMcpClient(cfg)
+
+# This will raise RuntimeError
+await client.list_tools()  # Error: Session not initialized
+
+# Correct usage:
+async with client:
+    await client.list_tools()  # Works correctly
+```
+
+**Connection Errors**: Network or process errors are propagated from the underlying MCP client:
+
+```python
+try:
+    async with LiteMcpClient(cfg) as client:
+        tools = await client.list_tools()
+except Exception as e:
+    print(f"Connection failed: {e}")
+```
+
+### Notes
+
+- The `LiteMcpClient` uses the official `mcp` package for MCP protocol communication
+- STDIO transport merges environment variables from the configuration with the current process environment
+- HTTP transport uses Streamable HTTP, the modern replacement for SSE
+- All async operations must be called from within the context manager
+- The client automatically handles connection setup and teardown
+
+---
+
 ## See Also
 
 - [Quickstart Guide](quickstart.md) - Getting started with MCI
