@@ -438,8 +438,8 @@ class TestEdgeCases:
         result2 = client2.execute("generate_text", properties={"name": "User"})
 
         # Both should succeed and use different dates from their respective env vars
-        assert isinstance(result1.content, str)
-        assert isinstance(result2.content, str)
+        assert isinstance(result1.result.content[0].text, str)
+        assert isinstance(result2.result.content[0].text, str)
 
 
 class TestYAMLSupport:

@@ -278,7 +278,7 @@ class TestCLIExecutor:
         result = executor.execute(config, context)
 
         assert result.result.isError
-        assert "exited with code 1" in result.error
+        assert "exited with code 1" in result.result.content[0].text
         assert result.result.metadata["returncode"] == 1
 
     def test_execute_command_not_found(self, executor, context):
@@ -288,7 +288,7 @@ class TestCLIExecutor:
         result = executor.execute(config, context)
 
         assert result.result.isError
-        assert "FileNotFoundError" in result.error or "No such file" in result.error
+        assert "FileNotFoundError" in result.result.content[0].text or "No such file" in result.error
 
     def test_execute_with_timeout(self, executor, context):
         """Test executing command with timeout."""
@@ -303,7 +303,7 @@ class TestCLIExecutor:
 
         assert result.result.isError
         # The error message contains "timed out" (from subprocess.TimeoutExpired)
-        assert "timed out" in result.error.lower()
+        assert "timed out" in result.result.content[0].text.lower()
 
     def test_execute_with_cwd(self, executor, context):
         """Test executing command with working directory."""
@@ -347,7 +347,7 @@ class TestCLIExecutor:
         result = executor.execute(config, context)
 
         assert result.result.isError
-        assert "Expected CLIExecutionConfig" in result.error
+        assert "Expected CLIExecutionConfig" in result.result.content[0].text
 
     def test_execute_captures_stderr(self, executor, context):
         """Test that stderr is captured when command fails."""

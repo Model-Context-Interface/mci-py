@@ -79,7 +79,10 @@ class TestHTTPExecutor:
             result = executor.execute(config, context)
 
             assert not result.result.isError
-            assert result.content == {"status": "ok", "data": [1, 2, 3]}
+            assert len(result.result.content) == 1
+            # Content is JSON formatted as text
+            assert '"status": "ok"' in result.result.content[0].text
+            assert '"data":' in result.result.content[0].text
             
 
     def test_execute_post_request_with_json_body(self, executor, context):
@@ -104,7 +107,9 @@ class TestHTTPExecutor:
             result = executor.execute(config, context)
 
             assert not result.result.isError
-            assert result.content == {"created": True}
+            assert len(result.result.content) == 1
+            # Content is JSON formatted as text
+            assert '"created": true' in result.result.content[0].text
             mock_request.assert_called_once()
             assert mock_request.call_args[1]["json"] == {"key": "value", "num": 42}
 
@@ -310,7 +315,7 @@ class TestHTTPExecutor:
             result = executor.execute(config, context)
 
             assert result.result.isError
-            assert "404 Not Found" in result.error
+            assert "404 Not Found" in result.result.content[0].text
 
     def test_execute_with_connection_error(self, executor, context):
         """Test handling of connection errors."""
@@ -325,7 +330,7 @@ class TestHTTPExecutor:
             result = executor.execute(config, context)
 
             assert result.result.isError
-            assert "Connection failed" in result.error
+            assert "Connection failed" in result.result.content[0].text
 
     def test_execute_with_timeout_error(self, executor, context):
         """Test handling of timeout errors."""
@@ -340,7 +345,7 @@ class TestHTTPExecutor:
             result = executor.execute(config, context)
 
             assert result.result.isError
-            assert "Request timed out" in result.error
+            assert "Request timed out" in result.result.content[0].text
 
     def test_execute_with_wrong_config_type(self, executor, context):
         """Test that wrong config type is handled properly."""
@@ -350,7 +355,7 @@ class TestHTTPExecutor:
         result = executor.execute(config, context)
 
         assert result.result.isError
-        assert "Expected HTTPExecutionConfig" in result.error
+        assert "Expected HTTPExecutionConfig" in result.result.content[0].text
 
     def test_apply_api_key_auth_in_header(self, executor):
         """Test applying API key authentication in header."""
@@ -745,7 +750,7 @@ class TestHTTPExecutor:
                 result = executor.execute(config, context)
 
             assert result.result.isError
-            assert "Connection failed" in result.error
+            assert "Connection failed" in result.result.content[0].text
             assert mock_request.call_count == 2
 
     def test_execute_returns_metadata_with_status_code(self, executor, context):
