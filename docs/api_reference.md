@@ -918,6 +918,86 @@ Optional metadata about the MCI tool collection.
 
 ---
 
+### Toolset
+
+Reference to an external toolset file containing a collection of tools.
+
+**Fields:**
+
+| Field | Type | Required | Description |
+|-------|------|----------|-------------|
+| `name` | `str` | Yes | Name of toolset file/directory in `libraryDir` |
+| `filter` | `str` | No | Filter type: `"only"`, `"except"`, `"tags"`, `"withoutTags"` |
+| `filterValue` | `str` | Conditional* | Comma-separated list of tool names or tags |
+
+*Required when `filter` is specified.
+
+**Example:**
+
+```python
+{
+    "name": "github_prs",
+    "filter": "tags",
+    "filterValue": "read, safe"
+}
+```
+
+**Filter Types:**
+
+- `only` - Include only the specified tools (by name)
+- `except` - Include all tools except the specified ones (by name)
+- `tags` - Include only tools with at least one matching tag
+- `withoutTags` - Include only tools without any matching tags
+
+---
+
+### ToolsetFile
+
+Schema for toolset files loaded from `libraryDir`. Toolset files use a restricted schema that only allows specific fields.
+
+**Fields:**
+
+| Field | Type | Required | Description |
+|-------|------|----------|-------------|
+| `schemaVersion` | `str` | Yes | MCI schema version (e.g., "1.0") |
+| `metadata` | `Metadata` | No | Optional metadata about the toolset |
+| `tools` | `list[Tool]` | Yes | Array of tool definitions |
+
+**Restrictions:**
+
+Toolset files **cannot** contain:
+- `toolsets` (no nested toolsets)
+- `libraryDir`
+- `enableAnyPaths`
+- `directoryAllowList`
+
+**Example:**
+
+```python
+{
+    "schemaVersion": "1.0",
+    "metadata": {
+        "name": "GitHub Tools",
+        "description": "Tools for GitHub operations",
+        "version": "1.0.0"
+    },
+    "tools": [
+        {
+            "name": "list_repos",
+            "description": "List repositories",
+            "tags": ["github", "read"],
+            "execution": {
+                "type": "http",
+                "method": "GET",
+                "url": "https://api.github.com/user/repos"
+            }
+        }
+    ]
+}
+```
+
+---
+
 ## Execution Configurations
 
 ### HTTPExecutionConfig
