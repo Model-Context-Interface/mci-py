@@ -36,49 +36,53 @@ class ToolManager:
             schema_file_path: Path to the schema file (for path validation context)
         """
         self.schema = schema
-        # Create a mapping for fast tool lookup by name
-        self._tool_map: dict[str, Tool] = {tool.name: tool for tool in schema.tools}
+        # Create a mapping for fast tool lookup by name (excluding disabled tools)
+        self._tool_map: dict[str, Tool] = {
+            tool.name: tool for tool in schema.tools if not tool.disabled
+        }
         # Store schema file path for path validation
         self._schema_file_path = schema_file_path
 
     def get_tool(self, name: str) -> Tool | None:
         """
-        Retrieve a tool by name (case-sensitive).
+        Retrieve a tool by name (case-sensitive), excluding disabled tools.
 
         Args:
             name: Name of the tool to retrieve
 
         Returns:
-            Tool object if found, None otherwise
+            Tool object if found and enabled, None otherwise
         """
         return self._tool_map.get(name)
 
     def list_tools(self) -> list[Tool]:
         """
-        List all available tools.
+        List all available tools (excluding disabled tools).
 
         Returns:
-            List of all Tool objects in the schema
+            List of all enabled Tool objects in the schema
         """
-        return self.schema.tools
+        return [tool for tool in self.schema.tools if not tool.disabled]
 
     def filter_tools(
         self, only: list[str] | None = None, without: list[str] | None = None
     ) -> list[Tool]:
         """
-        Filter tools by inclusion/exclusion lists.
+        Filter tools by inclusion/exclusion lists (excluding disabled tools).
 
         If both 'only' and 'without' are provided, 'only' takes precedence
         (i.e., only tools in the 'only' list but not in 'without' are returned).
+        Disabled tools are always excluded regardless of filters.
 
         Args:
-            only: List of tool names to include (if None, all tools are considered)
+            only: List of tool names to include (if None, all enabled tools are considered)
             without: List of tool names to exclude (if None, no tools are excluded)
 
         Returns:
             Filtered list of Tool objects
         """
-        tools = self.schema.tools
+        # Start with only enabled tools
+        tools = [tool for tool in self.schema.tools if not tool.disabled]
 
         # If 'only' is specified, filter to only those tools
         if only is not None:

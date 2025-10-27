@@ -162,18 +162,36 @@ class TextExecutionConfig(ExecutionConfig):
     text: str
 
 
+class Annotations(BaseModel):
+    """
+    Optional annotations about tool behavior.
+
+    Contains hints and metadata about how the tool behaves, including
+    display information (title) and behavioral characteristics like
+    whether it modifies state, is destructive, idempotent, or interacts
+    with external entities.
+    """
+
+    title: str | None = None
+    readOnlyHint: bool | None = None
+    destructiveHint: bool | None = None
+    idempotentHint: bool | None = None
+    openWorldHint: bool | None = None
+
+
 class Tool(BaseModel):
     """
     Individual tool definition.
 
-    Represents a single tool with its name, title, description,
-    input schema (JSON Schema), and execution configuration.
+    Represents a single tool with its name, description, disabled state,
+    annotations, input schema (JSON Schema), and execution configuration.
     The execution configuration determines how the tool is executed
     (HTTP, CLI, file, or text).
     """
 
     name: str
-    title: str | None = None
+    disabled: bool = Field(default=False)
+    annotations: Annotations | None = None
     description: str | None = None
     inputSchema: dict[str, Any] | None = None
     execution: HTTPExecutionConfig | CLIExecutionConfig | FileExecutionConfig | TextExecutionConfig

@@ -293,7 +293,8 @@ class TestTool:
         config = HTTPExecutionConfig(url="https://api.example.com")
         tool = Tool(name="test_tool", execution=config)
         assert tool.name == "test_tool"
-        assert tool.title is None
+        assert tool.disabled is False
+        assert tool.annotations is None
         assert tool.description is None
         assert tool.inputSchema is None
         assert tool.execution == config
@@ -307,16 +308,31 @@ class TestTool:
             "required": ["location"],
         }
 
+        from mcipy import Annotations
+
         tool = Tool(
             name="get_weather",
-            title="Weather Information Provider",
+            disabled=False,
+            annotations=Annotations(
+                title="Weather Information Provider",
+                readOnlyHint=True,
+                destructiveHint=False,
+                idempotentHint=True,
+                openWorldHint=True,
+            ),
             description="Get current weather information",
             inputSchema=input_schema,
             execution=config,
         )
 
         assert tool.name == "get_weather"
-        assert tool.title == "Weather Information Provider"
+        assert tool.disabled is False
+        assert tool.annotations is not None
+        assert tool.annotations.title == "Weather Information Provider"
+        assert tool.annotations.readOnlyHint is True
+        assert tool.annotations.destructiveHint is False
+        assert tool.annotations.idempotentHint is True
+        assert tool.annotations.openWorldHint is True
         assert tool.description == "Get current weather information"
         assert tool.inputSchema == input_schema
 
@@ -333,6 +349,97 @@ class TestTool:
 
         text_tool = Tool(name="text_tool", execution=TextExecutionConfig(text="Hello"))
         assert text_tool.execution.type == ExecutionType.TEXT
+
+    def test_tool_disabled_field(self):
+        """Test tool with disabled field."""
+        config = HTTPExecutionConfig(url="https://api.example.com")
+        
+        # Test default disabled is False
+        tool_enabled = Tool(name="enabled_tool", execution=config)
+        assert tool_enabled.disabled is False
+        
+        # Test explicitly disabled
+        tool_disabled = Tool(name="disabled_tool", disabled=True, execution=config)
+        assert tool_disabled.disabled is True
+
+    def test_tool_annotations_all_fields(self):
+        """Test tool with all annotation fields."""
+        from mcipy import Annotations
+
+        config = HTTPExecutionConfig(url="https://api.example.com")
+        annotations = Annotations(
+            title="Test Tool",
+            readOnlyHint=True,
+            destructiveHint=False,
+            idempotentHint=True,
+            openWorldHint=False,
+        )
+        
+        tool = Tool(name="test_tool", annotations=annotations, execution=config)
+        assert tool.annotations is not None
+        assert tool.annotations.title == "Test Tool"
+        assert tool.annotations.readOnlyHint is True
+        assert tool.annotations.destructiveHint is False
+        assert tool.annotations.idempotentHint is True
+        assert tool.annotations.openWorldHint is False
+
+    def test_tool_annotations_partial_fields(self):
+        """Test tool with partial annotation fields."""
+        from mcipy import Annotations
+
+        config = HTTPExecutionConfig(url="https://api.example.com")
+        annotations = Annotations(title="Test Tool", readOnlyHint=True)
+        
+        tool = Tool(name="test_tool", annotations=annotations, execution=config)
+        assert tool.annotations is not None
+        assert tool.annotations.title == "Test Tool"
+        assert tool.annotations.readOnlyHint is True
+        assert tool.annotations.destructiveHint is None
+        assert tool.annotations.idempotentHint is None
+        assert tool.annotations.openWorldHint is None
+
+
+class TestAnnotations:
+    """Tests for Annotations model."""
+
+    def test_annotations_all_fields(self):
+        """Test Annotations with all fields."""
+        from mcipy import Annotations
+
+        annotations = Annotations(
+            title="Test Tool",
+            readOnlyHint=True,
+            destructiveHint=False,
+            idempotentHint=True,
+            openWorldHint=False,
+        )
+        assert annotations.title == "Test Tool"
+        assert annotations.readOnlyHint is True
+        assert annotations.destructiveHint is False
+        assert annotations.idempotentHint is True
+        assert annotations.openWorldHint is False
+
+    def test_annotations_optional_fields(self):
+        """Test that all Annotations fields are optional."""
+        from mcipy import Annotations
+
+        annotations = Annotations()
+        assert annotations.title is None
+        assert annotations.readOnlyHint is None
+        assert annotations.destructiveHint is None
+        assert annotations.idempotentHint is None
+        assert annotations.openWorldHint is None
+
+    def test_annotations_partial_fields(self):
+        """Test Annotations with partial fields."""
+        from mcipy import Annotations
+
+        annotations = Annotations(title="Partial Test", openWorldHint=True)
+        assert annotations.title == "Partial Test"
+        assert annotations.openWorldHint is True
+        assert annotations.readOnlyHint is None
+        assert annotations.destructiveHint is None
+        assert annotations.idempotentHint is None
 
 
 class TestMCISchema:
