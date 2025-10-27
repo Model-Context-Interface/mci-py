@@ -398,6 +398,33 @@ class TestTool:
         assert tool.annotations.idempotentHint is None
         assert tool.annotations.openWorldHint is None
 
+    def test_tool_tags_default_empty(self):
+        """Test that tool tags default to empty list."""
+        config = HTTPExecutionConfig(url="https://api.example.com")
+        tool = Tool(name="test_tool", execution=config)
+        assert tool.tags == []
+
+    def test_tool_with_tags(self):
+        """Test tool with tags."""
+        config = HTTPExecutionConfig(url="https://api.example.com")
+        tool = Tool(
+            name="test_tool",
+            execution=config,
+            tags=["api", "weather", "external"],
+        )
+        assert tool.tags == ["api", "weather", "external"]
+
+    def test_tool_tags_case_sensitive(self):
+        """Test that tool tags are case-sensitive."""
+        config = HTTPExecutionConfig(url="https://api.example.com")
+        tool = Tool(
+            name="test_tool",
+            execution=config,
+            tags=["API", "api", "Api"],
+        )
+        assert tool.tags == ["API", "api", "Api"]
+        assert len(tool.tags) == 3
+
 
 class TestAnnotations:
     """Tests for Annotations model."""
