@@ -211,7 +211,11 @@ class TestCLIExecutor:
 
         assert not result.result.isError
         assert "hello" in result.result.content[0].text
-        assert result.result.metadata["returncode"] == 0
+        assert result.result.metadata["exit_code"] == 0
+        assert "stdout_bytes" in result.result.metadata
+        assert "stderr_bytes" in result.result.metadata
+        assert isinstance(result.result.metadata["stdout_bytes"], int)
+        assert isinstance(result.result.metadata["stderr_bytes"], int)
 
     def test_execute_command_with_templated_args(self, executor, context):
         """Test executing command with templated arguments."""
@@ -279,7 +283,11 @@ class TestCLIExecutor:
 
         assert result.result.isError
         assert "exited with code 1" in result.result.content[0].text
-        assert result.result.metadata["returncode"] == 1
+        assert result.result.metadata["exit_code"] == 1
+        assert "stdout_bytes" in result.result.metadata
+        assert "stderr_bytes" in result.result.metadata
+        assert isinstance(result.result.metadata["stdout_bytes"], int)
+        assert isinstance(result.result.metadata["stderr_bytes"], int)
 
     def test_execute_command_not_found(self, executor, context):
         """Test executing a command that doesn't exist."""
@@ -289,7 +297,8 @@ class TestCLIExecutor:
 
         assert result.result.isError
         assert (
-            "FileNotFoundError" in result.result.content[0].text or "No such file" in result.result.content[0].text
+            "FileNotFoundError" in result.result.content[0].text
+            or "No such file" in result.result.content[0].text
         )
 
     def test_execute_with_timeout(self, executor, context):
@@ -320,7 +329,10 @@ class TestCLIExecutor:
             result = executor.execute(config, context)
 
             assert not result.result.isError
-            assert Path(tmpdir).name in result.result.content[0].text or tmpdir in result.result.content[0].text
+            assert (
+                Path(tmpdir).name in result.result.content[0].text
+                or tmpdir in result.result.content[0].text
+            )
 
     def test_execute_with_templated_cwd(self, executor, context):
         """Test executing command with templated working directory."""
@@ -339,7 +351,10 @@ class TestCLIExecutor:
             result = executor.execute(config, context)
 
             assert not result.result.isError
-            assert Path(tmpdir).name in result.result.content[0].text or tmpdir in result.result.content[0].text
+            assert (
+                Path(tmpdir).name in result.result.content[0].text
+                or tmpdir in result.result.content[0].text
+            )
 
     def test_execute_wrong_config_type(self, executor, context):
         """Test executing with wrong config type."""
@@ -363,7 +378,9 @@ class TestCLIExecutor:
         result = executor.execute(config, context)
 
         assert result.result.isError
-        assert result.result.metadata["returncode"] == 1
+        assert result.result.metadata["exit_code"] == 1
+        assert "stdout_bytes" in result.result.metadata
+        assert "stderr_bytes" in result.result.metadata
         # stderr should be captured in metadata
         assert "error" in result.result.metadata["stderr"] or result.result.metadata["stderr"] != ""
 
@@ -422,3 +439,62 @@ class TestCLIExecutor:
         # verbose is True, debug is False
         # So we should get -a and -c in that order
         assert result == ["-a", "-c"]
+
+    def test_metadata_includes_exit_code_and_byte_sizes(self, executor, context):
+        """Test that metadata includes exit_code, stdout_bytes, and stderr_bytes."""
+        if sys.platform == "win32":
+            config = CLIExecutionConfig(command="cmd", args=["/c", "echo", "test"])
+        else:
+            config = CLIExecutionConfig(command="echo", args=["test"])
+
+        result = executor.execute(config, context)
+
+        assert not result.result.isError
+        assert "exit_code" in result.result.metadata
+        assert result.result.metadata["exit_code"] == 0
+        assert "stdout_bytes" in result.result.metadata
+        assert "stderr_bytes" in result.result.metadata
+
+        # Verify stdout_bytes is correct
+        stdout_text = result.result.content[0].text
+        expected_stdout_bytes = len(stdout_text.encode())
+        assert result.result.metadata["stdout_bytes"] == expected_stdout_bytes
+
+        # Verify stderr_bytes is correct (should be 0 for this command)
+        assert result.result.metadata["stderr_bytes"] >= 0
+
+    def test_error_metadata_includes_all_fields(self, executor, context):
+        """Test that error results include exit_code and byte sizes."""
+        if sys.platform == "win32":
+            config = CLIExecutionConfig(command="cmd", args=["/c", "exit", "5"])
+        else:
+            config = CLIExecutionConfig(command="sh", args=["-c", "exit 5"])
+
+        result = executor.execute(config, context)
+
+        assert result.result.isError
+        assert "exit_code" in result.result.metadata
+        assert result.result.metadata["exit_code"] == 5
+        assert "stdout_bytes" in result.result.metadata
+        assert "stderr_bytes" in result.result.metadata
+        assert isinstance(result.result.metadata["stdout_bytes"], int)
+        assert isinstance(result.result.metadata["stderr_bytes"], int)
+
+    def test_byte_sizes_with_stderr_output(self, executor, context):
+        """Test that stderr_bytes is correctly calculated when command writes to stderr."""
+        if sys.platform == "win32":
+            # Windows command that writes to stderr
+            config = CLIExecutionConfig(command="cmd", args=["/c", "echo error 1>&2"])
+        else:
+            # Unix command that writes to stderr
+            config = CLIExecutionConfig(command="sh", args=["-c", "echo error >&2"])
+
+        result = executor.execute(config, context)
+
+        assert not result.result.isError
+        assert "stderr_bytes" in result.result.metadata
+        # stderr should have content, so bytes should be > 0
+        stderr = result.result.metadata.get("stderr", "")
+        expected_stderr_bytes = len(stderr.encode())
+        assert result.result.metadata["stderr_bytes"] == expected_stderr_bytes
+        assert result.result.metadata["stderr_bytes"] > 0

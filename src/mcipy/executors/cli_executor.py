@@ -77,6 +77,10 @@ class CLIExecutor(BaseExecutor):
             # Execute the subprocess
             stdout, stderr, returncode = self._run_subprocess(command_list, cwd, timeout)
 
+            # Calculate stdout and stderr sizes in bytes
+            stdout_bytes = len(stdout.encode())
+            stderr_bytes = len(stderr.encode())
+
             # Check if command succeeded
             if returncode != 0:
                 # Command failed - return error with stderr
@@ -87,7 +91,13 @@ class CLIExecutor(BaseExecutor):
                     result=ExecutionResultContent(
                         isError=True,
                         content=[TextContent(text=error_msg)],
-                        metadata={"returncode": returncode, "stderr": stderr, "stdout": stdout},
+                        metadata={
+                            "exit_code": returncode,
+                            "stdout_bytes": stdout_bytes,
+                            "stderr_bytes": stderr_bytes,
+                            "stderr": stderr,
+                            "stdout": stdout,
+                        },
                     )
                 )
 
@@ -96,7 +106,12 @@ class CLIExecutor(BaseExecutor):
                 result=ExecutionResultContent(
                     isError=False,
                     content=[TextContent(text=stdout)],
-                    metadata={"returncode": returncode, "stderr": stderr},
+                    metadata={
+                        "exit_code": returncode,
+                        "stdout_bytes": stdout_bytes,
+                        "stderr_bytes": stderr_bytes,
+                        "stderr": stderr,
+                    },
                 )
             )
 
