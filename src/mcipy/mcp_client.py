@@ -125,9 +125,7 @@ class LiteMcpClient:
             merged_env = os.environ.copy()
             merged_env.update(srv.env)
 
-            params = StdioServerParameters(
-                command=srv.command, args=srv.args, env=merged_env or None
-            )
+            params = StdioServerParameters(command=srv.command, args=srv.args, env=merged_env)
             self._ctx = stdio_client(params)
         else:
             # Streamable HTTP transport for web servers
