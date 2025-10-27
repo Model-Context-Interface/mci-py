@@ -37,8 +37,10 @@ class ToolManager:
         """
         self.schema = schema
         # Create a mapping for fast tool lookup by name (excluding disabled tools)
+        # Handle case where tools might be None (when only toolsets are used)
+        tools_list = schema.tools if schema.tools is not None else []
         self._tool_map: dict[str, Tool] = {
-            tool.name: tool for tool in schema.tools if not tool.disabled
+            tool.name: tool for tool in tools_list if not tool.disabled
         }
         # Store schema file path for path validation
         self._schema_file_path = schema_file_path
@@ -62,7 +64,8 @@ class ToolManager:
         Returns:
             List of all enabled Tool objects in the schema
         """
-        return [tool for tool in self.schema.tools if not tool.disabled]
+        tools_list = self.schema.tools if self.schema.tools is not None else []
+        return [tool for tool in tools_list if not tool.disabled]
 
     def filter_tools(
         self, only: list[str] | None = None, without: list[str] | None = None
@@ -82,7 +85,8 @@ class ToolManager:
             Filtered list of Tool objects
         """
         # Start with only enabled tools
-        tools = [tool for tool in self.schema.tools if not tool.disabled]
+        tools_list = self.schema.tools if self.schema.tools is not None else []
+        tools = [tool for tool in tools_list if not tool.disabled]
 
         # If 'only' is specified, filter to only those tools
         if only is not None:
@@ -111,13 +115,14 @@ class ToolManager:
             Filtered list of Tool objects that have at least one matching tag
         """
         # Start with only enabled tools
-        tools = [tool for tool in self.schema.tools if not tool.disabled]
+        tools_list = self.schema.tools if self.schema.tools is not None else []
+        tools = [tool for tool in tools_list if not tool.disabled]
 
         # Filter to tools that have at least one matching tag
         # Empty tag list should return no tools
         if not tags:
             return []
-        
+
         tags_set = set(tags)
         tools = [tool for tool in tools if any(tag in tags_set for tag in tool.tags)]
 
@@ -138,15 +143,48 @@ class ToolManager:
             Filtered list of Tool objects that do not have any of the specified tags
         """
         # Start with only enabled tools
-        tools = [tool for tool in self.schema.tools if not tool.disabled]
+        tools_list = self.schema.tools if self.schema.tools is not None else []
+        tools = [tool for tool in tools_list if not tool.disabled]
 
         # Filter to tools that don't have any matching tags
         # Empty tag list should return all tools
         if not tags:
             return tools
-        
+
         tags_set = set(tags)
         tools = [tool for tool in tools if not any(tag in tags_set for tag in tool.tags)]
+
+        return tools
+
+    def toolsets(self, toolset_names: list[str]) -> list[Tool]:
+        """
+        Filter tools to include only those from specified toolsets (excluding disabled tools).
+
+        Returns tools that were loaded from any of the specified toolsets.
+        Uses OR logic: a tool is included if it came from any of the specified toolsets.
+        Only tools that were registered by their toolset's schema-level filter are included.
+
+        Args:
+            toolset_names: List of toolset names to filter by
+
+        Returns:
+            Filtered list of Tool objects from the specified toolsets
+        """
+        # Start with only enabled tools
+        tools_list = self.schema.tools if self.schema.tools is not None else []
+        tools = [tool for tool in tools_list if not tool.disabled]
+
+        # Filter to tools from specified toolsets
+        # Empty toolset list should return no tools
+        if not toolset_names:
+            return []
+
+        toolset_set = set(toolset_names)
+        tools = [
+            tool
+            for tool in tools
+            if tool.toolset_source is not None and tool.toolset_source in toolset_set
+        ]
 
         return tools
 

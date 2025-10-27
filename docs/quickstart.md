@@ -13,6 +13,11 @@ Welcome to the MCI Python Adapter! This guide will help you get started quickly 
   - [CLI Execution](#cli-execution)
   - [HTTP Execution](#http-execution)
 - [Advanced Features](#advanced-features)
+  - [Toolsets - Organizing Tools into Libraries](#toolsets---organizing-tools-into-libraries)
+  - [Error Handling](#error-handling)
+  - [Multiple Clients](#multiple-clients)
+  - [Environment Variables](#environment-variables)
+  - [Security: Path Restrictions](#security-path-restrictions)
 - [Next Steps](#next-steps)
 
 ## Installation
@@ -700,6 +705,133 @@ if not report_result.result.isError:
 ```
 
 ## Advanced Features
+
+### Toolsets - Organizing Tools into Libraries
+
+**Toolsets** allow you to organize tools into reusable, modular collections. This is useful for:
+- Separating tools by domain (weather, database, GitHub, etc.)
+- Sharing tool collections across multiple schemas
+- Applying filters at load time to control which tools are available
+
+#### Creating Toolset Files
+
+Create toolset files in a library directory (default: `./mci`):
+
+**Directory structure:**
+```
+project/
+├── main.mci.json       # Main schema
+└── mci/                # Library directory
+    ├── weather.mci.json
+    ├── database.mci.json
+    └── github/
+        ├── prs.mci.json
+        └── issues.mci.json
+```
+
+**Toolset file** (`mci/weather.mci.json`):
+```json
+{
+  "schemaVersion": "1.0",
+  "metadata": {
+    "name": "Weather Toolset",
+    "description": "Tools for weather information"
+  },
+  "tools": [
+    {
+      "name": "get_weather",
+      "description": "Get current weather",
+      "tags": ["weather", "read"],
+      "execution": {
+        "type": "http",
+        "method": "GET",
+        "url": "https://api.weather.com/current",
+        "params": {
+          "location": "{{props.location}}"
+        }
+      }
+    }
+  ]
+}
+```
+
+#### Loading Toolsets in Main Schema
+
+**Main schema** (`main.mci.json`):
+```json
+{
+  "schemaVersion": "1.0",
+  "metadata": {
+    "name": "My Application"
+  },
+  "libraryDir": "./mci",
+  "toolsets": [
+    {"name": "weather"},
+    {"name": "database"},
+    {"name": "github"}
+  ]
+}
+```
+
+#### Schema-Level Filtering
+
+Apply filters when loading toolsets to control which tools are registered:
+
+```json
+{
+  "schemaVersion": "1.0",
+  "toolsets": [
+    {
+      "name": "weather",
+      "filter": "only",
+      "filterValue": "get_weather, get_forecast"
+    },
+    {
+      "name": "database",
+      "filter": "withoutTags",
+      "filterValue": "destructive"
+    },
+    {
+      "name": "github",
+      "filter": "tags",
+      "filterValue": "read"
+    }
+  ]
+}
+```
+
+**Filter types:**
+- `only`: Include only tools with specified names
+- `except`: Exclude tools with specified names
+- `tags`: Include only tools with at least one matching tag
+- `withoutTags`: Exclude tools with any matching tag
+
+#### Adapter-Level Toolset Filtering
+
+Use the `toolsets()` method to filter tools by their source toolset:
+
+```python
+from mcipy import MCIClient
+
+client = MCIClient(schema_file_path="main.mci.json")
+
+# Get only weather tools
+weather_tools = client.toolsets(["weather"])
+
+# Get tools from multiple toolsets
+api_tools = client.toolsets(["weather", "database"])
+
+# Combine with other filters
+read_only_weather = [
+    tool for tool in client.toolsets(["weather"])
+    if "read" in tool.tags
+]
+```
+
+**Key points:**
+- `toolsets()` only returns tools loaded from toolsets (not main schema tools)
+- Respects schema-level filters (only returns tools that passed the toolset filter)
+- Useful for dynamic tool selection based on context
 
 ### Error Handling
 

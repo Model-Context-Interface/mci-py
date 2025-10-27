@@ -12,6 +12,7 @@ This document provides a comprehensive API reference for the Python MCI Adapter 
     - [without()](#without)
     - [tags()](#tags)
     - [withoutTags()](#withouttags)
+    - [toolsets()](#toolsets)
     - [execute()](#execute)
     - [list_tools()](#list_tools)
     - [get_tool_schema()](#get_tool_schema)
@@ -430,6 +431,81 @@ No errors - returns all tools if none have any of the specified tags.
 - Uses OR logic for exclusion: a tool is excluded if it has ANY of the specified tags
 - Tools without tags are always included (they don't have the excluded tags)
 - Empty tag list returns all tools
+
+---
+
+#### `toolsets()`
+
+Filter tools to include only those from specified toolsets.
+
+**Method Signature:**
+
+```python
+def toolsets(self, toolset_names: list[str]) -> list[Tool]
+```
+
+**Parameters:**
+
+| Name | Type | Required | Description |
+|------|------|----------|-------------|
+| `toolset_names` | `list[str]` | Yes | List of toolset names to include (OR logic - tool is included if it came from any matching toolset) |
+
+**Returns:**
+
+| Type | Description |
+|------|-------------|
+| `list[Tool]` | Filtered list of Tool objects from the specified toolsets |
+
+**Example:**
+
+```python
+from mcipy import MCIClient
+
+client = MCIClient(schema_file_path="example.mci.json")
+
+# Get all tools from the "weather" toolset
+weather_tools = client.toolsets(["weather"])
+
+# Get tools from multiple toolsets
+api_tools = client.toolsets(["weather", "database", "github"])
+
+for tool in api_tools:
+    print(f"Tool: {tool.name} (from {tool.toolset_source})")
+```
+
+**Success Response:**
+
+```python
+[
+    Tool(
+        name="get_weather",
+        description="Get current weather",
+        tags=["weather", "read"],
+        toolset_source="weather",
+        execution=HTTPExecutionConfig(...)
+    ),
+    Tool(
+        name="query_data",
+        description="Query database",
+        tags=["database", "read"],
+        toolset_source="database",
+        execution=CLIExecutionConfig(...)
+    )
+]
+```
+
+**Error Response:**
+
+No errors - returns empty list if no tools match the specified toolset names.
+
+**Notes:**
+
+- Only returns tools that were loaded from toolsets (not main schema tools)
+- Uses OR logic: a tool is included if it came from ANY of the specified toolsets
+- Toolset filtering respects schema-level filters (only tools registered by their toolset's filter are included)
+- Empty toolset list returns no tools
+- Tools must have been loaded via the `toolsets` field in the main schema
+- The `toolset_source` field on each Tool indicates which toolset it came from
 
 ---
 

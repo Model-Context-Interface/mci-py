@@ -1,0 +1,67 @@
+{
+  "schemaVersion": "1.0",
+  "metadata": {
+    "name": "Weather Toolset",
+    "description": "Tools for weather information",
+    "version": "1.0.0"
+  },
+  "tools": [
+    {
+      "name": "get_weather",
+      "description": "Get current weather",
+      "tags": ["weather", "read"],
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "location": {
+            "type": "string"
+          }
+        },
+        "required": ["location"]
+      },
+      "execution": {
+        "type": "text",
+        "text": "Weather for {{props.location}}"
+      }
+    },
+    {
+      "name": "get_forecast",
+      "description": "Get weather forecast",
+      "tags": ["weather", "read"],
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "location": {
+            "type": "string"
+          },
+          "days": {
+            "type": "integer"
+          }
+        },
+        "required": ["location"]
+      },
+      "execution": {
+        "type": "text",
+        "text": "Forecast for {{props.location}} for {{props.days}} days"
+      }
+    },
+    {
+      "name": "set_alert",
+      "description": "Set weather alert",
+      "tags": ["weather", "write"],
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "location": {
+            "type": "string"
+          }
+        },
+        "required": ["location"]
+      },
+      "execution": {
+        "type": "text",
+        "text": "Alert set for {{props.location}}"
+      }
+    }
+  ]
+}

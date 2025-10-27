@@ -1,0 +1,27 @@
+{
+  "schemaVersion": "1.0",
+  "metadata": {
+    "name": "GitHub PRs",
+    "description": "Tools for GitHub PR management"
+  },
+  "tools": [
+    {
+      "name": "list_prs",
+      "description": "List pull requests",
+      "tags": ["github", "read"],
+      "execution": {
+        "type": "text",
+        "text": "List of PRs"
+      }
+    },
+    {
+      "name": "create_pr",
+      "description": "Create a pull request",
+      "tags": ["github", "write"],
+      "execution": {
+        "type": "text",
+        "text": "PR created"
+      }
+    }
+  ]
+}

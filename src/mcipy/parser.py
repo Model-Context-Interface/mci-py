@@ -8,6 +8,7 @@ MCI schema files. It handles:
 - Validating schema versions
 - Validating tool definitions
 - Building appropriate execution configurations based on type
+- Loading and filtering toolsets from library directories
 """
 
 import json
@@ -25,6 +26,8 @@ from .models import (
     HTTPExecutionConfig,
     MCISchema,
     TextExecutionConfig,
+    Tool,
+    ToolsetSchema,
 )
 from .schema_config import SUPPORTED_SCHEMA_VERSIONS
 
@@ -95,19 +98,21 @@ class SchemaParser:
         except OSError as e:
             raise SchemaParserError(f"Failed to read file {file_path}: {e}") from e
 
-        # Parse the dictionary
-        return SchemaParser.parse_dict(data)
+        # Parse the dictionary, passing the file path for toolset resolution
+        return SchemaParser.parse_dict(data, schema_file_path=file_path)
 
     @staticmethod
-    def parse_dict(data: dict[str, Any]) -> MCISchema:
+    def parse_dict(data: dict[str, Any], schema_file_path: str | None = None) -> MCISchema:
         """
         Parse a dictionary into an MCISchema object.
 
         Validates the dictionary structure, schema version, and tool definitions,
-        then returns a validated MCISchema object.
+        then returns a validated MCISchema object. If toolsets are defined,
+        loads tools from toolset files and applies schema-level filtering.
 
         Args:
             data: Dictionary containing MCI schema data
+            schema_file_path: Path to the schema file (for resolving relative paths in toolsets)
 
         Returns:
             Validated MCISchema object
@@ -123,26 +128,40 @@ class SchemaParser:
         if "schemaVersion" not in data:
             raise SchemaParserError("Missing required field 'schemaVersion'")
 
-        if "tools" not in data:
-            raise SchemaParserError("Missing required field 'tools'")
+        # Either tools or toolsets must be provided (or both)
+        has_tools = "tools" in data and data["tools"] is not None
+        has_toolsets = "toolsets" in data and data["toolsets"] is not None
+
+        if not has_tools and not has_toolsets:
+            raise SchemaParserError("Either 'tools' or 'toolsets' field must be provided")
 
         # Validate schema version
         SchemaParser._validate_schema_version(data["schemaVersion"])
 
-        # Validate tools is a list
-        if not isinstance(data["tools"], list):
-            raise SchemaParserError(
-                f"Field 'tools' must be a list, got {type(data['tools']).__name__}"
-            )
-
-        # Validate tools
-        SchemaParser._validate_tools(data["tools"])
+        # Validate tools if present
+        if has_tools:
+            if not isinstance(data["tools"], list):
+                raise SchemaParserError(
+                    f"Field 'tools' must be a list, got {type(data['tools']).__name__}"
+                )
+            SchemaParser._validate_tools(data["tools"])
 
         # Use Pydantic to validate and build the schema
         try:
             schema = MCISchema(**data)
         except ValidationError as e:
             raise SchemaParserError(f"Schema validation failed: {e}") from e
+
+        # Load toolsets if present
+        if schema.toolsets:
+            toolset_tools = SchemaParser._load_toolsets(
+                schema.toolsets, schema.libraryDir, schema_file_path
+            )
+            # Merge toolset tools with existing tools
+            if schema.tools is None:
+                schema.tools = toolset_tools
+            else:
+                schema.tools.extend(toolset_tools)
 
         return schema
 
@@ -265,3 +284,264 @@ class SchemaParser:
             raise SchemaParserError(f"Invalid {exec_type} execution config: {e}") from e
 
         return config
+
+    @staticmethod
+    def _load_toolsets(
+        toolsets: list[Any], library_dir: str, schema_file_path: str | None
+    ) -> list[Tool]:
+        """
+        Load tools from toolset definitions.
+
+        Discovers toolset files in the library directory, loads them,
+        and applies schema-level filtering based on the toolset configuration.
+
+        Args:
+            toolsets: List of toolset definitions from main schema
+            library_dir: Directory to search for toolset files (relative to schema file)
+            schema_file_path: Path to the main schema file (for resolving relative paths)
+
+        Returns:
+            List of Tool objects loaded from all toolsets with filters applied
+
+        Raises:
+            SchemaParserError: If toolset files cannot be found or loaded
+        """
+        all_tools: list[Tool] = []
+
+        # Resolve library directory path
+        if schema_file_path:
+            base_dir = Path(schema_file_path).parent
+            lib_path = base_dir / library_dir
+        else:
+            lib_path = Path(library_dir)
+
+        # Check if library directory exists
+        if not lib_path.exists():
+            raise SchemaParserError(f"Library directory not found: {lib_path}")
+
+        if not lib_path.is_dir():
+            raise SchemaParserError(f"Library path is not a directory: {lib_path}")
+
+        # Process each toolset
+        for toolset in toolsets:
+            # Load toolset schema
+            toolset_schema = SchemaParser._load_toolset_file(toolset.name, lib_path)
+
+            # Apply schema-level filter
+            filtered_tools = SchemaParser._apply_toolset_filter(
+                toolset_schema.tools, toolset.filter, toolset.filterValue
+            )
+
+            # Tag each tool with its toolset source
+            for tool in filtered_tools:
+                tool.toolset_source = toolset.name
+
+            # Add to all tools
+            all_tools.extend(filtered_tools)
+
+        return all_tools
+
+    @staticmethod
+    def _load_toolset_file(name: str, lib_path: Path) -> ToolsetSchema:
+        """
+        Load a toolset file from the library directory.
+
+        Tries to find the toolset as:
+        1. A directory containing .mci.json files
+        2. A file with exact name (e.g., github_prs.mci.json)
+        3. A file with .mci.json extension added (e.g., github_prs -> github_prs.mci.json)
+
+        Args:
+            name: Name of the toolset (directory, file, or bare prefix)
+            lib_path: Path to the library directory
+
+        Returns:
+            Parsed ToolsetSchema
+
+        Raises:
+            SchemaParserError: If toolset file cannot be found or loaded
+        """
+        # Try as directory first
+        dir_path = lib_path / name
+        if dir_path.is_dir():
+            # Load all .mci.json files in directory
+            toolset_files = list(dir_path.glob("*.mci.json"))
+            if not toolset_files:
+                raise SchemaParserError(
+                    f"No .mci.json files found in toolset directory: {dir_path}"
+                )
+            # Merge tools from all files. Metadata is not merged (documentation only). Schema version validated for compatibility.
+            all_tools: list[Tool] = []
+            schema_version = None
+            for toolset_file in toolset_files:
+                schema = SchemaParser._parse_toolset_file(toolset_file)
+                all_tools.extend(schema.tools)
+                # Validate schema version consistency across all files in directory
+                if schema_version is None:
+                    schema_version = schema.schemaVersion
+                elif schema.schemaVersion != schema_version:
+                    raise SchemaParserError(
+                        f"Schema version mismatch in toolset directory '{dir_path}': "
+                        f"File '{toolset_file.name}' has schemaVersion '{schema.schemaVersion}', "
+                        f"but expected '{schema_version}' (from first file in directory). "
+                        f"All files in a toolset directory must use the same schema version."
+                    )
+
+            # Return combined schema with only tools (no metadata from toolset files)
+            return ToolsetSchema(
+                schemaVersion=schema_version or "1.0",
+                metadata=None,  # Don't merge metadata from toolset files
+                tools=all_tools,
+            )
+
+        # Try as direct file
+        file_path = lib_path / name
+        if file_path.is_file():
+            return SchemaParser._parse_toolset_file(file_path)
+
+        # Try with .mci.json extension
+        file_with_ext = lib_path / f"{name}.mci.json"
+        if file_with_ext.is_file():
+            return SchemaParser._parse_toolset_file(file_with_ext)
+
+        # Try with .mci.yaml extension
+        file_with_yaml = lib_path / f"{name}.mci.yaml"
+        if file_with_yaml.is_file():
+            return SchemaParser._parse_toolset_file(file_with_yaml)
+
+        # Try with .mci.yml extension
+        file_with_yml = lib_path / f"{name}.mci.yml"
+        if file_with_yml.is_file():
+            return SchemaParser._parse_toolset_file(file_with_yml)
+
+        raise SchemaParserError(
+            f"Toolset not found: {name}. Looked for directory, file, or file with .mci.json/.mci.yaml/.mci.yml extension in {lib_path}"
+        )
+
+    @staticmethod
+    def _parse_toolset_file(file_path: Path) -> ToolsetSchema:
+        """
+        Parse a toolset file.
+
+        Args:
+            file_path: Path to the toolset file
+
+        Returns:
+            Parsed ToolsetSchema
+
+        Raises:
+            SchemaParserError: If file cannot be parsed or is invalid
+        """
+        # Determine file type by extension
+        file_extension = file_path.suffix.lower()
+
+        # Read and parse file
+        try:
+            with file_path.open("r", encoding="utf-8") as f:
+                if file_extension == ".json":
+                    data = json.load(f)
+                elif file_extension in (".yaml", ".yml"):
+                    data = yaml.safe_load(f)
+                else:
+                    raise SchemaParserError(
+                        f"Unsupported toolset file extension '{file_extension}'. "
+                        f"Supported extensions: .json, .yaml, .yml"
+                    )
+        except json.JSONDecodeError as e:
+            raise SchemaParserError(f"Invalid JSON in toolset file {file_path}: {e}") from e
+        except yaml.YAMLError as e:
+            raise SchemaParserError(f"Invalid YAML in toolset file {file_path}: {e}") from e
+        except OSError as e:
+            raise SchemaParserError(f"Failed to read toolset file {file_path}: {e}") from e
+
+        # Validate required fields
+        if not isinstance(data, dict):
+            raise SchemaParserError(
+                f"Toolset file {file_path} must contain a JSON/YAML object, got {type(data).__name__}"
+            )
+
+        if "schemaVersion" not in data:
+            raise SchemaParserError(
+                f"Toolset file {file_path} missing required field 'schemaVersion'"
+            )
+
+        if "tools" not in data:
+            raise SchemaParserError(f"Toolset file {file_path} missing required field 'tools'")
+
+        # Validate schema version
+        SchemaParser._validate_schema_version(data["schemaVersion"])
+
+        # Validate tools
+        if not isinstance(data["tools"], list):
+            raise SchemaParserError(
+                f"Toolset file {file_path} field 'tools' must be a list, got {type(data['tools']).__name__}"
+            )
+        SchemaParser._validate_tools(data["tools"])
+
+        # Parse with Pydantic
+        try:
+            schema = ToolsetSchema(**data)
+        except ValidationError as e:
+            raise SchemaParserError(f"Toolset file {file_path} validation failed: {e}") from e
+
+        return schema
+
+    @staticmethod
+    def _apply_toolset_filter(
+        tools: list[Tool], filter_type: str | None, filter_value: str | None
+    ) -> list[Tool]:
+        """
+        Apply schema-level filtering to toolset tools.
+
+        Args:
+            tools: List of tools from the toolset
+            filter_type: Type of filter ("only", "except", "tags", "withoutTags", or None)
+            filter_value: Comma-separated list of tool names or tags
+
+        Returns:
+            Filtered list of Tool objects
+
+        Raises:
+            SchemaParserError: If filter configuration is invalid
+        """
+        # If no filter, return all tools
+        if filter_type is None:
+            return tools
+
+        # Validate that filterValue is provided when filter is specified
+        if filter_value is None:
+            raise SchemaParserError(
+                f"Filter type '{filter_type}' specified but filterValue is missing"
+            )
+
+        # Parse filter value (comma-separated, trim whitespace)
+        filter_items = [item.strip() for item in filter_value.split(",") if item.strip()]
+
+        if not filter_items:
+            raise SchemaParserError(f"Filter value cannot be empty for filter type '{filter_type}'")
+
+        # Apply filter based on type
+        if filter_type == "only":
+            # Include only tools with names in filter_items
+            filter_set = set(filter_items)
+            return [tool for tool in tools if tool.name in filter_set]
+
+        elif filter_type == "except":
+            # Exclude tools with names in filter_items
+            filter_set = set(filter_items)
+            return [tool for tool in tools if tool.name not in filter_set]
+
+        elif filter_type == "tags":
+            # Include only tools with at least one matching tag
+            filter_set = set(filter_items)
+            return [tool for tool in tools if any(tag in filter_set for tag in tool.tags)]
+
+        elif filter_type == "withoutTags":
+            # Exclude tools with any matching tag
+            filter_set = set(filter_items)
+            return [tool for tool in tools if not any(tag in filter_set for tag in tool.tags)]
+
+        else:
+            raise SchemaParserError(
+                f"Invalid filter type '{filter_type}'. Valid types: only, except, tags, withoutTags"
+            )
