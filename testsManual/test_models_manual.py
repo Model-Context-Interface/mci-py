@@ -8,9 +8,7 @@ Usage:
     uv run python testsManual/test_models_manual.py
 """
 
-import json
 
-from mcipy.enums import ExecutionType
 from mcipy.models import (
     ApiKeyAuth,
     BasicAuth,
@@ -58,9 +56,11 @@ def test_http_tool_with_api_key():
         retries=RetryConfig(attempts=3, backoff_ms=1000),
     )
 
+    from mcipy import Annotations
+
     tool = Tool(
         name="get_weather",
-        title="Weather Information Provider",
+        annotations=Annotations(title="Weather Information Provider"),
         description="Get current weather information for a location",
         inputSchema={
             "type": "object",
@@ -71,7 +71,7 @@ def test_http_tool_with_api_key():
     )
 
     print(f"Tool Name: {tool.name}")
-    print(f"Title: {tool.title}")
+    print(f"Title: {tool.annotations.title if tool.annotations else 'None'}")
     print(f"Execution Type: {tool.execution.type}")
     print(f"Method: {tool.execution.method}")
     print(f"URL: {tool.execution.url}")
@@ -83,6 +83,8 @@ def test_http_tool_with_api_key():
 def test_cli_tool():
     """Demonstrate CLI tool configuration."""
     print_section("CLI Tool Configuration")
+
+    from mcipy import Annotations
 
     flags = {
         "-i": FlagConfig(**{"from": "props.ignore_case", "type": "boolean"}),
@@ -99,7 +101,7 @@ def test_cli_tool():
 
     tool = Tool(
         name="search_files",
-        title="File Search Tool",
+        annotations=Annotations(title="File Search Tool"),
         description="Search for patterns in files using grep",
         execution=execution,
     )
@@ -116,13 +118,15 @@ def test_file_tool():
     """Demonstrate file reading tool."""
     print_section("File Reading Tool")
 
+    from mcipy import Annotations
+
     execution = FileExecutionConfig(
         path="./templates/report-{{props.report_id}}.txt", enableTemplating=True
     )
 
     tool = Tool(
         name="read_report",
-        title="Report Reader",
+        annotations=Annotations(title="Report Reader"),
         description="Read report templates with placeholder substitution",
         execution=execution,
     )
@@ -136,13 +140,15 @@ def test_text_tool():
     """Demonstrate text template tool."""
     print_section("Text Template Tool")
 
+    from mcipy import Annotations
+
     execution = TextExecutionConfig(
         text="Report generated for {{input.username}} on {{env.CURRENT_DATE}}"
     )
 
     tool = Tool(
         name="generate_message",
-        title="Message Generator",
+        annotations=Annotations(title="Message Generator"),
         description="Generate formatted messages",
         execution=execution,
     )
@@ -154,6 +160,8 @@ def test_text_tool():
 def test_full_mci_schema():
     """Demonstrate a complete MCI schema with multiple tools."""
     print_section("Complete MCI Schema")
+
+    from mcipy import Annotations
 
     metadata = Metadata(
         name="Development Tools Context",
@@ -167,7 +175,7 @@ def test_full_mci_schema():
     bearer_auth = BearerAuth(token="{{env.GITHUB_TOKEN}}")
     http_tool = Tool(
         name="github_api",
-        title="GitHub API Client",
+        annotations=Annotations(title="GitHub API Client"),
         description="Query GitHub API",
         execution=HTTPExecutionConfig(
             url="https://api.github.com/repos/{{input.owner}}/{{input.repo}}",
@@ -180,7 +188,7 @@ def test_full_mci_schema():
     # CLI tool
     cli_tool = Tool(
         name="list_files",
-        title="File Lister",
+        annotations=Annotations(title="File Lister"),
         description="List files in directory",
         execution=CLIExecutionConfig(command="ls", args=["-la"]),
     )
@@ -188,7 +196,7 @@ def test_full_mci_schema():
     # File tool
     file_tool = Tool(
         name="read_config",
-        title="Config Reader",
+        annotations=Annotations(title="Config Reader"),
         description="Read configuration file",
         execution=FileExecutionConfig(path="{{props.config_path}}", enableTemplating=False),
     )
@@ -196,7 +204,7 @@ def test_full_mci_schema():
     # Text tool
     text_tool = Tool(
         name="status_message",
-        title="Status Message",
+        annotations=Annotations(title="Status Message"),
         description="Generate status message",
         execution=TextExecutionConfig(text="Status: {{input.status}} at {{env.TIMESTAMP}}"),
     )
@@ -212,7 +220,7 @@ def test_full_mci_schema():
 
     for i, tool in enumerate(schema.tools, 1):
         print(f"{i}. {tool.name} ({tool.execution.type})")
-        print(f"   Title: {tool.title}")
+        print(f"   Title: {tool.annotations.title if tool.annotations else 'None'}")
         print(f"   Description: {tool.description}")
 
     # Serialize to JSON
@@ -227,11 +235,25 @@ def test_execution_results():
     """Demonstrate execution result models."""
     print_section("Execution Results")
 
+    from mcipy import ExecutionResultContent, TextContent
+
     success_result = ExecutionResult(
-        isError=False, content={"temperature": 72, "condition": "sunny", "humidity": 45}
+        result=ExecutionResultContent(
+            isError=False,
+            content=[
+                TextContent(
+                    text='{"temperature": 72, "condition": "sunny", "humidity": 45}'
+                )
+            ],
+        )
     )
 
-    error_result = ExecutionResult(isError=True, error="Connection timeout after 5000ms")
+    error_result = ExecutionResult(
+        result=ExecutionResultContent(
+            isError=True,
+            content=[TextContent(text="Connection timeout after 5000ms")],
+        )
+    )
 
     print("Success Result:")
     print(f"  Is Error: {success_result.result.isError}")
@@ -248,26 +270,26 @@ def test_auth_types():
 
     # API Key in header
     api_key_header = ApiKeyAuth(**{"in": "header", "name": "X-API-Key", "value": "secret123"})
-    print(f"1. API Key (Header)")
+    print("1. API Key (Header)")
     print(f"   Type: {api_key_header.type}")
     print(f"   Location: {api_key_header.in_}")
     print(f"   Name: {api_key_header.name}")
 
     # API Key in query
     api_key_query = ApiKeyAuth(**{"in": "query", "name": "api_key", "value": "secret123"})
-    print(f"\n2. API Key (Query)")
+    print("\n2. API Key (Query)")
     print(f"   Type: {api_key_query.type}")
     print(f"   Location: {api_key_query.in_}")
 
     # Bearer token
     bearer = BearerAuth(token="bearer_token_abc123")
-    print(f"\n3. Bearer Token")
+    print("\n3. Bearer Token")
     print(f"   Type: {bearer.type}")
     print(f"   Token: {bearer.token[:20]}...")
 
     # Basic auth
     basic = BasicAuth(username="admin", password="password123")
-    print(f"\n4. Basic Auth")
+    print("\n4. Basic Auth")
     print(f"   Type: {basic.type}")
     print(f"   Username: {basic.username}")
 
@@ -279,11 +301,95 @@ def test_auth_types():
         clientSecret="secret_xyz789",
         scopes=["read:data", "write:data"],
     )
-    print(f"\n5. OAuth2")
+    print("\n5. OAuth2")
     print(f"   Type: {oauth2.type}")
     print(f"   Flow: {oauth2.flow}")
     print(f"   Token URL: {oauth2.tokenUrl}")
     print(f"   Scopes: {', '.join(oauth2.scopes)}")
+
+
+def test_tags_filtering():
+    """Demonstrate tag filtering functionality."""
+    print_section("Tag Filtering")
+
+    # Create tools with different tags
+    tool1 = Tool(
+        name="github_api",
+        description="GitHub API client",
+        execution=HTTPExecutionConfig(url="https://api.github.com"),
+        tags=["api", "external", "git"],
+    )
+
+    tool2 = Tool(
+        name="database_query",
+        description="Database query tool",
+        execution=CLIExecutionConfig(command="psql"),
+        tags=["database", "internal", "data"],
+    )
+
+    tool3 = Tool(
+        name="data_processor",
+        description="Process data files",
+        execution=FileExecutionConfig(path="./data/input.csv"),
+        tags=["data", "processing", "batch"],
+    )
+
+    tool4 = Tool(
+        name="status_message",
+        description="Generate status message",
+        execution=TextExecutionConfig(text="Status: OK"),
+        tags=["internal", "utility"],
+    )
+
+    tool5 = Tool(
+        name="no_tags_tool",
+        description="Tool without tags",
+        execution=TextExecutionConfig(text="Hello"),
+        tags=[],
+    )
+
+    schema = MCISchema(
+        schemaVersion="1.0",
+        tools=[tool1, tool2, tool3, tool4, tool5],
+    )
+
+    print("All Tools:")
+    for tool in schema.tools:
+        print(f"  - {tool.name}: {tool.tags if tool.tags else '(no tags)'}")
+
+    # Demonstrate tag filtering with ToolManager
+    from mcipy.tool_manager import ToolManager
+
+    manager = ToolManager(schema)
+
+    print("\n" + "-" * 70)
+    print("Filter by tags=['api']:")
+    api_tools = manager.tags(["api"])
+    for tool in api_tools:
+        print(f"  - {tool.name}")
+
+    print("\n" + "-" * 70)
+    print("Filter by tags=['data', 'internal'] (OR logic):")
+    data_or_internal = manager.tags(["data", "internal"])
+    for tool in data_or_internal:
+        print(f"  - {tool.name}")
+
+    print("\n" + "-" * 70)
+    print("Exclude tags=['internal'] using withoutTags:")
+    without_internal = manager.withoutTags(["internal"])
+    for tool in without_internal:
+        print(f"  - {tool.name}")
+
+    print("\n" + "-" * 70)
+    print("Exclude tags=['api', 'database'] (OR logic):")
+    without_api_db = manager.withoutTags(["api", "database"])
+    for tool in without_api_db:
+        print(f"  - {tool.name}")
+
+    print("\n" + "-" * 70)
+    print("Tags are case-sensitive:")
+    print(f"  tags(['API']) = {len(manager.tags(['API']))} tools (uppercase 'API')")
+    print(f"  tags(['api']) = {len(manager.tags(['api']))} tools (lowercase 'api')")
 
 
 def main():
@@ -299,6 +405,7 @@ def main():
     test_full_mci_schema()
     test_execution_results()
     test_auth_types()
+    test_tags_filtering()
 
     print("\n" + "=" * 70)
     print("  All Manual Tests Completed Successfully!")

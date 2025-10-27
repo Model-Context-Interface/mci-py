@@ -17,8 +17,8 @@ from mcipy.executors import CLIExecutor, FileExecutor, HTTPExecutor, TextExecuto
 from mcipy.models import (
     ApiKeyAuth,
     CLIExecutionConfig,
-    FlagConfig,
     FileExecutionConfig,
+    FlagConfig,
     HTTPBodyConfig,
     HTTPExecutionConfig,
     TextExecutionConfig,
@@ -60,7 +60,7 @@ def test_text_executor():
     print("1. Simple Placeholder Substitution:")
     config1 = TextExecutionConfig(text="Hello {{props.user}} from {{env.COMPANY}}!")
     result1 = executor.execute(config1, context)
-    print(f"   Input:  'Hello {{{{props.user}}}} from {{{{env.COMPANY}}}}!'")
+    print("   Input:  'Hello {{props.user}} from {{env.COMPANY}}!'")
     print(f"   Output: '{result1.result.content[0].text}'")
     print(f"   Status: {'✓ Success' if not result1.result.isError else '✗ Error'}\n")
 
@@ -208,7 +208,7 @@ API URL: {{env.API_URL}}
             path="{{env.CONFIG_DIR}}/{{props.filename}}", enableTemplating=False
         )
         result3 = executor.execute(config3, context_with_path)
-        print(f"   Path template: '{{{{env.CONFIG_DIR}}}}/{{{{props.filename}}}}'")
+        print("   Path template: '{{env.CONFIG_DIR}}/{{props.filename}}'")
         print(f"   Resolved path: '{temp_dir}/{file_name}'")
         print(f"   Content:       '{result3.result.content[0].text}'")
         print(f"   Status: {'✓ Success' if not result3.result.isError else '✗ Error'}\n")
@@ -232,7 +232,7 @@ API URL: {{env.API_URL}}
     # Create a temporary file to match the templated path
     import os
 
-    templated_dir = f"/tmp/users/john"
+    templated_dir = "/tmp/users/john"
     os.makedirs(templated_dir, exist_ok=True)
     templated_file = f"{templated_dir}/data.txt"
     Path(templated_file).write_text("User data for john")
@@ -242,8 +242,8 @@ API URL: {{env.API_URL}}
         context_demo["env"]["BASE_PATH"] = "/tmp"
         result_demo = executor.execute(config_demo, context_demo)
 
-        print(f"   Original path: '{{{{env.BASE_PATH}}}}/users/{{{{props.username}}}}/data.txt'")
-        print(f"   Templated to:  '/tmp/users/john/data.txt'")
+        print("   Original path: '{{env.BASE_PATH}}/users/{{props.username}}/data.txt'")
+        print("   Templated to:  '/tmp/users/john/data.txt'")
         print(f"   Content:       '{result_demo.content}'")
         print(f"   Status: {'✓ Success' if not result_demo.isError else '✗ Error'}")
         print("   Note: Path templating happens automatically in the executor!\n")
@@ -258,7 +258,7 @@ API URL: {{env.API_URL}}
     print("5. Error Handling (File Not Found):")
     config4 = FileExecutionConfig(path="/nonexistent/file.txt", enableTemplating=False)
     result4 = executor.execute(config4, context)
-    print(f"   Path: '/nonexistent/file.txt'")
+    print("   Path: '/nonexistent/file.txt'")
     print(f"   Status: {'✗ Error (as expected)' if result4.isError else '✓ Success (unexpected!)'}")
     print(f"   Error message: '{result4.error}'")
 
@@ -282,7 +282,7 @@ def test_context_building():
     print(
         f"   Status: {'✓ Success' if context['input'] is context['props'] else '✗ Error'}"
     )
-    print(f"   Note: 'input' is an alias for 'props' (same object reference)\n")
+    print("   Note: 'input' is an alias for 'props' (same object reference)\n")
 
 
 def test_http_executor():
@@ -331,8 +331,8 @@ def test_http_executor():
 
         result2 = executor.execute(config2, context)
 
-    print(f"   URL template: '{{{{env.BASE_URL}}}}/users/{{{{props.user_id}}}}'")
-    print(f"   Resolved to:  'https://api.example.com/users/123'")
+    print("   URL template: '{{env.BASE_URL}}/users/{{props.user_id}}'")
+    print("   Resolved to:  'https://api.example.com/users/123'")
     print(f"   Status: {'✓ Success' if not result2.result.isError else '✗ Error'}")
     print(f"   Response: {result2.result.content[0].text}\n")
 
@@ -355,7 +355,7 @@ def test_http_executor():
         call_kwargs = mock_request.call_args[1]
 
     print(f"   URL:    '{config3.url}'")
-    print(f"   Params: user_id={{{{props.user_id}}}}, format={{{{props.format}}}}")
+    print("   Params: user_id={{props.user_id}}, format={{props.format}}")
     print(f"   Resolved params: {call_kwargs.get('params', {})}")
     print(f"   Status: {'✓ Success' if not result3.result.isError else '✗ Error'}\n")
 
@@ -377,7 +377,7 @@ def test_http_executor():
         call_kwargs = mock_request.call_args[1]
 
     print(f"   URL:     '{config4.url}'")
-    print(f"   Headers: X-Custom-Header={{{{props.format}}}}, X-User-Agent=MCI-Adapter/1.0")
+    print("   Headers: X-Custom-Header={{props.format}}, X-User-Agent=MCI-Adapter/1.0")
     print(f"   Resolved headers: {call_kwargs.get('headers', {})}")
     print(f"   Status: {'✓ Success' if not result4.isError else '✗ Error'}\n")
 
@@ -397,7 +397,7 @@ def test_http_executor():
         call_kwargs = mock_request.call_args[1]
 
     print(f"   URL:  '{config5.url}'")
-    print(f"   Auth: API Key in header 'X-API-Key' = {{{{env.API_KEY}}}}")
+    print("   Auth: API Key in header 'X-API-Key' = {{env.API_KEY}}")
     print(f"   Resolved header X-API-Key: {call_kwargs.get('headers', {}).get('X-API-Key')}")
     print(f"   Status: {'✓ Success' if not result5.isError else '✗ Error'}\n")
 
@@ -417,7 +417,7 @@ def test_http_executor():
         call_kwargs = mock_request.call_args[1]
 
     print(f"   URL:  '{config6.url}'")
-    print(f"   Auth: API Key in query param 'api_key' = {{{{env.API_KEY}}}}")
+    print("   Auth: API Key in query param 'api_key' = {{env.API_KEY}}")
     print(f"   Resolved param api_key: {call_kwargs.get('params', {}).get('api_key')}")
     print(f"   Status: {'✓ Success' if not result6.isError else '✗ Error'}\n")
 
@@ -475,7 +475,7 @@ def test_http_executor():
     cli_config = CLIExecutionConfig(command="ls")
     result9 = executor.execute(cli_config, context)
 
-    print(f"   Config type: CLIExecutionConfig (wrong type)")
+    print("   Config type: CLIExecutionConfig (wrong type)")
     print(f"   Status: {'✓ Error detected (as expected)' if result9.isError else '✗ No error (unexpected!)'}")
     if result9.isError:
         print(f"   Error: {result9.error}\n")
@@ -504,7 +504,7 @@ def test_http_executor():
         result10 = executor.execute(config10, context)
         call_kwargs = mock_request.call_args[1]
 
-    print(f"   URL template: '{{{{env.BASE_URL}}}}/api/v1/resources'")
+    print("   URL template: '{{env.BASE_URL}}/api/v1/resources'")
     print(f"   Resolved URL: {call_kwargs.get('url')}")
     print(f"   Method:  {call_kwargs.get('method')}")
     print(f"   Headers: {call_kwargs.get('headers', {})}")
@@ -512,7 +512,7 @@ def test_http_executor():
     print(f"   Body:    {call_kwargs.get('json', {})}")
     print(f"   Timeout: {call_kwargs.get('timeout')} seconds")
     print(f"   Status: {'✓ Success' if not result10.isError else '✗ Error'}")
-    print(f"\n   Note: HTTPExecutor successfully applies templating and executes requests ✓\n")
+    print("\n   Note: HTTPExecutor successfully applies templating and executes requests ✓\n")
 
 
 def test_cli_executor():
@@ -548,7 +548,7 @@ def test_cli_executor():
         config2 = CLIExecutionConfig(command="echo", args=["File: {{props.filename}}"])
 
     result2 = executor.execute(config2, context)
-    print(f"   Template: 'echo File: {{{{props.filename}}}}'")
+    print("   Template: 'echo File: {{props.filename}}'")
     print(f"   Output:   '{result2.result.content[0].text.strip()}'")
     print(f"   Status:   {'✓ Success' if not result2.result.isError else '✗ Error'}\n")
 
@@ -569,7 +569,7 @@ def test_cli_executor():
 
     result3 = executor.execute(config3, context)
     print(f"   verbose={context['props']['verbose']}, quiet={context['props']['quiet']}")
-    print(f"   Expected flags: -v (verbose is True), no -q (quiet is False)")
+    print("   Expected flags: -v (verbose is True), no -q (quiet is False)")
     print(f"   Output:  '{result3.result.content[0].text.strip()}'")
     print(f"   Status:  {'✓ Success' if not result3.result.isError else '✗ Error'}\n")
 
@@ -613,7 +613,7 @@ def test_cli_executor():
         config6 = CLIExecutionConfig(command="sh", args=["-c", "exit 1"])
 
     result6 = executor.execute(config6, context)
-    print(f"   Command: exit with code 1")
+    print("   Command: exit with code 1")
     print(f"   Status:  {'✓ Error detected (as expected)' if result6.isError else '✗ No error (unexpected!)'}")
     print(f"   Error:   '{result6.error}'")
     print(f"   Metadata: returncode={result6.metadata.get('returncode') if result6.metadata else 'N/A'}\n")
@@ -632,7 +632,7 @@ def test_cli_executor():
             config7 = CLIExecutionConfig(command="pwd", cwd="{{env.WORKDIR}}")
 
         result7 = executor.execute(config7, context_with_dir)
-        print(f"   CWD template: '{{{{env.WORKDIR}}}}'")
+        print("   CWD template: '{{env.WORKDIR}}'")
         print(f"   Resolved to:  '{tmpdir}'")
         print(f"   Output contains temp dir: {Path(tmpdir).name in result7.content or tmpdir in result7.content}")
         print(f"   Status: {'✓ Success' if not result7.isError else '✗ Error'}\n")

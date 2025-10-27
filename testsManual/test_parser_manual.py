@@ -13,7 +13,6 @@ Run with: uv run python testsManual/test_parser_manual.py
 
 from pathlib import Path
 
-from mcipy.enums import ExecutionType
 from mcipy.models import (
     CLIExecutionConfig,
     FileExecutionConfig,

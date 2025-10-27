@@ -39,28 +39,28 @@ def test_executor_factory():
     print("1. Get HTTP Executor:")
     http_executor = ExecutorFactory.get_executor(ExecutionType.HTTP)
     print(f"   Type: {type(http_executor).__name__}")
-    print(f"   Expected: HTTPExecutor")
+    print("   Expected: HTTPExecutor")
     print(f"   Status: {'✓ Success' if type(http_executor).__name__ == 'HTTPExecutor' else '✗ Failed'}\n")
 
     # Test 2: Get CLI executor
     print("2. Get CLI Executor:")
     cli_executor = ExecutorFactory.get_executor(ExecutionType.CLI)
     print(f"   Type: {type(cli_executor).__name__}")
-    print(f"   Expected: CLIExecutor")
+    print("   Expected: CLIExecutor")
     print(f"   Status: {'✓ Success' if type(cli_executor).__name__ == 'CLIExecutor' else '✗ Failed'}\n")
 
     # Test 3: Get File executor
     print("3. Get File Executor:")
     file_executor = ExecutorFactory.get_executor(ExecutionType.FILE)
     print(f"   Type: {type(file_executor).__name__}")
-    print(f"   Expected: FileExecutor")
+    print("   Expected: FileExecutor")
     print(f"   Status: {'✓ Success' if type(file_executor).__name__ == 'FileExecutor' else '✗ Failed'}\n")
 
     # Test 4: Get Text executor
     print("4. Get Text Executor:")
     text_executor = ExecutorFactory.get_executor(ExecutionType.TEXT)
     print(f"   Type: {type(text_executor).__name__}")
-    print(f"   Expected: TextExecutor")
+    print("   Expected: TextExecutor")
     print(f"   Status: {'✓ Success' if type(text_executor).__name__ == 'TextExecutor' else '✗ Failed'}\n")
 
     # Test 5: Caching (same instance returned)
@@ -101,9 +101,9 @@ def test_text_execution_e2e():
     print("1. Simple Text Execution:")
     config1 = TextExecutionConfig(text="Hello {{props.name}}, {{props.role}} at {{env.COMPANY}}!")
     result1 = executor.execute(config1, context)
-    print(f"   Template: 'Hello {{{{props.name}}}}, {{{{props.role}}}} at {{{{env.COMPANY}}}}!'")
+    print("   Template: 'Hello {{props.name}}, {{props.role}} at {{env.COMPANY}}!'")
     print(f"   Result:   '{result1.result.content[0].text}'")
-    print(f"   Expected: 'Hello Alice, Developer at ACME Corp!'")
+    print("   Expected: 'Hello Alice, Developer at ACME Corp!'")
     print(f"   Status: {'✓ Success' if not result1.result.isError else '✗ Error'}\n")
 
     # Test 2: Advanced templating with @foreach
@@ -114,7 +114,7 @@ def test_text_execution_e2e():
         text="Tasks:\n@foreach(item in props.items)\n- {{item}}\n@endforeach"
     )
     result2 = executor.execute(config2, context)
-    print(f"   Template: Tasks with @foreach loop")
+    print("   Template: Tasks with @foreach loop")
     print(f"   Result:\n{result2.result.content[0].text}")
     print(f"   Status: {'✓ Success' if not result2.result.isError else '✗ Error'}\n")
 
@@ -144,7 +144,7 @@ def test_file_execution_e2e():
         config1 = FileExecutionConfig(path=temp_file, enableTemplating=True)
         result1 = executor.execute(config1, context)
         print(f"   Path: {temp_file}")
-        print(f"   Templating: enabled")
+        print("   Templating: enabled")
         print(f"   Result:\n{result1.result.content[0].text}")
         print(f"   Status: {'✓ Success' if not result1.result.isError else '✗ Error'}\n")
 
@@ -153,7 +153,7 @@ def test_file_execution_e2e():
         config2 = FileExecutionConfig(path=temp_file, enableTemplating=False)
         result2 = executor.execute(config2, context)
         print(f"   Path: {temp_file}")
-        print(f"   Templating: disabled")
+        print("   Templating: disabled")
         print(f"   Result:\n{result2.result.content[0].text}")
         print(f"   Status: {'✓ Success' if not result2.result.isError else '✗ Error'}\n")
 
@@ -161,7 +161,7 @@ def test_file_execution_e2e():
         print("3. Error Handling (File Not Found):")
         config3 = FileExecutionConfig(path="/nonexistent/file.txt", enableTemplating=False)
         result3 = executor.execute(config3, context)
-        print(f"   Path: /nonexistent/file.txt")
+        print("   Path: /nonexistent/file.txt")
         print(f"   Status: {'✗ Error (as expected)' if result3.result.isError else '✓ Success (unexpected!)'}")
         print(f"   Error: {result3.result.content[0].text}\n")
 
@@ -188,7 +188,7 @@ def test_cli_execution_e2e():
     print("1. Simple Command Execution (echo):")
     config1 = CLIExecutionConfig(command="echo", args=["Hello from CLI executor!"])
     result1 = executor.execute(config1, context)
-    print(f"   Command: echo 'Hello from CLI executor!'")
+    print("   Command: echo 'Hello from CLI executor!'")
     print(f"   Result: '{result1.result.content[0].text.strip() if result1.result.content[0].text else 'None'}'")
     print(f"   Status: {'✓ Success' if not result1.result.isError else '✗ Error'}\n")
 
@@ -196,7 +196,7 @@ def test_cli_execution_e2e():
     print("2. Command with Templating:")
     config2 = CLIExecutionConfig(command="ls", args=["{{props.directory}}"])
     result2 = executor.execute(config2, context)
-    print(f"   Command: ls {{{{props.directory}}}}")
+    print("   Command: ls {{props.directory}}")
     print(f"   Resolved: ls {context['props']['directory']}")
     print(f"   Status: {'✓ Success' if not result2.result.isError else '✗ Error'}")
     print(f"   Output (first 200 chars): {(result2.result.content[0].text or '')[:200]}\n")
@@ -205,7 +205,7 @@ def test_cli_execution_e2e():
     print("3. Error Handling (Command Not Found):")
     config3 = CLIExecutionConfig(command="nonexistent_command_12345")
     result3 = executor.execute(config3, context)
-    print(f"   Command: nonexistent_command_12345")
+    print("   Command: nonexistent_command_12345")
     print(f"   Status: {'✗ Error (as expected)' if result3.result.isError else '✓ Success (unexpected!)'}")
     print(f"   Error: {result3.result.content[0].text[:100] if result3.result.content[0].text else 'None'}\n")
 
@@ -243,9 +243,9 @@ def test_http_execution_e2e():
         http_executor = ExecutorFactory.get_executor(ExecutionType.HTTP)
         result1 = http_executor.execute(config1, context)
 
-        print(f"   URL: https://api.example.com/weather?city={{{{props.city}}}}")
-        print(f"   Resolved: https://api.example.com/weather?city=London")
-        print(f"   Method: GET")
+        print("   URL: https://api.example.com/weather?city={{props.city}}")
+        print("   Resolved: https://api.example.com/weather?city=London")
+        print("   Method: GET")
         print(f"   Response: {result1.result.content[0].text}")
         print(f"   Status: {'✓ Success' if not result1.result.isError else '✗ Error'}\n")
 
@@ -271,8 +271,8 @@ def test_http_execution_e2e():
         result2 = http_executor.execute(config2, context)
         call_kwargs = mock_request.call_args[1]
 
-        print(f"   URL: https://api.example.com/data")
-        print(f"   Method: POST")
+        print("   URL: https://api.example.com/data")
+        print("   Method: POST")
         print(f"   Auth header: {call_kwargs.get('headers', {}).get('X-API-Key', 'None')}")
         print(f"   Response: {result2.result.content[0].text}")
         print(f"   Status: {'✓ Success' if not result2.result.isError else '✗ Error'}\n")
