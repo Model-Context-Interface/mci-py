@@ -134,8 +134,8 @@ class TestFileExecutor:
         result = executor.execute(config, context)
 
         assert result.result.isError is True
-        assert "File not found" in result.error
-        assert result.content is None
+        assert "File not found" in result.result.error
+        assert result.result.content is None
 
     def test_execute_templated_path(self, executor, temp_file):
         """Test executing with templated file path."""
