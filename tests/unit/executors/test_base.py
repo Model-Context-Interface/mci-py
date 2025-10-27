@@ -104,8 +104,8 @@ class TestBaseExecutor:
 
         assert isinstance(result, ExecutionResult)
         assert result.result.isError is True
-        assert result.error == "Something went wrong"
-        assert result.content is None
+        assert result.result.content[0].text == "Something went wrong"
+        assert result.result.content[0].type == "error"
 
     def test_format_error_different_types(self, executor):
         """Test error formatting with different exception types."""
