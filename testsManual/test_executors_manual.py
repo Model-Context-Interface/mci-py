@@ -61,8 +61,8 @@ def test_text_executor():
     config1 = TextExecutionConfig(text="Hello {{props.user}} from {{env.COMPANY}}!")
     result1 = executor.execute(config1, context)
     print(f"   Input:  'Hello {{{{props.user}}}} from {{{{env.COMPANY}}}}!'")
-    print(f"   Output: '{result1.content}'")
-    print(f"   Status: {'✓ Success' if not result1.isError else '✗ Error'}\n")
+    print(f"   Output: '{result1.result.content[0].text}'")
+    print(f"   Status: {'✓ Success' if not result1.result.isError else '✗ Error'}\n")
 
     # Test 2: @foreach loop
     print("2. @foreach Loop:")
@@ -75,8 +75,8 @@ def test_text_executor():
     print("     @foreach(task in props.tasks)")
     print("     - {{task}}")
     print("     @endforeach")
-    print(f"   Output:\n{result2.content}")
-    print(f"   Status: {'✓ Success' if not result2.isError else '✗ Error'}\n")
+    print(f"   Output:\n{result2.result.content[0].text}")
+    print(f"   Status: {'✓ Success' if not result2.result.isError else '✗ Error'}\n")
 
     # Test 3: @for loop
     print("3. @for Loop:")
@@ -86,8 +86,8 @@ def test_text_executor():
     print("     @for(i in range(0, 3))")
     print("     {{i}}. Item {{i}}")
     print("     @endfor")
-    print(f"   Output:\n{result3.content}")
-    print(f"   Status: {'✓ Success' if not result3.isError else '✗ Error'}\n")
+    print(f"   Output:\n{result3.result.content[0].text}")
+    print(f"   Status: {'✓ Success' if not result3.result.isError else '✗ Error'}\n")
 
     # Test 4: @if conditional
     print("4. @if Conditional:")
@@ -152,8 +152,8 @@ def test_file_executor():
         config1 = FileExecutionConfig(path=temp_path1, enableTemplating=False)
         result1 = executor.execute(config1, context)
         print(f"   File content: '{content1}'")
-        print(f"   Output:       '{result1.content}'")
-        print(f"   Status: {'✓ Success' if not result1.isError else '✗ Error'}\n")
+        print(f"   Output:       '{result1.result.content[0].text}'")
+        print(f"   Status: {'✓ Success' if not result1.result.isError else '✗ Error'}\n")
     finally:
         Path(temp_path1).unlink(missing_ok=True)
 
@@ -184,8 +184,8 @@ API URL: {{env.API_URL}}
         print("   File content:")
         print(content2)
         print("\n   Output after templating:")
-        print(result2.content)
-        print(f"   Status: {'✓ Success' if not result2.isError else '✗ Error'}\n")
+        print(result2.result.content[0].text)
+        print(f"   Status: {'✓ Success' if not result2.result.isError else '✗ Error'}\n")
     finally:
         Path(temp_path2).unlink(missing_ok=True)
 
@@ -210,8 +210,8 @@ API URL: {{env.API_URL}}
         result3 = executor.execute(config3, context_with_path)
         print(f"   Path template: '{{{{env.CONFIG_DIR}}}}/{{{{props.filename}}}}'")
         print(f"   Resolved path: '{temp_dir}/{file_name}'")
-        print(f"   Content:       '{result3.content}'")
-        print(f"   Status: {'✓ Success' if not result3.isError else '✗ Error'}\n")
+        print(f"   Content:       '{result3.result.content[0].text}'")
+        print(f"   Status: {'✓ Success' if not result3.result.isError else '✗ Error'}\n")
 
     # Test 4: Config-level templating demonstration
     print("4. Config-Level Templating (New Feature):")
@@ -315,8 +315,8 @@ def test_http_executor():
 
     print(f"   URL:    '{config1.url}'")
     print(f"   Method: {config1.method}")
-    print(f"   Status: {'✓ Success' if not result1.isError else '✗ Error'}")
-    print(f"   Response: {result1.content}\n")
+    print(f"   Status: {'✓ Success' if not result1.result.isError else '✗ Error'}")
+    print(f"   Response: {result1.result.content[0].text}\n")
 
     # Test 2: GET request with templated URL
     print("2. GET Request with Templated URL:")
@@ -333,8 +333,8 @@ def test_http_executor():
 
     print(f"   URL template: '{{{{env.BASE_URL}}}}/users/{{{{props.user_id}}}}'")
     print(f"   Resolved to:  'https://api.example.com/users/123'")
-    print(f"   Status: {'✓ Success' if not result2.isError else '✗ Error'}")
-    print(f"   Response: {result2.content}\n")
+    print(f"   Status: {'✓ Success' if not result2.result.isError else '✗ Error'}")
+    print(f"   Response: {result2.result.content[0].text}\n")
 
     # Test 3: GET request with templated query parameters
     print("3. GET Request with Templated Query Parameters:")
@@ -357,7 +357,7 @@ def test_http_executor():
     print(f"   URL:    '{config3.url}'")
     print(f"   Params: user_id={{{{props.user_id}}}}, format={{{{props.format}}}}")
     print(f"   Resolved params: {call_kwargs.get('params', {})}")
-    print(f"   Status: {'✓ Success' if not result3.isError else '✗ Error'}\n")
+    print(f"   Status: {'✓ Success' if not result3.result.isError else '✗ Error'}\n")
 
     # Test 4: GET request with templated custom headers
     print("4. GET Request with Templated Custom Headers:")
@@ -535,8 +535,8 @@ def test_cli_executor():
 
     result1 = executor.execute(config1, context)
     print(f"   Command: {'cmd /c echo Hello from CLI!' if sys.platform == 'win32' else 'echo Hello from CLI!'}")
-    print(f"   Output:  '{result1.content.strip()}'")
-    print(f"   Status:  {'✓ Success' if not result1.isError else '✗ Error'}\n")
+    print(f"   Output:  '{result1.result.content[0].text.strip()}'")
+    print(f"   Status:  {'✓ Success' if not result1.result.isError else '✗ Error'}\n")
 
     # Test 2: Command with templated arguments
     print("2. Command with Templated Arguments:")
@@ -549,8 +549,8 @@ def test_cli_executor():
 
     result2 = executor.execute(config2, context)
     print(f"   Template: 'echo File: {{{{props.filename}}}}'")
-    print(f"   Output:   '{result2.content.strip()}'")
-    print(f"   Status:   {'✓ Success' if not result2.isError else '✗ Error'}\n")
+    print(f"   Output:   '{result2.result.content[0].text.strip()}'")
+    print(f"   Status:   {'✓ Success' if not result2.result.isError else '✗ Error'}\n")
 
     # Test 3: Command with boolean flags
     print("3. Command with Boolean Flags:")
@@ -570,8 +570,8 @@ def test_cli_executor():
     result3 = executor.execute(config3, context)
     print(f"   verbose={context['props']['verbose']}, quiet={context['props']['quiet']}")
     print(f"   Expected flags: -v (verbose is True), no -q (quiet is False)")
-    print(f"   Output:  '{result3.content.strip()}'")
-    print(f"   Status:  {'✓ Success' if not result3.isError else '✗ Error'}\n")
+    print(f"   Output:  '{result3.result.content[0].text.strip()}'")
+    print(f"   Status:  {'✓ Success' if not result3.result.isError else '✗ Error'}\n")
 
     # Test 4: Command with value flags
     print("4. Command with Value Flags:")
