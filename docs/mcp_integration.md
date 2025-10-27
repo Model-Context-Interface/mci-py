@@ -45,11 +45,11 @@ Add the `mcp_servers` field to your MCI schema file to register MCP servers:
 {
   "schemaVersion": "1.0",
   "mcp_servers": {
-    "github": {
+    "api_server": {
       "type": "http",
-      "url": "https://api.githubcopilot.com/mcp/",
+      "url": "https://api.example.com/mcp/",
       "headers": {
-        "Authorization": "Bearer {{env.GITHUB_MCP_PAT}}"
+        "Authorization": "Bearer {{env.API_TOKEN}}"
       },
       "config": {
         "expDays": 7,
@@ -283,11 +283,11 @@ Here's a complete example combining MCP servers with regular MCI tools:
         "filterValue": "delete_file,format_disk"
       }
     },
-    "web": {
+    "api_server": {
       "type": "http",
-      "url": "https://mcp.example.com/api",
+      "url": "https://api.example.com/mcp/",
       "headers": {
-        "Authorization": "Bearer {{env.WEB_TOKEN}}"
+        "Authorization": "Bearer {{env.API_TOKEN}}"
       },
       "config": {
         "expDays": 30
@@ -312,7 +312,7 @@ from mcipy import MCIClient
 
 client = MCIClient(
     schema_file_path="schema.mci.json",
-    env_vars={"WEB_TOKEN": "my-secret-token"}
+    env_vars={"API_TOKEN": "my-secret-token"}
 )
 
 # List all tools (MCP + regular)

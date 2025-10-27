@@ -174,6 +174,9 @@ def test_mcp_tool_filtering():
 
     schema_path = Path(__file__).parent.parent / "examples" / "mcp_example.mci.json"
 
+    # Expected max tools based on filter in schema (only: read_file,write_file,list_directory)
+    EXPECTED_MAX_FILTERED_TOOLS = 3
+
     try:
         client = MCIClient(schema_file_path=str(schema_path), env_vars={})
 
@@ -183,12 +186,14 @@ def test_mcp_tool_filtering():
         for tool in fs_tools:
             print(f"  - {tool.name}")
 
-        if len(fs_tools) <= 3:  # Filter should limit to 3 tools
-            print("[green]✅ Filtering working correctly (max 3 tools expected)[/green]")
+        if len(fs_tools) <= EXPECTED_MAX_FILTERED_TOOLS:
+            print(
+                f"[green]✅ Filtering working correctly (max {EXPECTED_MAX_FILTERED_TOOLS} tools expected)[/green]"
+            )
             return True
         else:
             print(
-                f"[yellow]⚠ Expected max 3 filtered tools, got {len(fs_tools)}[/yellow]"
+                f"[yellow]⚠ Expected max {EXPECTED_MAX_FILTERED_TOOLS} filtered tools, got {len(fs_tools)}[/yellow]"
             )
             return True
     except Exception as e:
@@ -205,11 +210,11 @@ def main():
     print("[dim]Testing MCP server integration, caching, and execution[/dim]\n")
 
     # Check if npx is available
-    if os.system("which npx > /dev/null 2>&1") != 0:
+    import shutil
+
+    if shutil.which("npx") is None:
         print("[red]❌ npx not found. Please install Node.js and npm.[/red]")
-        print(
-            "[yellow]Note: MCP tests require npx to run MCP server packages.[/yellow]"
-        )
+        print("[yellow]Note: MCP tests require npx to run MCP server packages.[/yellow]")
         return
 
     tests = [
