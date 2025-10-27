@@ -104,7 +104,13 @@ async def test_uvx_connection():
     cfg = ClientCfg(
         server=StdioCfg(
             command="uvx",
-            args=["mcp-server-memory"],
+            args=[
+                "mcp-python-interpreter",
+                "--dir",
+                "/mnt/c/Users/admin/Desktop/mci/mci-py/testUvxServer",
+                "--python-path",
+                "/mnt/c/Users/admin/Desktop/mci/mci-py/venv/bin/python"
+            ],
             env={},
         )
     )
@@ -131,18 +137,27 @@ async def test_http_connection():
     print_section("HTTP CONNECTION TEST")
 
     print_info("Testing connection to HTTP MCP server")
-    print_info("This test requires a running MCP server at http://localhost:8000/mcp\n")
+    print_info(f"Server URL: {os.getenv('MCP_SERVER_URL', 'https://api.githubcopilot.com/mcp')}")
+    print_info(f"Auth token: {'Set' if os.getenv('MCP_AUTH_TOKEN') else 'Not set'}\n")
+
+    # Check if a custom MCP server URL is provided via environment variable
+    mcp_server_url = os.getenv('MCP_SERVER_URL', 'https://api.githubcopilot.com/mcp')
+    mcp_auth_token = os.getenv('MCP_AUTH_TOKEN')
+
+    headers = {}
+    if mcp_auth_token:
+        headers["Authorization"] = f"Bearer {mcp_auth_token}"
 
     cfg = ClientCfg(
         server=SseCfg(
-            url="http://localhost:8000/mcp",
-            headers={},  # Add auth headers if needed
+            url=mcp_server_url,
+            headers=headers,
         )
     )
 
     try:
         # Set a short timeout for the test
-        async with asyncio.timeout(5):
+        async with asyncio.timeout(10):
             async with LiteMcpClient(cfg) as client:
                 print_success("Connected to MCP server via HTTP")
 
@@ -152,11 +167,26 @@ async def test_http_connection():
                 print_info(f"Available tools: {', '.join(tools)}\n")
 
     except asyncio.TimeoutError:
-        print_error("Connection timeout - no server running at http://localhost:8000/mcp")
-        print_info("Skipping HTTP test (expected if no server is running)")
+        print_error(f"Connection timeout - server at {mcp_server_url} not responding")
+        print_info("Set MCP_SERVER_URL environment variable to test a different server")
+        print_info("Set MCP_AUTH_TOKEN environment variable if authentication is required")
+    except asyncio.CancelledError:
+        print_error("Connection cancelled - likely due to authentication failure")
+        print_info("Set MCP_AUTH_TOKEN environment variable with a valid token")
+    except ConnectionError as e:
+        print_error(f"Connection failed: {e}")
+        print_info("Check if the server is running and accessible")
     except Exception as e:
-        print_error(f"Failed to connect: {e}")
-        print_info("This is expected if no MCP server is running locally")
+        error_msg = str(e).lower()
+        if "401" in error_msg or "unauthorized" in error_msg:
+            print_error("Authentication failed (401 Unauthorized)")
+            print_info("Set MCP_AUTH_TOKEN environment variable with a valid token")
+        elif "404" in error_msg or "not found" in error_msg:
+            print_error("Server endpoint not found (404)")
+            print_info("Check the MCP_SERVER_URL is correct")
+        else:
+            print_error(f"Connection failed: {type(e).__name__}: {e}")
+        print_info("This is expected if authentication is not configured properly")
 
 
 async def test_configuration_models():
@@ -236,7 +266,11 @@ async def main():
         print_info(f"\nSTDIO (uvx) test skipped or failed: {e}")
 
     # HTTP test (requires running server)
-    await test_http_connection()
+    try:
+        await test_http_connection()
+    except Exception as e:
+        print_info(f"\nHTTP test failed: {type(e).__name__}: {e}")
+        print_info("This is expected if no MCP server is running or configured")
 
     print_section("ALL TESTS COMPLETED")
     print("Note: Some tests may be skipped if dependencies are not available")

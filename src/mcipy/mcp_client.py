@@ -117,31 +117,37 @@ class LiteMcpClient:
         Returns:
             The initialized client instance with active session
         """
-        srv = self.cfg.server
+        try:
+            srv = self.cfg.server
 
-        if isinstance(srv, StdioCfg):
-            # STDIO transport for local servers (uvx, npx, etc.)
-            # Merge server env vars with current environment
-            merged_env = os.environ.copy()
-            merged_env.update(srv.env)
+            if isinstance(srv, StdioCfg):
+                # STDIO transport for local servers (uvx, npx, etc.)
+                # Merge server env vars with current environment
+                merged_env = os.environ.copy()
+                merged_env.update(srv.env)
 
-            params = StdioServerParameters(command=srv.command, args=srv.args, env=merged_env)
-            self._ctx = stdio_client(params)
-        else:
-            # Streamable HTTP transport for web servers
-            # This is the modern replacement for SSE transport
-            self._ctx = streamablehttp_client(str(srv.url), headers=srv.headers or None)
+                params = StdioServerParameters(command=srv.command, args=srv.args, env=merged_env)
+                self._ctx = stdio_client(params)
+            else:
+                # Streamable HTTP transport for web servers
+                # This is the modern replacement for SSE transport
+                self._ctx = streamablehttp_client(str(srv.url), headers=srv.headers or None)
 
-        # Enter the transport context and get read/write streams
-        context_result = await self._ctx.__aenter__()
-        self._read, self._write = context_result[0], context_result[1]
+            # Enter the transport context and get read/write streams
+            context_result = await self._ctx.__aenter__()
+            self._read, self._write = context_result[0], context_result[1]
 
-        # Create and initialize the client session
-        self.session = ClientSession(self._read, self._write)
-        await self.session.__aenter__()
-        await self.session.initialize()
+            # Create and initialize the client session
+            self.session = ClientSession(self._read, self._write)
+            await self.session.__aenter__()
+            await self.session.initialize()
 
-        return self
+            return self
+
+        except Exception:
+            # If initialization fails, clean up any partially initialized resources
+            await self.__aexit__(None, None, None)
+            raise
 
     async def __aexit__(self, *exc) -> None:
         """
@@ -150,10 +156,25 @@ class LiteMcpClient:
         Args:
             exc: Exception information if an error occurred
         """
+        # Clean up session first, then transport context
+        # Handle each cleanup separately to avoid cascading failures
         if self.session:
-            await self.session.__aexit__(*exc)
+            try:
+                await self.session.__aexit__(*exc)
+            except Exception:
+                # Suppress cleanup errors - the original exception is more important
+                pass
+            finally:
+                self.session = None
+
         if self._ctx:
-            await self._ctx.__aexit__(*exc)
+            try:
+                await self._ctx.__aexit__(*exc)
+            except Exception:
+                # Suppress cleanup errors - the original exception is more important
+                pass
+            finally:
+                self._ctx = None
 
     async def list_tools(self) -> list[str]:
         """

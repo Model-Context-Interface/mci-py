@@ -267,7 +267,6 @@ class TestLiteMcpClient:
         """Test that environment variables are properly merged for STDIO."""
         import os
 
-        original_env = os.environ.copy()
         cfg = ClientCfg(server=StdioCfg(command="uvx", env={"CUSTOM_VAR": "test_value"}))
 
         mock_session = AsyncMock()
