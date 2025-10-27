@@ -218,10 +218,10 @@ class MCISchema(BaseModel):
 class TextContent(BaseModel):
     """
     Text content object for execution results.
-    
+
     Represents textual content in MCP-compatible format.
     """
-    
+
     type: str = Field(default="text")
     text: str
 
@@ -229,10 +229,10 @@ class TextContent(BaseModel):
 class ImageContent(BaseModel):
     """
     Image content object for execution results.
-    
+
     Represents base64-encoded image data in MCP-compatible format.
     """
-    
+
     type: str = Field(default="image")
     data: str
     mimeType: str
@@ -241,10 +241,10 @@ class ImageContent(BaseModel):
 class AudioContent(BaseModel):
     """
     Audio content object for execution results.
-    
+
     Represents base64-encoded audio data in MCP-compatible format.
     """
-    
+
     type: str = Field(default="audio")
     data: str
     mimeType: str
@@ -256,10 +256,10 @@ ContentObject = TextContent | ImageContent | AudioContent
 class ExecutionResultContent(BaseModel):
     """
     Inner result object containing execution result data.
-    
+
     Contains the structured content array, error status, and optional metadata.
     """
-    
+
     content: list[ContentObject]
     isError: bool
     metadata: dict[str, Any] | None = None

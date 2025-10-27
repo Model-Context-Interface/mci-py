@@ -288,7 +288,9 @@ class TestCLIExecutor:
         result = executor.execute(config, context)
 
         assert result.result.isError
-        assert "FileNotFoundError" in result.result.content[0].text or "No such file" in result.error
+        assert (
+            "FileNotFoundError" in result.result.content[0].text or "No such file" in result.error
+        )
 
     def test_execute_with_timeout(self, executor, context):
         """Test executing command with timeout."""

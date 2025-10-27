@@ -358,8 +358,8 @@ class TestExecute:
         """Test that execute returns ExecutionResult object."""
         result = client.execute("generate_text", properties={"name": "test"})
         assert isinstance(result, ExecutionResult)
-        assert hasattr(result.result, 'isError')
-        assert hasattr(result.result, 'content')
+        assert hasattr(result.result, "isError")
+        assert hasattr(result.result, "content")
         assert isinstance(result.result.content[0].text, str)
         assert "test" in result.result.content[0].text
 

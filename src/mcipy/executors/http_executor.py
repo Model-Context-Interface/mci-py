@@ -130,7 +130,7 @@ class HTTPExecutor(BaseExecutor):
                 )
             else:
                 response = requests.request(**request_kwargs)
-            
+
             # Calculate response time
             response_time_ms = int((time.time() - start_time) * 1000)
 

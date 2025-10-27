@@ -115,7 +115,6 @@ class TestFileExecutor:
         assert result.result.isError is False
         assert len(result.result.content) == 1
         assert result.result.content[0].text == "Hello World"
-        
 
     def test_execute_success_with_templating(self, executor, temp_template_file, context):
         """Test executing file read with templating."""
@@ -126,7 +125,6 @@ class TestFileExecutor:
         assert result.result.isError is False
         assert len(result.result.content) == 1
         assert result.result.content[0].text == "Hello Alice! Your key is secret123."
-        
 
     def test_execute_file_not_found(self, executor):
         """Test executing with non-existent file returns error."""

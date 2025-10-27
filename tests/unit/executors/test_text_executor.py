@@ -33,7 +33,6 @@ class TestTextExecutor:
         assert result.result.isError is False
         assert len(result.result.content) == 1
         assert result.result.content[0].text == "Hello, World!"
-        
 
     def test_execute_with_props_placeholder(self, executor, context):
         """Test executing with props placeholders."""
@@ -43,7 +42,6 @@ class TestTextExecutor:
         assert result.result.isError is False
         assert len(result.result.content) == 1
         assert result.result.content[0].text == "Hello Alice!"
-        
 
     def test_execute_with_env_placeholder(self, executor, context):
         """Test executing with environment variable placeholders."""
@@ -53,7 +51,6 @@ class TestTextExecutor:
         assert result.result.isError is False
         assert len(result.result.content) == 1
         assert result.result.content[0].text == "API Key: secret123"
-        
 
     def test_execute_with_input_placeholder(self, executor, context):
         """Test executing with input placeholders (alias for props)."""
@@ -63,7 +60,6 @@ class TestTextExecutor:
         assert result.result.isError is False
         assert len(result.result.content) == 1
         assert result.result.content[0].text == "User: Alice, Age: 30"
-        
 
     def test_execute_with_multiple_placeholders(self, executor, context):
         """Test executing with multiple placeholders."""
@@ -73,7 +69,6 @@ class TestTextExecutor:
         assert result.result.isError is False
         assert len(result.result.content) == 1
         assert result.result.content[0].text == "Alice lives in Seattle (production)"
-        
 
     def test_execute_with_for_loop(self, executor):
         """Test executing with @for loop."""
@@ -205,7 +200,6 @@ Summary: {{props.user}} has completed @for(i in range(0, 2)){{i}} @endfor tasks.
         assert result.result.isError is False
         assert len(result.result.content) == 1
         assert result.result.content[0].text == ""
-        
 
     def test_execute_whitespace_preservation(self, executor, context):
         """Test that whitespace is preserved in output."""

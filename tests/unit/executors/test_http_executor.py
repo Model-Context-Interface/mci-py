@@ -55,7 +55,7 @@ class TestHTTPExecutor:
             assert not result.result.isError
             assert len(result.result.content) == 1
             assert result.result.content[0].text == "Success"
-            
+
             mock_request.assert_called_once()
             assert mock_request.call_args[1]["method"] == "GET"
             assert mock_request.call_args[1]["url"] == "https://api.example.com/data"
@@ -83,7 +83,6 @@ class TestHTTPExecutor:
             # Content is JSON formatted as text
             assert '"status": "ok"' in result.result.content[0].text
             assert '"data":' in result.result.content[0].text
-            
 
     def test_execute_post_request_with_json_body(self, executor, context):
         """Test executing a POST request with JSON body."""
