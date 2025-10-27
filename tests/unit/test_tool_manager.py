@@ -597,3 +597,230 @@ class TestDisabledToolFiltering:
         assert len(manager.list_tools()) == 2
         assert manager.get_tool("tool_default") is not None
         assert manager.get_tool("tool_explicit_false") is not None
+
+
+class TestTagFiltering:
+    """Tests for tag-based filtering in ToolManager."""
+
+    @pytest.fixture
+    def schema_with_tags(self):
+        """Create a sample MCISchema with tools that have tags."""
+        from mcipy import Annotations
+
+        tools = [
+            Tool(
+                name="api_tool_1",
+                annotations=Annotations(title="API Tool 1"),
+                description="First API tool",
+                execution=HTTPExecutionConfig(url="https://api.example.com/tool1"),
+                tags=["api", "external", "data"],
+            ),
+            Tool(
+                name="api_tool_2",
+                annotations=Annotations(title="API Tool 2"),
+                description="Second API tool",
+                execution=HTTPExecutionConfig(url="https://api.example.com/tool2"),
+                tags=["api", "internal"],
+            ),
+            Tool(
+                name="cli_tool_1",
+                annotations=Annotations(title="CLI Tool 1"),
+                description="First CLI tool",
+                execution=CLIExecutionConfig(command="ls"),
+                tags=["cli", "filesystem"],
+            ),
+            Tool(
+                name="data_tool",
+                annotations=Annotations(title="Data Tool"),
+                description="Data processing tool",
+                execution=HTTPExecutionConfig(url="https://api.example.com/data"),
+                tags=["data", "processing", "internal"],
+            ),
+            Tool(
+                name="no_tags_tool",
+                annotations=Annotations(title="No Tags Tool"),
+                description="Tool without tags",
+                execution=TextExecutionConfig(text="Hello"),
+                tags=[],
+            ),
+        ]
+
+        return MCISchema(schemaVersion="1.0", tools=tools)
+
+    def test_tags_filter_single_tag(self, schema_with_tags):
+        """Test filtering by a single tag."""
+        manager = ToolManager(schema_with_tags)
+        tools = manager.tags(["api"])
+        tool_names = [tool.name for tool in tools]
+
+        assert len(tools) == 2
+        assert "api_tool_1" in tool_names
+        assert "api_tool_2" in tool_names
+
+    def test_tags_filter_multiple_tags_or_logic(self, schema_with_tags):
+        """Test filtering by multiple tags (OR logic)."""
+        manager = ToolManager(schema_with_tags)
+        tools = manager.tags(["api", "cli"])
+        tool_names = [tool.name for tool in tools]
+
+        # Should return tools with 'api' OR 'cli' tags
+        assert len(tools) == 3
+        assert "api_tool_1" in tool_names
+        assert "api_tool_2" in tool_names
+        assert "cli_tool_1" in tool_names
+
+    def test_tags_filter_no_matches(self, schema_with_tags):
+        """Test filtering with tags that don't match any tools."""
+        manager = ToolManager(schema_with_tags)
+        tools = manager.tags(["nonexistent"])
+
+        assert len(tools) == 0
+
+    def test_tags_filter_empty_list(self, schema_with_tags):
+        """Test filtering with empty tag list."""
+        manager = ToolManager(schema_with_tags)
+        tools = manager.tags([])
+
+        # Empty tag list should return no tools
+        assert len(tools) == 0
+
+    def test_tags_filter_case_sensitive(self, schema_with_tags):
+        """Test that tag filtering is case-sensitive."""
+        manager = ToolManager(schema_with_tags)
+        tools_lower = manager.tags(["api"])
+        tools_upper = manager.tags(["API"])
+
+        # Should find 'api' but not 'API'
+        assert len(tools_lower) == 2
+        assert len(tools_upper) == 0
+
+    def test_tags_filter_excludes_tools_without_tags(self, schema_with_tags):
+        """Test that filtering excludes tools without tags."""
+        manager = ToolManager(schema_with_tags)
+        tools = manager.tags(["data"])
+        tool_names = [tool.name for tool in tools]
+
+        assert len(tools) == 2
+        assert "api_tool_1" in tool_names
+        assert "data_tool" in tool_names
+        assert "no_tags_tool" not in tool_names
+
+    def test_without_tags_single_tag(self, schema_with_tags):
+        """Test excluding tools with a single tag."""
+        manager = ToolManager(schema_with_tags)
+        tools = manager.withoutTags(["api"])
+        tool_names = [tool.name for tool in tools]
+
+        # Should exclude api_tool_1 and api_tool_2
+        assert len(tools) == 3
+        assert "cli_tool_1" in tool_names
+        assert "data_tool" in tool_names
+        assert "no_tags_tool" in tool_names
+        assert "api_tool_1" not in tool_names
+        assert "api_tool_2" not in tool_names
+
+    def test_without_tags_multiple_tags_or_logic(self, schema_with_tags):
+        """Test excluding tools with multiple tags (OR logic)."""
+        manager = ToolManager(schema_with_tags)
+        tools = manager.withoutTags(["api", "cli"])
+        tool_names = [tool.name for tool in tools]
+
+        # Should exclude tools with 'api' OR 'cli' tags
+        assert len(tools) == 2
+        assert "data_tool" in tool_names
+        assert "no_tags_tool" in tool_names
+
+    def test_without_tags_no_matches(self, schema_with_tags):
+        """Test excluding with tags that don't match any tools."""
+        manager = ToolManager(schema_with_tags)
+        tools = manager.withoutTags(["nonexistent"])
+
+        # Should return all tools
+        assert len(tools) == 5
+
+    def test_without_tags_empty_list(self, schema_with_tags):
+        """Test excluding with empty tag list."""
+        manager = ToolManager(schema_with_tags)
+        tools = manager.withoutTags([])
+
+        # Empty tag list should return all tools
+        assert len(tools) == 5
+
+    def test_without_tags_case_sensitive(self, schema_with_tags):
+        """Test that withoutTags filtering is case-sensitive."""
+        manager = ToolManager(schema_with_tags)
+        tools_lower = manager.withoutTags(["api"])
+        tools_upper = manager.withoutTags(["API"])
+
+        # Should exclude 'api' but not 'API'
+        assert len(tools_lower) == 3
+        assert len(tools_upper) == 5  # No tools excluded
+
+    def test_without_tags_includes_tools_without_tags(self, schema_with_tags):
+        """Test that withoutTags includes tools without tags."""
+        manager = ToolManager(schema_with_tags)
+        tools = manager.withoutTags(["api", "cli", "data"])
+        tool_names = [tool.name for tool in tools]
+
+        assert len(tools) == 1
+        assert "no_tags_tool" in tool_names
+
+    def test_tags_filter_with_disabled_tools(self):
+        """Test that tag filtering excludes disabled tools."""
+        from mcipy import Annotations
+
+        tools = [
+            Tool(
+                name="enabled_api_tool",
+                annotations=Annotations(title="Enabled API Tool"),
+                execution=HTTPExecutionConfig(url="https://api.example.com"),
+                tags=["api"],
+            ),
+            Tool(
+                name="disabled_api_tool",
+                disabled=True,
+                annotations=Annotations(title="Disabled API Tool"),
+                execution=HTTPExecutionConfig(url="https://api.example.com"),
+                tags=["api"],
+            ),
+        ]
+        schema = MCISchema(schemaVersion="1.0", tools=tools)
+        manager = ToolManager(schema)
+
+        filtered = manager.tags(["api"])
+        tool_names = [tool.name for tool in filtered]
+
+        # Should only include enabled tools
+        assert len(filtered) == 1
+        assert "enabled_api_tool" in tool_names
+        assert "disabled_api_tool" not in tool_names
+
+    def test_without_tags_filter_with_disabled_tools(self):
+        """Test that withoutTags filtering excludes disabled tools."""
+        from mcipy import Annotations
+
+        tools = [
+            Tool(
+                name="enabled_no_api",
+                annotations=Annotations(title="Enabled No API"),
+                execution=HTTPExecutionConfig(url="https://api.example.com"),
+                tags=["data"],
+            ),
+            Tool(
+                name="disabled_no_api",
+                disabled=True,
+                annotations=Annotations(title="Disabled No API"),
+                execution=HTTPExecutionConfig(url="https://api.example.com"),
+                tags=["data"],
+            ),
+        ]
+        schema = MCISchema(schemaVersion="1.0", tools=tools)
+        manager = ToolManager(schema)
+
+        filtered = manager.withoutTags(["api"])
+        tool_names = [tool.name for tool in filtered]
+
+        # Should only include enabled tools
+        assert len(filtered) == 1
+        assert "enabled_no_api" in tool_names
+        assert "disabled_no_api" not in tool_names

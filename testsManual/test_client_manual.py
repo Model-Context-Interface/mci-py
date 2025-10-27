@@ -32,7 +32,7 @@ def test_initialization():
     client = MCIClient(json_file_path=schema_path)
     print(f"   Client created: {client is not None}")
     print(f"   Available tools: {len(client.list_tools())}")
-    print(f"   Status: ✓ Success\n")
+    print("   Status: ✓ Success\n")
 
     # Test 2: Initialize with environment variables
     print("2. Initialize with environment variables:")
@@ -46,7 +46,7 @@ def test_initialization():
     client = MCIClient(json_file_path=schema_path, env_vars=env_vars)
     print(f"   Client created: {client is not None}")
     print(f"   Environment variables set: {len(env_vars)}")
-    print(f"   Status: ✓ Success\n")
+    print("   Status: ✓ Success\n")
 
     # Test 3: Initialize with nonexistent file
     print("3. Initialize with nonexistent file (error case):")
@@ -56,7 +56,7 @@ def test_initialization():
     except MCIClientError as e:
         print(f"   Error caught: {type(e).__name__}")
         print(f"   Message: {str(e)[:60]}...")
-        print(f"   Status: ✓ Success\n")
+        print("   Status: ✓ Success\n")
 
     return client
 
@@ -71,7 +71,7 @@ def test_list_tools(client: MCIClient):
     print(f"   Total tools: {len(tool_names)}")
     for i, name in enumerate(tool_names, 1):
         print(f"   {i}. {name}")
-    print(f"   Status: ✓ Success\n")
+    print("   Status: ✓ Success\n")
 
     # Test 2: Get all tool objects
     print("2. Get all tool objects:")
@@ -80,7 +80,7 @@ def test_list_tools(client: MCIClient):
     for tool in tools[:3]:  # Show first 3
         print(f"   - {tool.name}: {tool.title}")
     print(f"   ... and {len(tools) - 3} more")
-    print(f"   Status: ✓ Success\n")
+    print("   Status: ✓ Success\n")
 
 
 def test_filtering(client: MCIClient):
@@ -90,19 +90,19 @@ def test_filtering(client: MCIClient):
     # Test 1: Filter with only()
     print("1. Filter to include only specific tools:")
     filtered = client.only(["get_weather", "create_report"])
-    print(f"   Requested tools: ['get_weather', 'create_report']")
+    print("   Requested tools: ['get_weather', 'create_report']")
     print(f"   Filtered tools: {[t.name for t in filtered]}")
     print(f"   Count: {len(filtered)}")
-    print(f"   Status: ✓ Success\n")
+    print("   Status: ✓ Success\n")
 
     # Test 2: Filter with without()
     print("2. Filter to exclude specific tools:")
     excluded = client.without(["get_weather", "create_report"])
     excluded_names = [t.name for t in excluded]
-    print(f"   Excluded tools: ['get_weather', 'create_report']")
+    print("   Excluded tools: ['get_weather', 'create_report']")
     print(f"   Remaining tools: {excluded_names}")
     print(f"   Count: {len(excluded)}")
-    print(f"   Status: ✓ Success\n")
+    print("   Status: ✓ Success\n")
 
     # Test 3: Combine filters (conceptually - show both approaches)
     print("3. Multiple filtering approaches:")
@@ -110,7 +110,7 @@ def test_filtering(client: MCIClient):
     without_weather = client.without(["create_report", "search_files"])
     print(f"   Only weather-related: {[t.name for t in only_weather]}")
     print(f"   Without specific tools: {[t.name for t in without_weather]}")
-    print(f"   Status: ✓ Success\n")
+    print("   Status: ✓ Success\n")
 
 
 def test_get_tool_schema(client: MCIClient):
@@ -123,7 +123,7 @@ def test_get_tool_schema(client: MCIClient):
     print(f"   Schema type: {schema.get('type', 'N/A')}")
     print(f"   Properties: {list(schema.get('properties', {}).keys())}")
     print(f"   Required: {schema.get('required', [])}")
-    print(f"   Status: ✓ Success\n")
+    print("   Status: ✓ Success\n")
 
     # Test 2: Get schema for tool with complex requirements
     print("2. Get schema for 'create_report' tool:")
@@ -131,7 +131,7 @@ def test_get_tool_schema(client: MCIClient):
     print(f"   Schema type: {schema.get('type', 'N/A')}")
     print(f"   Properties: {list(schema.get('properties', {}).keys())}")
     print(f"   Required: {schema.get('required', [])}")
-    print(f"   Status: ✓ Success\n")
+    print("   Status: ✓ Success\n")
 
     # Test 3: Get schema for nonexistent tool (error case)
     print("3. Get schema for nonexistent tool (error case):")
@@ -141,7 +141,7 @@ def test_get_tool_schema(client: MCIClient):
     except MCIClientError as e:
         print(f"   Error caught: {type(e).__name__}")
         print(f"   Message: {str(e)}")
-        print(f"   Status: ✓ Success\n")
+        print("   Status: ✓ Success\n")
 
 
 def test_execution(client: MCIClient):
@@ -151,11 +151,11 @@ def test_execution(client: MCIClient):
     # Test 1: Execute text generation tool
     print("1. Execute 'generate_message' tool:")
     result = client.execute("generate_message", properties={"username": "TestUser"})
-    print(f"   Tool: generate_message")
-    print(f"   Properties: {{'username': 'TestUser'}}")
+    print("   Tool: generate_message")
+    print("   Properties: {'username': 'TestUser'}")
     print(f"   Result Error: {result.result.isError}")
     print(f"   Result Content: {result.result.content[0].text}")
-    print(f"   Status: ✓ Success\n")
+    print("   Status: ✓ Success\n")
 
     # Test 2: Execute with missing required properties (error case)
     print("2. Execute with missing required properties (error case):")
@@ -165,16 +165,16 @@ def test_execution(client: MCIClient):
     except MCIClientError as e:
         print(f"   Error caught: {type(e).__name__}")
         print(f"   Message: {str(e)[:80]}...")
-        print(f"   Status: ✓ Success\n")
+        print("   Status: ✓ Success\n")
 
     # Test 3: Execute tool with environment variable templating
     print("3. Execute with environment variable templating:")
     result = client.execute("generate_message", properties={"username": "{{env.USERNAME}}"})
-    print(f"   Tool: generate_message")
-    print(f"   Properties: {{'username': '{{{{env.USERNAME}}}}'}}")
+    print("   Tool: generate_message")
+    print("   Properties: {'username': '{{env.USERNAME}}'}")
     print(f"   Result Error: {result.result.isError}")
     print(f"   Result Content: {result.result.content[0].text}")
-    print(f"   Status: ✓ Success\n")
+    print("   Status: ✓ Success\n")
 
     # Test 4: Execute nonexistent tool (error case)
     print("4. Execute nonexistent tool (error case):")
@@ -184,7 +184,7 @@ def test_execution(client: MCIClient):
     except MCIClientError as e:
         print(f"   Error caught: {type(e).__name__}")
         print(f"   Message: {str(e)}")
-        print(f"   Status: ✓ Success\n")
+        print("   Status: ✓ Success\n")
 
 
 def test_complete_workflow():
@@ -201,30 +201,30 @@ def test_complete_workflow():
     print("1. Initialize client:")
     client = MCIClient(json_file_path=schema_path, env_vars=env_vars)
     print(f"   Client initialized with {len(env_vars)} env vars")
-    print(f"   Status: ✓ Success\n")
+    print("   Status: ✓ Success\n")
 
     print("2. List available tools:")
     all_tools = client.list_tools()
     print(f"   Found {len(all_tools)} tools: {', '.join(all_tools[:3])}...")
-    print(f"   Status: ✓ Success\n")
+    print("   Status: ✓ Success\n")
 
     print("3. Filter to safe tools (exclude potentially dangerous operations):")
     safe_tools = client.without(["create_report", "search_files"])
     safe_tool_names = [t.name for t in safe_tools]
     print(f"   Safe tools ({len(safe_tools)}): {', '.join(safe_tool_names)}")
-    print(f"   Status: ✓ Success\n")
+    print("   Status: ✓ Success\n")
 
     print("4. Get schema for a specific tool:")
     schema = client.get_tool_schema("generate_message")
-    print(f"   Tool: generate_message")
+    print("   Tool: generate_message")
     print(f"   Required properties: {schema.get('required', [])}")
-    print(f"   Status: ✓ Success\n")
+    print("   Status: ✓ Success\n")
 
     print("5. Execute the tool:")
     result = client.execute("generate_message", properties={"username": "workflow_user"})
     print(f"   Execution successful: {not result.result.isError}")
     print(f"   Content: {result.result.content[0].text}")
-    print(f"   Status: ✓ Success\n")
+    print("   Status: ✓ Success\n")
 
 
 def test_multiple_clients():
@@ -235,22 +235,22 @@ def test_multiple_clients():
 
     print("1. Create first client with API_KEY:")
     client1 = MCIClient(schema_path, env_vars={"API_KEY": "key-123", "ENV": "production"})
-    print(f"   Client 1 created with env: production")
+    print("   Client 1 created with env: production")
     print(f"   Tools available: {len(client1.list_tools())}")
-    print(f"   Status: ✓ Success\n")
+    print("   Status: ✓ Success\n")
 
     print("2. Create second client with different environment:")
     client2 = MCIClient(schema_path, env_vars={"API_KEY": "key-456", "ENV": "development"})
-    print(f"   Client 2 created with env: development")
+    print("   Client 2 created with env: development")
     print(f"   Tools available: {len(client2.list_tools())}")
-    print(f"   Status: ✓ Success\n")
+    print("   Status: ✓ Success\n")
 
     print("3. Verify clients are independent:")
     print(f"   Client 1 env vars: {len(client1._env_vars)} vars")
     print(f"   Client 2 env vars: {len(client2._env_vars)} vars")
     print(f"   Same tool count: {len(client1.list_tools()) == len(client2.list_tools())}")
     print(f"   Different env values: {client1._env_vars != client2._env_vars}")
-    print(f"   Status: ✓ Success\n")
+    print("   Status: ✓ Success\n")
 
 
 def test_error_handling():
@@ -267,7 +267,7 @@ def test_error_handling():
         print("   Status: ✗ Failed")
     except MCIClientError as e:
         print(f"   MCIClientError caught: '{str(e)}'")
-        print(f"   Status: ✓ Success\n")
+        print("   Status: ✓ Success\n")
 
     # Test 2: Nonexistent tool in get_tool_schema
     print("2. Get schema for nonexistent tool:")
@@ -276,7 +276,7 @@ def test_error_handling():
         print("   Status: ✗ Failed")
     except MCIClientError as e:
         print(f"   MCIClientError caught: '{str(e)}'")
-        print(f"   Status: ✓ Success\n")
+        print("   Status: ✓ Success\n")
 
     # Test 3: Missing required properties
     print("3. Execute with missing required properties:")
@@ -284,9 +284,9 @@ def test_error_handling():
         client.execute("get_weather", properties={})
         print("   Status: ✗ Failed")
     except MCIClientError as e:
-        print(f"   MCIClientError caught")
+        print("   MCIClientError caught")
         print(f"   Message indicates missing properties: {'requires properties' in str(e).lower()}")
-        print(f"   Status: ✓ Success\n")
+        print("   Status: ✓ Success\n")
 
     # Test 4: Invalid schema file
     print("4. Initialize with invalid schema file:")
@@ -294,9 +294,9 @@ def test_error_handling():
         MCIClient("/invalid/path/schema.json")
         print("   Status: ✗ Failed")
     except MCIClientError as e:
-        print(f"   MCIClientError caught")
+        print("   MCIClientError caught")
         print(f"   Message indicates file error: {'Failed to load schema' in str(e)}")
-        print(f"   Status: ✓ Success\n")
+        print("   Status: ✓ Success\n")
 
 
 def main():

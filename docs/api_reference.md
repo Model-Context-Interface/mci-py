@@ -10,6 +10,8 @@ This document provides a comprehensive API reference for the Python MCI Adapter 
     - [tools()](#tools)
     - [only()](#only)
     - [without()](#without)
+    - [tags()](#tags)
+    - [withoutTags()](#withouttags)
     - [execute()](#execute)
     - [list_tools()](#list_tools)
     - [get_tool_schema()](#get_tool_schema)
@@ -291,6 +293,143 @@ for tool in safe_tools:
 **Error Response:**
 
 No errors - returns all tools if specified names don't exist.
+
+---
+
+#### `tags()`
+
+Filter tools to include only those with at least one matching tag.
+
+**Method Signature:**
+
+```python
+def tags(self, tags: list[str]) -> list[Tool]
+```
+
+**Parameters:**
+
+| Name | Type | Required | Description |
+|------|------|----------|-------------|
+| `tags` | `list[str]` | Yes | List of tags to filter by (OR logic - tool must have at least one matching tag) |
+
+**Returns:**
+
+| Type | Description |
+|------|-------------|
+| `list[Tool]` | Filtered list of Tool objects that have at least one of the specified tags |
+
+**Example:**
+
+```python
+from mcipy import MCIClient
+
+client = MCIClient(schema_file_path="example.mci.json")
+
+# Get all tools tagged with "api" or "database"
+api_or_db_tools = client.tags(["api", "database"])
+
+for tool in api_or_db_tools:
+    print(f"Tool: {tool.name}, Tags: {tool.tags}")
+```
+
+**Success Response:**
+
+```python
+[
+    Tool(
+        name="github_api",
+        description="GitHub API client",
+        tags=["api", "external"],
+        execution=HTTPExecutionConfig(...)
+    ),
+    Tool(
+        name="database_query",
+        description="Query database",
+        tags=["database", "internal"],
+        execution=CLIExecutionConfig(...)
+    )
+]
+```
+
+**Error Response:**
+
+No errors - returns empty list if no tools have any of the specified tags.
+
+**Notes:**
+
+- Tags are case-sensitive and matched exactly as provided
+- Uses OR logic: a tool is included if it has ANY of the specified tags
+- Tools without tags are never included
+- Empty tag list returns empty result
+
+---
+
+#### `withoutTags()`
+
+Filter tools to exclude those with any matching tag.
+
+**Method Signature:**
+
+```python
+def withoutTags(self, tags: list[str]) -> list[Tool]
+```
+
+**Parameters:**
+
+| Name | Type | Required | Description |
+|------|------|----------|-------------|
+| `tags` | `list[str]` | Yes | List of tags to exclude (OR logic - tool is excluded if it has any matching tag) |
+
+**Returns:**
+
+| Type | Description |
+|------|-------------|
+| `list[Tool]` | Filtered list of Tool objects that do NOT have any of the specified tags |
+
+**Example:**
+
+```python
+from mcipy import MCIClient
+
+client = MCIClient(schema_file_path="example.mci.json")
+
+# Get all tools that are NOT tagged with "external" or "deprecated"
+internal_tools = client.withoutTags(["external", "deprecated"])
+
+for tool in internal_tools:
+    print(f"Internal tool: {tool.name}")
+```
+
+**Success Response:**
+
+```python
+[
+    Tool(
+        name="database_query",
+        description="Query database",
+        tags=["database", "internal"],
+        execution=CLIExecutionConfig(...)
+    ),
+    Tool(
+        name="generate_report",
+        description="Generate internal report",
+        tags=["internal", "reporting"],
+        execution=TextExecutionConfig(...)
+    )
+    # Tools with "external" or "deprecated" tags are excluded
+]
+```
+
+**Error Response:**
+
+No errors - returns all tools if none have any of the specified tags.
+
+**Notes:**
+
+- Tags are case-sensitive and matched exactly as provided
+- Uses OR logic for exclusion: a tool is excluded if it has ANY of the specified tags
+- Tools without tags are always included (they don't have the excluded tags)
+- Empty tag list returns all tools
 
 ---
 

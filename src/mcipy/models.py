@@ -197,6 +197,7 @@ class Tool(BaseModel):
     execution: HTTPExecutionConfig | CLIExecutionConfig | FileExecutionConfig | TextExecutionConfig
     enableAnyPaths: bool = Field(default=False)
     directoryAllowList: list[str] = Field(default_factory=list)
+    tags: list[str] = Field(default_factory=list)
 
 
 class MCISchema(BaseModel):

@@ -163,6 +163,16 @@ Each tool in the `tools` array represents a single executable operation.
 | `execution`          | object  | **Required** | Execution configuration (see [Execution Types](#execution-types)) |
 | `enableAnyPaths`     | boolean | Optional     | Override schema-level path restriction (default: `false`)         |
 | `directoryAllowList` | array   | Optional     | Override schema-level allowed directories (default: `[]`)         |
+| `tags`               | array   | Optional     | Array of string tags for filtering (default: `[]`)                |
+
+### Tags
+
+**`tags`** (array of strings, default: `[]`)
+- List of tags for categorizing and filtering tools
+- Tags are case-sensitive and matched exactly as provided
+- Used with `tags()` and `withoutTags()` filter methods in MCIClient and ToolManager
+- Tools can have zero or more tags
+- Common tag examples: `"api"`, `"database"`, `"internal"`, `"external"`, `"deprecated"`
 
 ### Disabled Tools
 
@@ -209,6 +219,7 @@ The `annotations` object provides optional metadata and behavioral hints about t
     "openWorldHint": true
   },
   "description": "Fetch current weather for a location",
+  "tags": ["api", "external", "weather"],
   "inputSchema": {
     "type": "object",
     "properties": {

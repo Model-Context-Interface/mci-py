@@ -574,3 +574,163 @@ class TestYAMLSupport:
         """Test that missing both parameters raises an error."""
         with pytest.raises(MCIClientError, match="must be provided"):
             MCIClient()
+
+
+class TestTagFiltering:
+    """Tests for tag-based filtering in MCIClient."""
+
+    @pytest.fixture
+    def schema_with_tags(self, tmp_path):
+        """Create a sample schema file with tools that have tags."""
+        schema = {
+            "schemaVersion": "1.0",
+            "tools": [
+                {
+                    "name": "api_tool_1",
+                    "description": "First API tool",
+                    "execution": {"type": "http", "url": "https://api.example.com/tool1"},
+                    "tags": ["api", "external", "data"],
+                },
+                {
+                    "name": "api_tool_2",
+                    "description": "Second API tool",
+                    "execution": {"type": "http", "url": "https://api.example.com/tool2"},
+                    "tags": ["api", "internal"],
+                },
+                {
+                    "name": "cli_tool_1",
+                    "description": "First CLI tool",
+                    "execution": {"type": "cli", "command": "ls"},
+                    "tags": ["cli", "filesystem"],
+                },
+                {
+                    "name": "data_tool",
+                    "description": "Data processing tool",
+                    "execution": {"type": "http", "url": "https://api.example.com/data"},
+                    "tags": ["data", "processing", "internal"],
+                },
+                {
+                    "name": "no_tags_tool",
+                    "description": "Tool without tags",
+                    "execution": {"type": "text", "text": "Hello"},
+                    "tags": [],
+                },
+            ],
+        }
+
+        schema_file = tmp_path / "schema_with_tags.json"
+        schema_file.write_text(json.dumps(schema))
+        return str(schema_file)
+
+    def test_tags_filter_single_tag(self, schema_with_tags):
+        """Test filtering by a single tag."""
+        client = MCIClient(schema_file_path=schema_with_tags)
+        tools = client.tags(["api"])
+        tool_names = [tool.name for tool in tools]
+
+        assert len(tools) == 2
+        assert "api_tool_1" in tool_names
+        assert "api_tool_2" in tool_names
+
+    def test_tags_filter_multiple_tags(self, schema_with_tags):
+        """Test filtering by multiple tags (OR logic)."""
+        client = MCIClient(schema_file_path=schema_with_tags)
+        tools = client.tags(["api", "cli"])
+        tool_names = [tool.name for tool in tools]
+
+        # Should return tools with 'api' OR 'cli' tags
+        assert len(tools) == 3
+        assert "api_tool_1" in tool_names
+        assert "api_tool_2" in tool_names
+        assert "cli_tool_1" in tool_names
+
+    def test_tags_filter_no_matches(self, schema_with_tags):
+        """Test filtering with tags that don't match any tools."""
+        client = MCIClient(schema_file_path=schema_with_tags)
+        tools = client.tags(["nonexistent"])
+
+        assert len(tools) == 0
+
+    def test_tags_filter_empty_list(self, schema_with_tags):
+        """Test filtering with empty tag list."""
+        client = MCIClient(schema_file_path=schema_with_tags)
+        tools = client.tags([])
+
+        assert len(tools) == 0
+
+    def test_tags_returns_tool_objects(self, schema_with_tags):
+        """Test that tags() returns Tool objects."""
+        client = MCIClient(schema_file_path=schema_with_tags)
+        tools = client.tags(["api"])
+
+        for tool in tools:
+            assert isinstance(tool, Tool)
+
+    def test_without_tags_single_tag(self, schema_with_tags):
+        """Test excluding tools with a single tag."""
+        client = MCIClient(schema_file_path=schema_with_tags)
+        tools = client.withoutTags(["api"])
+        tool_names = [tool.name for tool in tools]
+
+        # Should exclude api_tool_1 and api_tool_2
+        assert len(tools) == 3
+        assert "cli_tool_1" in tool_names
+        assert "data_tool" in tool_names
+        assert "no_tags_tool" in tool_names
+        assert "api_tool_1" not in tool_names
+        assert "api_tool_2" not in tool_names
+
+    def test_without_tags_multiple_tags(self, schema_with_tags):
+        """Test excluding tools with multiple tags (OR logic)."""
+        client = MCIClient(schema_file_path=schema_with_tags)
+        tools = client.withoutTags(["api", "cli"])
+        tool_names = [tool.name for tool in tools]
+
+        # Should exclude tools with 'api' OR 'cli' tags
+        assert len(tools) == 2
+        assert "data_tool" in tool_names
+        assert "no_tags_tool" in tool_names
+
+    def test_without_tags_no_matches(self, schema_with_tags):
+        """Test excluding with tags that don't match any tools."""
+        client = MCIClient(schema_file_path=schema_with_tags)
+        tools = client.withoutTags(["nonexistent"])
+
+        # Should return all tools
+        assert len(tools) == 5
+
+    def test_without_tags_empty_list(self, schema_with_tags):
+        """Test excluding with empty tag list."""
+        client = MCIClient(schema_file_path=schema_with_tags)
+        tools = client.withoutTags([])
+
+        # Empty tag list should return all tools
+        assert len(tools) == 5
+
+    def test_without_tags_returns_tool_objects(self, schema_with_tags):
+        """Test that withoutTags() returns Tool objects."""
+        client = MCIClient(schema_file_path=schema_with_tags)
+        tools = client.withoutTags(["api"])
+
+        for tool in tools:
+            assert isinstance(tool, Tool)
+
+    def test_tags_case_sensitive(self, schema_with_tags):
+        """Test that tag filtering is case-sensitive."""
+        client = MCIClient(schema_file_path=schema_with_tags)
+        tools_lower = client.tags(["api"])
+        tools_upper = client.tags(["API"])
+
+        # Should find 'api' but not 'API'
+        assert len(tools_lower) == 2
+        assert len(tools_upper) == 0
+
+    def test_without_tags_case_sensitive(self, schema_with_tags):
+        """Test that withoutTags filtering is case-sensitive."""
+        client = MCIClient(schema_file_path=schema_with_tags)
+        tools_lower = client.withoutTags(["api"])
+        tools_upper = client.withoutTags(["API"])
+
+        # Should exclude 'api' but not 'API'
+        assert len(tools_lower) == 3
+        assert len(tools_upper) == 5  # No tools excluded

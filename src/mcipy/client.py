@@ -137,6 +137,38 @@ class MCIClient:
         """
         return self._tool_manager.filter_tools(without=tool_names)
 
+    def tags(self, tags: list[str]) -> list[Tool]:
+        """
+        Filter tools to include only those with at least one matching tag (excluding disabled tools).
+
+        Returns tools that have at least one tag matching any tag in the provided list.
+        Uses OR logic: a tool is included if it has any of the specified tags.
+        Tags are matched case-sensitively and exactly as provided.
+
+        Args:
+            tags: List of tags to filter by
+
+        Returns:
+            Filtered list of enabled Tool objects that have at least one matching tag
+        """
+        return self._tool_manager.tags(tags)
+
+    def withoutTags(self, tags: list[str]) -> list[Tool]:
+        """
+        Filter tools to exclude those with any matching tag (excluding disabled tools).
+
+        Returns tools that do NOT have any tags matching the provided list.
+        Uses OR logic for exclusion: a tool is excluded if it has any of the specified tags.
+        Tags are matched case-sensitively and exactly as provided.
+
+        Args:
+            tags: List of tags to exclude
+
+        Returns:
+            Filtered list of enabled Tool objects that do not have any of the specified tags
+        """
+        return self._tool_manager.withoutTags(tags)
+
     def execute(self, tool_name: str, properties: dict[str, Any] | None = None) -> ExecutionResult:
         """
         Execute a tool by name with the provided properties.

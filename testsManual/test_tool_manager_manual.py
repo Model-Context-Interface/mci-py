@@ -28,13 +28,13 @@ def test_loading_and_initialization():
 
     # Load schema from file
     schema = SchemaParser.parse_file("example.mci.json")
-    print(f"✓ Schema loaded successfully")
+    print("✓ Schema loaded successfully")
     print(f"  Schema version: {schema.schemaVersion}")
     print(f"  Number of tools: {len(schema.tools)}")
 
     # Initialize ToolManager
     manager = ToolManager(schema)
-    print(f"✓ ToolManager initialized")
+    print("✓ ToolManager initialized")
     print(f"  Manager contains {len(manager.list_tools())} tools")
 
 
@@ -54,13 +54,13 @@ def test_get_tool():
         print(f"     Description: {tool.description}")
         print(f"     Execution type: {tool.execution.type.value}")
     else:
-        print(f"   ✗ Tool not found")
+        print("   ✗ Tool not found")
 
     # Test non-existent tool
     print("\n2. Retrieve non-existent tool:")
     tool = manager.get_tool("nonexistent_tool")
     if tool is None:
-        print(f"   ✓ Correctly returned None for non-existent tool")
+        print("   ✓ Correctly returned None for non-existent tool")
     else:
         print(f"   ✗ Unexpectedly found tool: {tool.name}")
 
@@ -68,7 +68,7 @@ def test_get_tool():
     print("\n3. Test case sensitivity:")
     tool = manager.get_tool("GET_WEATHER")
     if tool is None:
-        print(f"   ✓ Tool names are case-sensitive (GET_WEATHER not found)")
+        print("   ✓ Tool names are case-sensitive (GET_WEATHER not found)")
     else:
         print(f"   ✗ Found tool with wrong case: {tool.name}")
 
@@ -102,14 +102,14 @@ def test_filter_tools():
     # Test 'only' filter
     print("\n1. Filter with 'only' parameter:")
     filtered = manager.filter_tools(only=["get_weather", "create_report"])
-    print(f"   Requested: get_weather, create_report")
+    print("   Requested: get_weather, create_report")
     print(f"   Result: {[tool.name for tool in filtered]}")
     print(f"   ✓ Filtered to {len(filtered)} tools")
 
     # Test 'without' filter
     print("\n2. Filter with 'without' parameter:")
     filtered = manager.filter_tools(without=["search_files"])
-    print(f"   Excluded: search_files")
+    print("   Excluded: search_files")
     print(f"   Result: {[tool.name for tool in filtered]}")
     print(f"   ✓ Filtered to {len(filtered)} tools")
 
@@ -119,8 +119,8 @@ def test_filter_tools():
         only=["get_weather", "create_report", "search_files"],
         without=["search_files"]
     )
-    print(f"   Only: get_weather, create_report, search_files")
-    print(f"   Without: search_files")
+    print("   Only: get_weather, create_report, search_files")
+    print("   Without: search_files")
     print(f"   Result: {[tool.name for tool in filtered]}")
     print(f"   ✓ Filtered to {len(filtered)} tools (search_files excluded)")
 
@@ -128,7 +128,7 @@ def test_filter_tools():
     print("\n4. No filters (all tools):")
     filtered = manager.filter_tools()
     print(f"   Result: {len(filtered)} tools")
-    print(f"   ✓ Returns all tools when no filters specified")
+    print("   ✓ Returns all tools when no filters specified")
 
 
 def test_execute_tool():
@@ -146,7 +146,7 @@ def test_execute_tool():
             properties={"username": "Alice"},
             env_vars={"CURRENT_DATE": "2024-01-15"}
         )
-        print(f"   ✓ Execution successful")
+        print("   ✓ Execution successful")
         print(f"     Error: {result.result.isError}")
         print(f"     Content: {result.result.content[0].text}")
     except ToolManagerError as e:
@@ -156,7 +156,7 @@ def test_execute_tool():
     print("\n2. Execute 'get_weather' without required 'location':")
     try:
         result = manager.execute("get_weather", properties={})
-        print(f"   ✗ Should have raised error but didn't")
+        print("   ✗ Should have raised error but didn't")
     except ToolManagerError as e:
         print(f"   ✓ Correctly raised error: {e}")
 
@@ -167,12 +167,12 @@ def test_execute_tool():
             "get_weather",
             properties={"location": "New York"}
         )
-        print(f"   ✓ Execution attempted")
+        print("   ✓ Execution attempted")
         print(f"     Error: {result.result.isError}")
         # Note: This will fail because we don't have a real API, but validation passed
         if result.result.isError:
             print(f"     Error message: {result.result.content[0].text}")
-            print(f"     (Expected - no real API endpoint)")
+            print("     (Expected - no real API endpoint)")
     except ToolManagerError as e:
         print(f"   ✗ Validation error: {e}")
 
@@ -180,7 +180,7 @@ def test_execute_tool():
     print("\n4. Execute non-existent tool:")
     try:
         result = manager.execute("nonexistent_tool", properties={})
-        print(f"   ✗ Should have raised error but didn't")
+        print("   ✗ Should have raised error but didn't")
     except ToolManagerError as e:
         print(f"   ✓ Correctly raised error: {e}")
 
@@ -192,7 +192,7 @@ def test_execute_tool():
             properties={"title": "My Report"}
             # Missing 'content' which is required
         )
-        print(f"   ✗ Should have raised error but didn't")
+        print("   ✗ Should have raised error but didn't")
     except ToolManagerError as e:
         print(f"   ✓ Correctly raised error: {e}")
 
@@ -203,12 +203,12 @@ def test_execute_tool():
             "load_template",
             properties={"username": "Bob"}
         )
-        print(f"   ✓ Execution attempted")
+        print("   ✓ Execution attempted")
         print(f"     Error: {result.result.isError}")
         # Will fail because file might not exist
         if result.result.isError:
             print(f"     Error message: {result.result.content[0].text}")
-            print(f"     (Expected - template file may not exist)")
+            print("     (Expected - template file may not exist)")
     except ToolManagerError as e:
         print(f"   ✗ Validation error: {e}")
 
@@ -224,19 +224,19 @@ def test_edge_cases():
     print("\n1. Filter with empty 'only' list:")
     filtered = manager.filter_tools(only=[])
     print(f"   Result: {len(filtered)} tools")
-    print(f"   ✓ Empty 'only' list returns no tools")
+    print("   ✓ Empty 'only' list returns no tools")
 
     # Test 2: Empty without list
     print("\n2. Filter with empty 'without' list:")
     filtered = manager.filter_tools(without=[])
     print(f"   Result: {len(filtered)} tools")
-    print(f"   ✓ Empty 'without' list returns all tools")
+    print("   ✓ Empty 'without' list returns all tools")
 
     # Test 3: Execute with None properties
     print("\n3. Execute with None properties (tool requires username):")
     try:
         result = manager.execute("generate_message", properties=None)
-        print(f"   ✗ Should have raised error for missing required properties")
+        print("   ✗ Should have raised error for missing required properties")
     except ToolManagerError as e:
         print(f"   ✓ Correctly raised error for missing required properties: {e}")
 
@@ -244,7 +244,7 @@ def test_edge_cases():
     print("\n4. Case sensitivity in execute:")
     try:
         result = manager.execute("GENERATE_MESSAGE", properties={"username": "Test"})
-        print(f"   ✗ Should have raised ToolManagerError")
+        print("   ✗ Should have raised ToolManagerError")
     except ToolManagerError as e:
         print(f"   ✓ Correctly enforced case sensitivity: {e}")
 
