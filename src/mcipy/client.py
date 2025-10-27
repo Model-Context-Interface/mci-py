@@ -31,8 +31,15 @@ class MCIClient:
         ```python
         from mcipy import MCIClient
 
+        # Load from JSON file
         client = MCIClient(
-            json_file_path="example.mci.json",
+            schema_file_path="example.mci.json",
+            env_vars={"API_KEY": "your-secret-key"}
+        )
+
+        # Or load from YAML file
+        client = MCIClient(
+            schema_file_path="example.mci.yaml",
             env_vars={"API_KEY": "your-secret-key"}
         )
 
@@ -51,25 +58,37 @@ class MCIClient:
         ```
     """
 
-    def __init__(self, json_file_path: str, env_vars: dict[str, Any] | None = None):
+    def __init__(
+        self,
+        schema_file_path: str | None = None,
+        env_vars: dict[str, Any] | None = None,
+        json_file_path: str | None = None,
+    ):
         """
         Initialize the MCI client with a schema file and environment variables.
 
-        Loads the MCI JSON schema, stores environment variables for templating,
+        Loads the MCI schema (JSON or YAML), stores environment variables for templating,
         and initializes the ToolManager for tool execution.
 
         Args:
-            json_file_path: Path to the MCI JSON schema file
+            schema_file_path: Path to the MCI schema file (.json, .yaml, or .yml)
             env_vars: Environment variables for template substitution (default: empty dict)
+            json_file_path: DEPRECATED. Use schema_file_path instead. Kept for backward compatibility.
 
         Raises:
             MCIClientError: If the schema file cannot be loaded or parsed
         """
+        # Handle backward compatibility: json_file_path is deprecated in favor of schema_file_path
+        if json_file_path is not None and schema_file_path is None:
+            schema_file_path = json_file_path
+        elif schema_file_path is None:
+            raise MCIClientError("Either 'schema_file_path' or 'json_file_path' must be provided")
+
         # Load schema using SchemaParser
         try:
-            self._schema = SchemaParser.parse_file(json_file_path)
+            self._schema = SchemaParser.parse_file(schema_file_path)
         except Exception as e:
-            raise MCIClientError(f"Failed to load schema from {json_file_path}: {e}") from e
+            raise MCIClientError(f"Failed to load schema from {schema_file_path}: {e}") from e
 
         # Store environment variables
         self._env_vars = env_vars if env_vars is not None else {}

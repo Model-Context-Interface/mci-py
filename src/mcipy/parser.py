@@ -1,9 +1,9 @@
 """
-Schema parser for MCI JSON files.
+Schema parser for MCI JSON and YAML files.
 
 This module provides the SchemaParser class for loading and validating
 MCI schema files. It handles:
-- Loading JSON files from disk
+- Loading JSON and YAML files from disk
 - Parsing dictionaries into MCISchema objects
 - Validating schema versions
 - Validating tool definitions
@@ -14,6 +14,7 @@ import json
 from pathlib import Path
 from typing import Any
 
+import yaml
 from pydantic import ValidationError
 
 from .enums import ExecutionType
@@ -38,7 +39,7 @@ class SchemaParser:
     """
     Parser for MCI schema files.
 
-    Loads and validates MCI JSON schema files, ensuring they conform to
+    Loads and validates MCI JSON and YAML schema files, ensuring they conform to
     the expected structure and contain valid tool definitions. Uses Pydantic
     for strong validation and provides helpful error messages for invalid schemas.
     """
@@ -46,20 +47,22 @@ class SchemaParser:
     @staticmethod
     def parse_file(file_path: str) -> MCISchema:
         """
-        Load and validate an MCI JSON file.
+        Load and validate an MCI schema file (JSON or YAML).
 
-        Reads a JSON file from disk, validates its structure and content,
-        and returns a parsed MCISchema object.
+        Reads a JSON or YAML file from disk, validates its structure and content,
+        and returns a parsed MCISchema object. The file type is determined by
+        the file extension (.json, .yaml, or .yml).
 
         Args:
-            file_path: Path to the MCI JSON file
+            file_path: Path to the MCI schema file (.json, .yaml, or .yml)
 
         Returns:
             Validated MCISchema object
 
         Raises:
             SchemaParserError: If the file doesn't exist, can't be read,
-                             contains invalid JSON, or fails validation
+                             contains invalid JSON/YAML, has unsupported extension,
+                             or fails validation
         """
         path = Path(file_path)
 
@@ -70,12 +73,25 @@ class SchemaParser:
         if not path.is_file():
             raise SchemaParserError(f"Path is not a file: {file_path}")
 
-        # Read and parse JSON
+        # Determine file type by extension
+        file_extension = path.suffix.lower()
+
+        # Read and parse file based on extension
         try:
             with path.open("r", encoding="utf-8") as f:
-                data = json.load(f)
+                if file_extension == ".json":
+                    data = json.load(f)
+                elif file_extension in (".yaml", ".yml"):
+                    data = yaml.safe_load(f)
+                else:
+                    raise SchemaParserError(
+                        f"Unsupported file extension '{file_extension}'. "
+                        f"Supported extensions: .json, .yaml, .yml"
+                    )
         except json.JSONDecodeError as e:
             raise SchemaParserError(f"Invalid JSON in file {file_path}: {e}") from e
+        except yaml.YAMLError as e:
+            raise SchemaParserError(f"Invalid YAML in file {file_path}: {e}") from e
         except OSError as e:
             raise SchemaParserError(f"Failed to read file {file_path}: {e}") from e
 
