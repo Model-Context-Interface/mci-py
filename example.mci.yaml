@@ -8,7 +8,6 @@ metadata:
   - MCI Development Team
 tools:
 - name: get_weather
-  title: Get Weather Information
   description: Fetch current weather information for a location using HTTP GET request
   inputSchema:
     type: object
@@ -28,8 +27,9 @@ tools:
     headers:
       Accept: application/json
     timeout_ms: 5000
+  annotations:
+    title: Get Weather Information
 - name: create_report
-  title: Create Report
   description: Create a new report using HTTP POST request with Bearer token authentication
   inputSchema:
     type: object
@@ -60,8 +60,9 @@ tools:
         content: '{{props.content}}'
         timestamp: '{{env.CURRENT_TIMESTAMP}}'
     timeout_ms: 10000
+  annotations:
+    title: Create Report
 - name: search_files
-  title: Search Files
   description: Search for text in files using grep command
   inputSchema:
     type: object
@@ -90,8 +91,9 @@ tools:
         type: boolean
     cwd: '{{props.directory}}'
     timeout_ms: 8000
+  annotations:
+    title: Search Files
 - name: load_template
-  title: Load Template File
   description: Load content from a text file with placeholder parsing
   inputSchema:
     type: object
@@ -105,8 +107,9 @@ tools:
     type: file
     path: ./text.txt
     enableTemplating: true
+  annotations:
+    title: Load Template File
 - name: generate_message
-  title: Generate Message
   description: Generate a simple text message with placeholder substitution
   inputSchema:
     type: object
@@ -119,3 +122,5 @@ tools:
   execution:
     type: text
     text: Hello {{props.username}}! This message was generated on {{env.CURRENT_DATE}}.
+  annotations:
+    title: Generate Message

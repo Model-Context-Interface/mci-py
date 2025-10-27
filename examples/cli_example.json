@@ -12,7 +12,6 @@
   "tools": [
     {
       "name": "search_files",
-      "title": "Search Files",
       "description": "Search for text in files using grep command with optional case-insensitive flag",
       "inputSchema": {
         "type": "object",
@@ -51,11 +50,13 @@
         },
         "cwd": "{{props.directory}}",
         "timeout_ms": 8000
+      },
+      "annotations": {
+        "title": "Search Files"
       }
     },
     {
       "name": "list_files",
-      "title": "List Files",
       "description": "List files in a directory with detailed information",
       "inputSchema": {
         "type": "object",
@@ -87,11 +88,13 @@
         },
         "cwd": "{{props.directory}}",
         "timeout_ms": 5000
+      },
+      "annotations": {
+        "title": "List Files"
       }
     },
     {
       "name": "count_lines",
-      "title": "Count Lines in File",
       "description": "Count the number of lines in a file using wc command",
       "inputSchema": {
         "type": "object",
@@ -113,11 +116,13 @@
           "{{props.file_path}}"
         ],
         "timeout_ms": 3000
+      },
+      "annotations": {
+        "title": "Count Lines in File"
       }
     },
     {
       "name": "find_files",
-      "title": "Find Files by Name",
       "description": "Find files matching a pattern in a directory using the find command",
       "inputSchema": {
         "type": "object",
@@ -145,6 +150,9 @@
           "{{props.name_pattern}}"
         ],
         "timeout_ms": 10000
+      },
+      "annotations": {
+        "title": "Find Files by Name"
       }
     }
   ]

@@ -140,7 +140,7 @@ for tool in all_tools:
 [
     Tool(
         name="get_weather",
-        title="Get Weather Information",
+        annotations=Annotations(title="Get Weather Information"),
         description="Fetch current weather information for a location",
         inputSchema={
             "type": "object",
@@ -153,7 +153,7 @@ for tool in all_tools:
     ),
     Tool(
         name="create_report",
-        title="Create Report",
+        annotations=Annotations(title="Create Report"),
         description="Create a new report using HTTP POST request",
         inputSchema={...},
         execution=HTTPExecutionConfig(...)
@@ -209,14 +209,14 @@ for tool in weather_tools:
 [
     Tool(
         name="get_weather",
-        title="Get Weather Information",
+        annotations=Annotations(title="Get Weather Information"),
         description="Fetch current weather information for a location",
         inputSchema={...},
         execution=HTTPExecutionConfig(...)
     ),
     Tool(
         name="get_forecast",
-        title="Get Weather Forecast",
+        annotations=Annotations(title="Get Weather Forecast"),
         description="Get weather forecast for the next 7 days",
         inputSchema={...},
         execution=HTTPExecutionConfig(...)
@@ -272,14 +272,14 @@ for tool in safe_tools:
 [
     Tool(
         name="get_weather",
-        title="Get Weather Information",
+        annotations=Annotations(title="Get Weather Information"),
         description="Fetch current weather information for a location",
         inputSchema={...},
         execution=HTTPExecutionConfig(...)
     ),
     Tool(
         name="search_data",
-        title="Search Data",
+        annotations=Annotations(title="Search Data"),
         description="Search for data in the database",
         inputSchema={...},
         execution=HTTPExecutionConfig(...)
@@ -543,7 +543,9 @@ Top-level MCI schema representing the complete MCI context file.
     "tools": [
         {
             "name": "get_weather",
-            "title": "Get Weather",
+            "annotations": {
+        "title": "Get Weather"
+            },
             "description": "Get weather information",
             "inputSchema": {...},
             "execution": {...}
@@ -563,7 +565,8 @@ Individual tool definition with name, description, input schema, and execution c
 | Field | Type | Required | Description |
 |-------|------|----------|-------------|
 | `name` | `str` | Yes | Unique identifier for the tool |
-| `title` | `str` | No | Human-readable title |
+| `annotations` | `Annotations` | No | Tool metadata and hints |
+| `disabled` | `bool` | No | If true, tool is ignored (default: false) |
 | `description` | `str` | No | Description of what the tool does |
 | `inputSchema` | `dict[str, Any]` | No | JSON Schema defining expected input properties |
 | `execution` | `HTTPExecutionConfig` \| `CLIExecutionConfig` \| `FileExecutionConfig` \| `TextExecutionConfig` | Yes | Execution configuration (determines how tool is executed) |
@@ -573,7 +576,9 @@ Individual tool definition with name, description, input schema, and execution c
 ```python
 {
     "name": "get_weather",
-    "title": "Get Weather Information",
+    "annotations": {
+        "title": "Get Weather Information"
+    },
     "description": "Fetch current weather information for a location",
     "inputSchema": {
         "type": "object",
@@ -1238,7 +1243,7 @@ for tool_name in client.list_tools():
 all_tools = client.tools()
 for tool in all_tools:
     print(f"\nTool: {tool.name}")
-    print(f"  Title: {tool.title}")
+    print(f"  Title: {tool.annotations.title if tool.annotations else \'N/A\'}")
     print(f"  Description: {tool.description}")
 
 # Filter tools

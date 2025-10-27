@@ -101,39 +101,39 @@ class MCIClient:
 
     def tools(self) -> list[Tool]:
         """
-        Get all available tools.
+        Get all available tools (excluding disabled tools).
 
         Returns:
-            List of all Tool objects in the schema
+            List of all enabled Tool objects in the schema
         """
         return self._tool_manager.list_tools()
 
     def only(self, tool_names: list[str]) -> list[Tool]:
         """
-        Filter to include only specified tools.
+        Filter to include only specified tools (excluding disabled tools).
 
-        Returns only the tools whose names are in the provided list.
-        Tools not in the list are excluded.
+        Returns only the tools whose names are in the provided list and
+        are not disabled. Tools not in the list or that are disabled are excluded.
 
         Args:
             tool_names: List of tool names to include
 
         Returns:
-            Filtered list of Tool objects
+            Filtered list of enabled Tool objects
         """
         return self._tool_manager.filter_tools(only=tool_names)
 
     def without(self, tool_names: list[str]) -> list[Tool]:
         """
-        Filter to exclude specified tools.
+        Filter to exclude specified tools (disabled tools are also excluded).
 
-        Returns all tools except those whose names are in the provided list.
+        Returns all enabled tools except those whose names are in the provided list.
 
         Args:
             tool_names: List of tool names to exclude
 
         Returns:
-            Filtered list of Tool objects
+            Filtered list of enabled Tool objects
         """
         return self._tool_manager.filter_tools(without=tool_names)
 
@@ -167,10 +167,10 @@ class MCIClient:
 
     def list_tools(self) -> list[str]:
         """
-        List available tool names.
+        List available tool names (excluding disabled tools).
 
         Returns:
-            List of tool names (strings)
+            List of enabled tool names (strings)
         """
         return [tool.name for tool in self._tool_manager.list_tools()]
 

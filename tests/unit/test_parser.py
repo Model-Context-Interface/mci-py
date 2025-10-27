@@ -365,7 +365,7 @@ class TestSchemaParserIntegration:
             "tools": [
                 {
                     "name": "get_weather",
-                    "title": "Get Weather",
+                    "annotations": {"title": "Get Weather"},
                     "description": "Fetch weather data",
                     "inputSchema": {
                         "type": "object",
@@ -419,7 +419,8 @@ class TestSchemaParserIntegration:
         # Verify HTTP tool
         http_tool = schema.tools[0]
         assert http_tool.name == "get_weather"
-        assert http_tool.title == "Get Weather"
+        assert http_tool.annotations is not None
+        assert http_tool.annotations.title == "Get Weather"
         assert isinstance(http_tool.execution, HTTPExecutionConfig)
         assert http_tool.execution.url == "https://api.weather.com/v1/current"
 
@@ -539,7 +540,7 @@ class TestSchemaParserYAMLSupport:
             "tools": [
                 {
                     "name": "get_weather",
-                    "title": "Get Weather",
+                    "annotations": {"title": "Get Weather"},
                     "description": "Fetch weather data",
                     "inputSchema": {
                         "type": "object",
@@ -593,7 +594,8 @@ class TestSchemaParserYAMLSupport:
         # Verify HTTP tool
         http_tool = schema.tools[0]
         assert http_tool.name == "get_weather"
-        assert http_tool.title == "Get Weather"
+        assert http_tool.annotations is not None
+        assert http_tool.annotations.title == "Get Weather"
         assert isinstance(http_tool.execution, HTTPExecutionConfig)
         assert http_tool.execution.url == "https://api.weather.com/v1/current"
 

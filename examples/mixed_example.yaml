@@ -9,7 +9,6 @@ metadata:
   - MCI Development Team
 tools:
 - name: get_weather
-  title: Get Weather Information
   description: Fetch current weather information using HTTP GET request
   inputSchema:
     type: object
@@ -29,8 +28,9 @@ tools:
     headers:
       Accept: application/json
     timeout_ms: 5000
+  annotations:
+    title: Get Weather Information
 - name: create_report
-  title: Create Report
   description: Create a new report using HTTP POST with authentication
   inputSchema:
     type: object
@@ -59,8 +59,9 @@ tools:
         title: '{{props.title}}'
         content: '{{props.content}}'
     timeout_ms: 10000
+  annotations:
+    title: Create Report
 - name: search_files
-  title: Search Files
   description: Search for text in files using grep command
   inputSchema:
     type: object
@@ -90,8 +91,9 @@ tools:
         type: boolean
     cwd: '{{props.directory}}'
     timeout_ms: 8000
+  annotations:
+    title: Search Files
 - name: list_files
-  title: List Files
   description: List files in a directory
   inputSchema:
     type: object
@@ -108,8 +110,9 @@ tools:
     - -l
     - '{{props.directory}}'
     timeout_ms: 5000
+  annotations:
+    title: List Files
 - name: load_template
-  title: Load Template File
   description: Load content from a text file with placeholder substitution
   inputSchema:
     type: object
@@ -123,8 +126,9 @@ tools:
     type: file
     path: ./text.txt
     enableTemplating: true
+  annotations:
+    title: Load Template File
 - name: load_config
-  title: Load Configuration File
   description: Load a raw configuration file without template processing
   inputSchema:
     type: object
@@ -138,8 +142,9 @@ tools:
     type: file
     path: ./configs/{{props.config_name}}.json
     enableTemplating: false
+  annotations:
+    title: Load Configuration File
 - name: generate_message
-  title: Generate Message
   description: Generate a simple text message with placeholder substitution
   inputSchema:
     type: object
@@ -152,8 +157,9 @@ tools:
   execution:
     type: text
     text: Hello {{props.username}}! This message was generated on {{env.CURRENT_DATE}}.
+  annotations:
+    title: Generate Message
 - name: generate_welcome
-  title: Generate Welcome Message
   description: Generate a personalized welcome message
   inputSchema:
     type: object
@@ -166,3 +172,5 @@ tools:
   execution:
     type: text
     text: Welcome {{props.username}}! Your account has been created successfully.
+  annotations:
+    title: Generate Welcome Message

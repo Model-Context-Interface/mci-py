@@ -1,6 +1,7 @@
 from .client import MCIClient, MCIClientError
 from .enums import ExecutionType
 from .models import (
+    Annotations,
     ApiKeyAuth,
     BasicAuth,
     BearerAuth,
@@ -27,6 +28,7 @@ __all__ = (
     # Enums
     "ExecutionType",
     # Models
+    "Annotations",
     "ApiKeyAuth",
     "BasicAuth",
     "BearerAuth",

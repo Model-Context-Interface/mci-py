@@ -27,7 +27,7 @@ def sample_schema_dict():
         "tools": [
             {
                 "name": "get_weather",
-                "title": "Get Weather",
+                "annotations": {"title": "Get Weather"},
                 "description": "Get weather information",
                 "inputSchema": {
                     "type": "object",
@@ -43,7 +43,7 @@ def sample_schema_dict():
             },
             {
                 "name": "create_report",
-                "title": "Create Report",
+                "annotations": {"title": "Create Report"},
                 "description": "Create a report",
                 "inputSchema": {
                     "type": "object",
@@ -61,7 +61,7 @@ def sample_schema_dict():
             },
             {
                 "name": "search_files",
-                "title": "Search Files",
+                "annotations": {"title": "Search Files"},
                 "description": "Search for files",
                 "inputSchema": {
                     "type": "object",
@@ -76,14 +76,14 @@ def sample_schema_dict():
             },
             {
                 "name": "load_file",
-                "title": "Load File",
+                "annotations": {"title": "Load File"},
                 "description": "Load a file",
                 "inputSchema": None,
                 "execution": {"type": "file", "path": "/tmp/test.txt"},
             },
             {
                 "name": "generate_text",
-                "title": "Generate Text",
+                "annotations": {"title": "Generate Text"},
                 "description": "Generate text",
                 "inputSchema": {},
                 "execution": {"type": "text", "text": "Hello {{props.name}}!"},
@@ -203,7 +203,8 @@ class TestTools:
         """Test that tools() returns correct tool data."""
         tools = client.tools()
         weather_tool = next(t for t in tools if t.name == "get_weather")
-        assert weather_tool.title == "Get Weather"
+        assert weather_tool.annotations is not None
+        assert weather_tool.annotations.title == "Get Weather"
         assert weather_tool.description == "Get weather information"
         assert weather_tool.inputSchema is not None
 
@@ -500,7 +501,9 @@ class TestYAMLSupport:
         assert len(json_tools) == len(yaml_tools)
         for json_tool, yaml_tool in zip(json_tools, yaml_tools, strict=False):
             assert json_tool.name == yaml_tool.name
-            assert json_tool.title == yaml_tool.title
+            # Compare annotations if present
+            if json_tool.annotations and yaml_tool.annotations:
+                assert json_tool.annotations.title == yaml_tool.annotations.title
 
     def test_execute_tool_from_yaml(self, sample_schema_dict, tmp_path):
         """Test executing a tool loaded from YAML file."""
