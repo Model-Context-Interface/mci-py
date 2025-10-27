@@ -1,0 +1,67 @@
+{
+  "schemaVersion": "1.0",
+  "metadata": {
+    "name": "Database Toolset",
+    "description": "Tools for database operations",
+    "version": "1.0.0"
+  },
+  "tools": [
+    {
+      "name": "query_data",
+      "description": "Query database",
+      "tags": ["database", "read"],
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "query": {
+            "type": "string"
+          }
+        },
+        "required": ["query"]
+      },
+      "execution": {
+        "type": "text",
+        "text": "Query result: {{props.query}}"
+      }
+    },
+    {
+      "name": "insert_data",
+      "description": "Insert data into database",
+      "tags": ["database", "write"],
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "table": {
+            "type": "string"
+          },
+          "data": {
+            "type": "string"
+          }
+        },
+        "required": ["table", "data"]
+      },
+      "execution": {
+        "type": "text",
+        "text": "Inserted {{props.data}} into {{props.table}}"
+      }
+    },
+    {
+      "name": "delete_data",
+      "description": "Delete data from database",
+      "tags": ["database", "write", "destructive"],
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "table": {
+            "type": "string"
+          }
+        },
+        "required": ["table"]
+      },
+      "execution": {
+        "type": "text",
+        "text": "Deleted from {{props.table}}"
+      }
+    }
+  ]
+}

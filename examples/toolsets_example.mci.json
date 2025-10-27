@@ -1,0 +1,54 @@
+{
+  "schemaVersion": "1.0",
+  "metadata": {
+    "name": "Example Application with Toolsets",
+    "description": "Demonstrates the Toolsets feature with multiple tool libraries and filtering",
+    "version": "1.0.0",
+    "authors": ["MCI Development Team"]
+  },
+  "libraryDir": "./toolsets_library",
+  "tools": [
+    {
+      "name": "app_status",
+      "annotations": {
+        "title": "Application Status",
+        "readOnlyHint": true,
+        "idempotentHint": true
+      },
+      "description": "Get application status (main schema tool)",
+      "tags": ["main", "status"],
+      "execution": {
+        "type": "text",
+        "text": "Application is running. Version: {{env.APP_VERSION}}"
+      }
+    },
+    {
+      "name": "app_config",
+      "annotations": {
+        "title": "Application Configuration",
+        "readOnlyHint": true
+      },
+      "description": "View application configuration (main schema tool)",
+      "tags": ["main", "config"],
+      "execution": {
+        "type": "text",
+        "text": "Config: Environment={{env.ENVIRONMENT}}, Debug={{env.DEBUG_MODE}}"
+      }
+    }
+  ],
+  "toolsets": [
+    {
+      "name": "weather",
+      "filter": "tags",
+      "filterValue": "read"
+    },
+    {
+      "name": "database",
+      "filter": "withoutTags",
+      "filterValue": "destructive"
+    },
+    {
+      "name": "github"
+    }
+  ]
+}

@@ -73,7 +73,31 @@ Comprehensive example combining all execution types:
 - Demonstrates how different tool types can coexist
 - Useful for testing filtering and tool selection
 
-## Usage Script
+### 6. `toolsets_example.mci.json`
+Demonstrates the Toolsets feature with library organization:
+- **Main tools**: app_status, app_config (in main schema)
+- **Weather toolset**: get_weather, get_forecast (schema-level filtered by tags)
+- **Database toolset**: query_data, insert_data (schema-level filtered to exclude destructive tools)
+- **GitHub toolset**: list_prs, create_pr, list_issues, create_issue (loaded from directory)
+
+**Features demonstrated:**
+- Loading toolsets from library directory (./toolsets_library)
+- Schema-level filtering (tags, withoutTags)
+- Mixing main schema tools with toolset tools
+- Directory-based toolsets (github directory with multiple files)
+- Adapter-level toolset filtering with toolsets() method
+
+**Toolsets Library Structure:**
+```
+examples/toolsets_library/
+├── weather.mci.json     - Weather tools
+├── database.mci.json    - Database tools
+└── github/              - GitHub tools directory
+    ├── prs.mci.json     - PR management tools
+    └── issues.mci.json  - Issue management tools
+```
+
+## Usage Scripts
 
 ### `example_usage.py`
 Executable Python script demonstrating how to:
@@ -91,6 +115,23 @@ Executable Python script demonstrating how to:
 python examples/example_usage.py
 # or
 uv run python examples/example_usage.py
+```
+
+### `toolsets_example_usage.py`
+Executable Python script demonstrating the Toolsets feature:
+- Loading toolsets from library directory
+- Schema-level filtering (only loading read-only weather tools, excluding destructive database tools)
+- Adapter-level filtering by toolset name
+- Mixing main schema tools with toolset tools
+- Executing tools from different sources
+- Using tags and other filters across all tools
+
+**Run the script:**
+```bash
+# From repository root
+python examples/toolsets_example_usage.py
+# or
+uv run python examples/toolsets_example_usage.py
 ```
 
 ## Running Individual Examples
