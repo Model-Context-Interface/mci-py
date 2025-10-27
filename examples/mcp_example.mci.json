@@ -1,0 +1,50 @@
+{
+  "schemaVersion": "1.0",
+  "metadata": {
+    "name": "MCP Integration Example",
+    "description": "Example schema demonstrating MCP server integration",
+    "version": "1.0.0"
+  },
+  "libraryDir": "./mci",
+  "mcp_servers": {
+    "filesystem": {
+      "command": "npx",
+      "args": ["-y", "@modelcontextprotocol/server-filesystem", "/tmp"],
+      "env": {
+        "DEBUG": "0"
+      },
+      "config": {
+        "expDays": 7,
+        "filter": "only",
+        "filterValue": "read_file,write_file,list_directory"
+      }
+    },
+    "everything": {
+      "command": "npx",
+      "args": ["-y", "@modelcontextprotocol/server-everything"],
+      "config": {
+        "expDays": 30
+      }
+    }
+  },
+  "tools": [
+    {
+      "name": "echo_test",
+      "description": "Simple echo test tool",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "message": {
+            "type": "string",
+            "description": "Message to echo"
+          }
+        },
+        "required": ["message"]
+      },
+      "execution": {
+        "type": "text",
+        "text": "Echo: {{props.message}}"
+      }
+    }
+  ]
+}
