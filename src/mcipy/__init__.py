@@ -1,5 +1,6 @@
 from .client import MCIClient, MCIClientError
 from .enums import ExecutionType
+from .mcp_client import ClientCfg, LiteMcpClient, ServerCfg, SseCfg, StdioCfg
 from .models import (
     Annotations,
     ApiKeyAuth,
@@ -29,6 +30,12 @@ __all__ = (
     # Client
     "MCIClient",
     "MCIClientError",
+    # MCP Client
+    "LiteMcpClient",
+    "ClientCfg",
+    "ServerCfg",
+    "StdioCfg",
+    "SseCfg",
     # Enums
     "ExecutionType",
     # Models
