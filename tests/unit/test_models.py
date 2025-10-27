@@ -353,11 +353,11 @@ class TestTool:
     def test_tool_disabled_field(self):
         """Test tool with disabled field."""
         config = HTTPExecutionConfig(url="https://api.example.com")
-        
+
         # Test default disabled is False
         tool_enabled = Tool(name="enabled_tool", execution=config)
         assert tool_enabled.disabled is False
-        
+
         # Test explicitly disabled
         tool_disabled = Tool(name="disabled_tool", disabled=True, execution=config)
         assert tool_disabled.disabled is True
@@ -374,7 +374,7 @@ class TestTool:
             idempotentHint=True,
             openWorldHint=False,
         )
-        
+
         tool = Tool(name="test_tool", annotations=annotations, execution=config)
         assert tool.annotations is not None
         assert tool.annotations.title == "Test Tool"
@@ -389,7 +389,7 @@ class TestTool:
 
         config = HTTPExecutionConfig(url="https://api.example.com")
         annotations = Annotations(title="Test Tool", readOnlyHint=True)
-        
+
         tool = Tool(name="test_tool", annotations=annotations, execution=config)
         assert tool.annotations is not None
         assert tool.annotations.title == "Test Tool"

@@ -477,13 +477,13 @@ class TestDisabledToolFiltering:
         """Test that list_tools excludes disabled tools."""
         tools = tool_manager_with_disabled.list_tools()
         tool_names = [tool.name for tool in tools]
-        
+
         # Should only include enabled tools
         assert len(tools) == 3
         assert "enabled_tool_1" in tool_names
         assert "enabled_tool_2" in tool_names
         assert "enabled_tool_3" in tool_names
-        
+
         # Should not include disabled tools
         assert "disabled_tool_1" not in tool_names
         assert "disabled_tool_2" not in tool_names
@@ -494,11 +494,11 @@ class TestDisabledToolFiltering:
         enabled_tool = tool_manager_with_disabled.get_tool("enabled_tool_1")
         assert enabled_tool is not None
         assert enabled_tool.name == "enabled_tool_1"
-        
+
         # Disabled tools should return None
         disabled_tool = tool_manager_with_disabled.get_tool("disabled_tool_1")
         assert disabled_tool is None
-        
+
         disabled_tool_2 = tool_manager_with_disabled.get_tool("disabled_tool_2")
         assert disabled_tool_2 is None
 
@@ -509,7 +509,7 @@ class TestDisabledToolFiltering:
             only=["enabled_tool_1", "disabled_tool_1", "enabled_tool_2"]
         )
         tool_names = [tool.name for tool in tools]
-        
+
         # Should only return enabled tools from the list
         assert len(tools) == 2
         assert "enabled_tool_1" in tool_names
@@ -521,7 +521,7 @@ class TestDisabledToolFiltering:
         # Exclude one enabled tool
         tools = tool_manager_with_disabled.filter_tools(without=["enabled_tool_1"])
         tool_names = [tool.name for tool in tools]
-        
+
         # Should return other enabled tools but not disabled ones
         assert len(tools) == 2
         assert "enabled_tool_2" in tool_names
@@ -534,7 +534,7 @@ class TestDisabledToolFiltering:
         """Test that filter_tools without filters excludes disabled tools."""
         tools = tool_manager_with_disabled.filter_tools()
         tool_names = [tool.name for tool in tools]
-        
+
         # Should return all enabled tools
         assert len(tools) == 3
         assert "enabled_tool_1" in tool_names
@@ -547,7 +547,7 @@ class TestDisabledToolFiltering:
         """Test that executing a disabled tool raises an error."""
         # Executing an enabled tool should work (we'll test it doesn't raise here)
         # Note: This will fail during execution due to network, but should pass validation
-        
+
         # Executing a disabled tool should raise ToolManagerError
         with pytest.raises(ToolManagerError, match="Tool not found: disabled_tool_1"):
             tool_manager_with_disabled.execute(
@@ -558,7 +558,7 @@ class TestDisabledToolFiltering:
 
     def test_tool_map_excludes_disabled_tools(self, tool_manager_with_disabled):
         """Test that the internal tool map excludes disabled tools.
-        
+
         Note: This test accesses private _tool_map to verify implementation.
         """
         # Should only contain enabled tools
@@ -571,7 +571,6 @@ class TestDisabledToolFiltering:
 
     def test_disabled_false_behaves_as_enabled(self):
         """Test that disabled=False behaves the same as not setting disabled."""
-        from mcipy import Annotations
 
         tools = [
             Tool(
@@ -586,9 +585,8 @@ class TestDisabledToolFiltering:
         ]
         schema = MCISchema(schemaVersion="1.0", tools=tools)
         manager = ToolManager(schema)
-        
+
         # Both tools should be available
         assert len(manager.list_tools()) == 2
         assert manager.get_tool("tool_default") is not None
         assert manager.get_tool("tool_explicit_false") is not None
-

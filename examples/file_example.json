@@ -12,7 +12,6 @@
   "tools": [
     {
       "name": "load_template",
-      "title": "Load Template File",
       "description": "Load content from a text file with placeholder substitution enabled",
       "inputSchema": {
         "type": "object",
@@ -30,11 +29,13 @@
         "type": "file",
         "path": "./text.txt",
         "enableTemplating": true
+      },
+      "annotations": {
+        "title": "Load Template File"
       }
     },
     {
       "name": "read_report",
-      "title": "Read Report Template",
       "description": "Read a report template file with dynamic placeholder substitution",
       "inputSchema": {
         "type": "object",
@@ -52,11 +53,13 @@
         "type": "file",
         "path": "./templates/report-{{props.report_id}}.txt",
         "enableTemplating": true
+      },
+      "annotations": {
+        "title": "Read Report Template"
       }
     },
     {
       "name": "load_config",
-      "title": "Load Configuration File",
       "description": "Load a raw configuration file without template processing",
       "inputSchema": {
         "type": "object",
@@ -74,11 +77,13 @@
         "type": "file",
         "path": "./configs/{{props.config_name}}.json",
         "enableTemplating": false
+      },
+      "annotations": {
+        "title": "Load Configuration File"
       }
     },
     {
       "name": "read_email_template",
-      "title": "Read Email Template",
       "description": "Read an email template with user and environment variable substitution",
       "inputSchema": {
         "type": "object",
@@ -101,6 +106,9 @@
         "type": "file",
         "path": "./templates/email/{{props.template_type}}.txt",
         "enableTemplating": true
+      },
+      "annotations": {
+        "title": "Read Email Template"
       }
     }
   ]

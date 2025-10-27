@@ -12,7 +12,11 @@
   "tools": [
     {
       "name": "get_weather",
-      "title": "Get Weather Information",
+      "annotations": {
+        "title": "Get Weather Information",
+        "readOnlyHint": true,
+        "openWorldHint": true
+      },
       "description": "Fetch current weather information for a location using HTTP GET request",
       "inputSchema": {
         "type": "object",
@@ -42,7 +46,11 @@
     },
     {
       "name": "create_report",
-      "title": "Create Report",
+      "annotations": {
+        "title": "Create Report",
+        "destructiveHint": true,
+        "openWorldHint": true
+      },
       "description": "Create a new report using HTTP POST request with Bearer token authentication",
       "inputSchema": {
         "type": "object",
@@ -86,7 +94,10 @@
     },
     {
       "name": "search_files",
-      "title": "Search Files",
+      "annotations": {
+        "title": "Search Files",
+        "readOnlyHint": true
+      },
       "description": "Search for text in files using grep command",
       "inputSchema": {
         "type": "object",
@@ -128,7 +139,10 @@
     },
     {
       "name": "load_template",
-      "title": "Load Template File",
+      "annotations": {
+        "title": "Load Template File",
+        "readOnlyHint": true
+      },
       "description": "Load content from a text file with placeholder parsing",
       "inputSchema": {
         "type": "object",
@@ -150,7 +164,11 @@
     },
     {
       "name": "generate_message",
-      "title": "Generate Message",
+      "annotations": {
+        "title": "Generate Message",
+        "readOnlyHint": true,
+        "idempotentHint": true
+      },
       "description": "Generate a simple text message with placeholder substitution",
       "inputSchema": {
         "type": "object",

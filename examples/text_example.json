@@ -12,7 +12,6 @@
   "tools": [
     {
       "name": "generate_message",
-      "title": "Generate Message",
       "description": "Generate a simple text message with placeholder substitution",
       "inputSchema": {
         "type": "object",
@@ -29,11 +28,13 @@
       "execution": {
         "type": "text",
         "text": "Hello {{props.username}}! This message was generated on {{env.CURRENT_DATE}}."
+      },
+      "annotations": {
+        "title": "Generate Message"
       }
     },
     {
       "name": "generate_welcome",
-      "title": "Generate Welcome Message",
       "description": "Generate a personalized welcome message with user details",
       "inputSchema": {
         "type": "object",
@@ -54,11 +55,13 @@
       "execution": {
         "type": "text",
         "text": "Welcome {{props.username}}! Your account has been created successfully. We've sent a confirmation email to {{props.email}}."
+      },
+      "annotations": {
+        "title": "Generate Welcome Message"
       }
     },
     {
       "name": "status_message",
-      "title": "Generate Status Message",
       "description": "Generate a status message with timestamp from environment",
       "inputSchema": {
         "type": "object",
@@ -75,11 +78,13 @@
       "execution": {
         "type": "text",
         "text": "Status: {{props.status}} at {{env.TIMESTAMP}}"
+      },
+      "annotations": {
+        "title": "Generate Status Message"
       }
     },
     {
       "name": "generate_report_summary",
-      "title": "Generate Report Summary",
       "description": "Generate a formatted report summary with multiple placeholders",
       "inputSchema": {
         "type": "object",
@@ -101,6 +106,9 @@
       "execution": {
         "type": "text",
         "text": "Report: {{props.report_name}}\nAuthor: {{props.author}}\nGenerated: {{env.CURRENT_DATE}}\nVersion: {{env.APP_VERSION}}"
+      },
+      "annotations": {
+        "title": "Generate Report Summary"
       }
     }
   ]

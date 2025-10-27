@@ -12,7 +12,6 @@
   "tools": [
     {
       "name": "get_weather",
-      "title": "Get Weather Information",
       "description": "Fetch current weather information for a location using HTTP GET request",
       "inputSchema": {
         "type": "object",
@@ -38,11 +37,13 @@
           "Accept": "application/json"
         },
         "timeout_ms": 5000
+      },
+      "annotations": {
+        "title": "Get Weather Information"
       }
     },
     {
       "name": "create_report",
-      "title": "Create Report",
       "description": "Create a new report using HTTP POST request with Bearer token authentication",
       "inputSchema": {
         "type": "object",
@@ -82,11 +83,13 @@
           }
         },
         "timeout_ms": 10000
+      },
+      "annotations": {
+        "title": "Create Report"
       }
     },
     {
       "name": "github_api",
-      "title": "GitHub API Client",
       "description": "Query GitHub repository information using API key authentication",
       "inputSchema": {
         "type": "object",
@@ -124,11 +127,13 @@
           "attempts": 3,
           "backoff_ms": 1000
         }
+      },
+      "annotations": {
+        "title": "GitHub API Client"
       }
     },
     {
       "name": "update_user",
-      "title": "Update User Profile",
       "description": "Update user profile using HTTP PUT with Basic authentication",
       "inputSchema": {
         "type": "object",
@@ -163,6 +168,9 @@
           }
         },
         "timeout_ms": 5000
+      },
+      "annotations": {
+        "title": "Update User Profile"
       }
     }
   ]
