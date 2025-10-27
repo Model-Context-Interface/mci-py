@@ -14,7 +14,14 @@ class ConcreteExecutor(BaseExecutor):
 
     def execute(self, config: ExecutionConfig, context: dict[str, Any]) -> ExecutionResult:
         """Simple execute implementation that returns success."""
-        return ExecutionResult(isError=False, content="test", error=None)
+        from mcipy.models import ExecutionResultContent, TextContent
+        return ExecutionResult(
+            result=ExecutionResultContent(
+                isError=False,
+                content=[TextContent(text="test")],
+                metadata=None
+            )
+        )
 
 
 class TestBaseExecutor:
@@ -112,20 +119,20 @@ class TestBaseExecutor:
         # ValueError
         error1 = ValueError("Invalid value")
         result1 = executor._format_error(error1)
-        assert result1.isError is True
-        assert result1.error == "Invalid value"
+        assert result1.result.isError is True
+        assert result1.result.content[0].text == "Invalid value"
 
         # TypeError
         error2 = TypeError("Wrong type")
         result2 = executor._format_error(error2)
-        assert result2.isError is True
-        assert result2.error == "Wrong type"
+        assert result2.result.isError is True
+        assert result2.result.content[0].text == "Wrong type"
 
         # RuntimeError
         error3 = RuntimeError("Runtime issue")
         result3 = executor._format_error(error3)
-        assert result3.isError is True
-        assert result3.error == "Runtime issue"
+        assert result3.result.isError is True
+        assert result3.result.content[0].text == "Runtime issue"
 
     def test_execute_returns_result(self, executor):
         """Test that execute method returns ExecutionResult."""

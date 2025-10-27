@@ -46,6 +46,8 @@ class TestHTTPExecutor:
             mock_response = Mock()
             mock_response.status_code = 200
             mock_response.text = "Success"
+            mock_response.content = b"Success"
+            mock_response.headers = {"Content-Type": "text/plain"}
             mock_response.json.side_effect = ValueError("Not JSON")
             mock_response.raise_for_status = Mock()
             mock_request.return_value = mock_response
@@ -149,6 +151,8 @@ class TestHTTPExecutor:
             mock_response = Mock()
             mock_response.status_code = 200
             mock_response.text = "OK"
+            mock_response.content = b"OK"
+            mock_response.headers = {"Content-Type": "text/plain"}
             mock_response.json.side_effect = ValueError("Not JSON")
             mock_response.raise_for_status = Mock()
             mock_request.return_value = mock_response
@@ -193,6 +197,8 @@ class TestHTTPExecutor:
             mock_response = Mock()
             mock_response.status_code = 200
             mock_response.text = "Data"
+            mock_response.content = b"Data"
+            mock_response.headers = {"Content-Type": "text/plain"}
             mock_response.json.side_effect = ValueError("Not JSON")
             mock_response.raise_for_status = Mock()
             mock_request.return_value = mock_response
@@ -215,6 +221,8 @@ class TestHTTPExecutor:
             mock_response = Mock()
             mock_response.status_code = 200
             mock_response.text = "OK"
+            mock_response.content = b"OK"
+            mock_response.headers = {"Content-Type": "text/plain"}
             mock_response.json.side_effect = ValueError("Not JSON")
             mock_response.raise_for_status = Mock()
             mock_request.return_value = mock_response
@@ -238,6 +246,8 @@ class TestHTTPExecutor:
             mock_response = Mock()
             mock_response.status_code = 200
             mock_response.text = "OK"
+            mock_response.content = b"OK"
+            mock_response.headers = {"Content-Type": "text/plain"}
             mock_response.json.side_effect = ValueError("Not JSON")
             mock_response.raise_for_status = Mock()
             mock_request.return_value = mock_response
@@ -288,6 +298,8 @@ class TestHTTPExecutor:
             mock_response = Mock()
             mock_response.status_code = 200
             mock_response.text = "OK"
+            mock_response.content = b"OK"
+            mock_response.headers = {"Content-Type": "text/plain"}
             mock_response.json.side_effect = ValueError("Not JSON")
             mock_response.raise_for_status = Mock()
             mock_request.return_value = mock_response
@@ -511,6 +523,8 @@ class TestHTTPExecutor:
             mock_response = Mock()
             mock_response.status_code = 200
             mock_response.text = "OK"
+            mock_response.content = b"OK"
+            mock_response.headers = {"Content-Type": "text/plain"}
             mock_response.json.side_effect = ValueError("Not JSON")
             mock_response.raise_for_status = Mock()
             mock_request.return_value = mock_response
@@ -535,6 +549,8 @@ class TestHTTPExecutor:
             mock_response = Mock()
             mock_response.status_code = 200
             mock_response.text = "OK"
+            mock_response.content = b"OK"
+            mock_response.headers = {"Content-Type": "text/plain"}
             mock_response.json.side_effect = ValueError("Not JSON")
             mock_response.raise_for_status = Mock()
             mock_request.return_value = mock_response
@@ -559,6 +575,8 @@ class TestHTTPExecutor:
             mock_response = Mock()
             mock_response.status_code = 200
             mock_response.text = "OK"
+            mock_response.content = b"OK"
+            mock_response.headers = {"Content-Type": "text/plain"}
             mock_response.json.side_effect = ValueError("Not JSON")
             mock_response.raise_for_status = Mock()
             mock_request.return_value = mock_response
@@ -720,6 +738,8 @@ class TestHTTPExecutor:
             success_response = Mock()
             success_response.status_code = 200
             success_response.text = "Success"
+            success_response.content = b"Success"
+            success_response.headers = {"Content-Type": "text/plain"}
             success_response.json.side_effect = ValueError("Not JSON")
             success_response.raise_for_status = Mock()
 

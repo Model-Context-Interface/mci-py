@@ -83,8 +83,8 @@ class TestFileExecutorPathValidation:
         client = MCIClient(schema_file_path=str(schema_with_file_tool))
         result = client.execute("read_file", {"name": "World"})
 
-        assert result.isError is False
-        assert result.content == "Hello World!"
+        assert result.result.isError is False
+        assert result.result.content[0].text == "Hello World!"
 
     def test_file_executor_blocks_outside_context(self, schema_with_file_tool_outside_context):
         """Test that file executor blocks access to files outside context directory."""
@@ -93,10 +93,10 @@ class TestFileExecutorPathValidation:
 
         result = client.execute("read_outside_file")
 
-        assert result.isError is True
+        assert result.result.isError is True
         assert (
-            result.error is not None
-            and "File path access outside context directory" in result.error
+            result.result.content[0].text is not None
+            and "File path access outside context directory" in result.result.content[0].text
         )
 
     def test_file_executor_allows_with_enable_any_paths_tool_level(
@@ -115,8 +115,8 @@ class TestFileExecutorPathValidation:
         client = MCIClient(schema_file_path=str(schema_file))
         result = client.execute("read_outside_file")
 
-        assert result.isError is False
-        assert result.content == "Outside content"
+        assert result.result.isError is False
+        assert result.result.content[0].text == "Outside content"
 
     def test_file_executor_allows_with_enable_any_paths_schema_level(
         self, schema_with_file_tool_outside_context
@@ -134,8 +134,8 @@ class TestFileExecutorPathValidation:
         client = MCIClient(schema_file_path=str(schema_file))
         result = client.execute("read_outside_file")
 
-        assert result.isError is False
-        assert result.content == "Outside content"
+        assert result.result.isError is False
+        assert result.result.content[0].text == "Outside content"
 
     def test_file_executor_allows_with_directory_allow_list(
         self, schema_with_file_tool_outside_context
@@ -153,8 +153,8 @@ class TestFileExecutorPathValidation:
         client = MCIClient(schema_file_path=str(schema_file))
         result = client.execute("read_outside_file")
 
-        assert result.isError is False
-        assert result.content == "Outside content"
+        assert result.result.isError is False
+        assert result.result.content[0].text == "Outside content"
 
     def test_file_executor_allows_subdirectories(self, temp_schema_dir):
         """Test that file executor allows access to subdirectories of context."""
@@ -187,8 +187,8 @@ class TestFileExecutorPathValidation:
         client = MCIClient(schema_file_path=str(schema_file))
         result = client.execute("read_deep_file")
 
-        assert result.isError is False
-        assert result.content == "Deep content"
+        assert result.result.isError is False
+        assert result.result.content[0].text == "Deep content"
 
 
 class TestCLIExecutorPathValidation:
@@ -226,8 +226,8 @@ class TestCLIExecutorPathValidation:
         result = client.execute("list_files")
 
         # Should succeed and list files
-        assert result.isError is False
-        assert result.content is not None and "test.txt" in result.content
+        assert result.result.isError is False
+        assert result.result.content[0].text is not None and "test.txt" in result.result.content[0].text
 
     def test_cli_executor_blocks_outside_context_cwd(self, temp_schema_dir):
         """Test that CLI executor blocks cwd outside context directory."""
@@ -251,10 +251,10 @@ class TestCLIExecutorPathValidation:
             client = MCIClient(schema_file_path=str(schema_file))
             result = client.execute("list_outside")
 
-            assert result.isError is True
+            assert result.result.isError is True
             assert (
-                result.error is not None
-                and "File path access outside context directory" in result.error
+                result.result.content[0].text is not None
+                and "File path access outside context directory" in result.result.content[0].text
             )
 
     def test_cli_executor_allows_with_enable_any_paths(self, temp_schema_dir):
@@ -284,8 +284,8 @@ class TestCLIExecutorPathValidation:
             client = MCIClient(schema_file_path=str(schema_file))
             result = client.execute("list_outside")
 
-            assert result.isError is False
-            assert result.content is not None and "outside.txt" in result.content
+            assert result.result.isError is False
+            assert result.result.content[0].text is not None and "outside.txt" in result.result.content[0].text
 
     def test_cli_executor_allows_with_directory_allow_list(self, temp_schema_dir):
         """Test that CLI executor allows cwd in directoryAllowList."""
@@ -314,8 +314,8 @@ class TestCLIExecutorPathValidation:
             client = MCIClient(schema_file_path=str(schema_file))
             result = client.execute("list_allowed")
 
-            assert result.isError is False
-            assert result.content is not None and "allowed.txt" in result.content
+            assert result.result.isError is False
+            assert result.result.content[0].text is not None and "allowed.txt" in result.result.content[0].text
 
     def test_cli_executor_no_cwd_specified(self, temp_schema_dir):
         """Test that CLI executor works when no cwd is specified."""
@@ -339,5 +339,5 @@ class TestCLIExecutorPathValidation:
         result = client.execute("echo_test")
 
         # Should succeed - no path validation needed
-        assert result.isError is False
-        assert result.content is not None and "hello" in result.content
+        assert result.result.isError is False
+        assert result.result.content[0].text is not None and "hello" in result.result.content[0].text
