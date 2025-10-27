@@ -1097,6 +1097,68 @@ result = client.execute("template_tool", {})
 # )
 ```
 
+**Path Validation Error:**
+
+```python
+# When a tool attempts to access a file outside allowed directories
+result = client.execute("read_file", {"path": "/etc/passwd"})
+# ExecutionResult(
+#     isError=True,
+#     content=None,
+#     error="File path access outside context directory and allow-list is not allowed unless enableAnyPaths is true. Path: /etc/passwd",
+#     metadata=None
+# )
+```
+
+### Security: Path Validation
+
+The MCI Python adapter includes built-in path validation to prevent unauthorized file system access.
+
+**Default Behavior:**
+- File and CLI execution are restricted to the schema file's directory
+- Subdirectories of the schema directory are allowed
+- Paths outside the schema directory are blocked unless explicitly allowed
+
+**Configuration Options:**
+
+1. **Schema-level settings** (applies to all tools):
+   ```json
+   {
+     "schemaVersion": "1.0",
+     "enableAnyPaths": false,
+     "directoryAllowList": ["/home/user/data", "./configs"],
+     "tools": [...]
+   }
+   ```
+
+2. **Tool-level settings** (overrides schema-level):
+   ```json
+   {
+     "name": "read_system_file",
+     "enableAnyPaths": true,
+     "execution": {
+       "type": "file",
+       "path": "{{props.file_path}}"
+     }
+   }
+   ```
+
+**Path Validation Behavior:**
+
+| Scenario | Allowed? |
+|----------|----------|
+| File in schema directory | ✓ Yes |
+| File in subdirectory of schema directory | ✓ Yes |
+| File outside schema directory (no config) | ✗ No - Error |
+| File in `directoryAllowList` | ✓ Yes |
+| Any path with `enableAnyPaths: true` | ✓ Yes |
+
+**Best Practices:**
+- Keep `enableAnyPaths` disabled unless absolutely necessary
+- Use `directoryAllowList` for specific directories instead of `enableAnyPaths`
+- Validate user input before passing to tools that access files
+- Review tool configurations regularly for security implications
+
 ### Error Handling Best Practices
 
 **Check isError Flag:**

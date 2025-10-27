@@ -33,7 +33,7 @@ class CLIExecutor(BaseExecutor):
 
         Args:
             config: CLI execution configuration with command, args, flags, cwd, timeout
-            context: Context dictionary with 'props', 'env', and 'input' keys
+            context: Context dictionary with 'props', 'env', 'input', and 'path_validation' keys
 
         Returns:
             ExecutionResult with command output or error
@@ -47,6 +47,16 @@ class CLIExecutor(BaseExecutor):
         try:
             # Apply basic templating to all config fields (command, args, cwd)
             self._apply_basic_templating_to_config(config, context)
+
+            # Validate cwd path if path validation context is provided and cwd is specified
+            if context.get("path_validation") and config.cwd:
+                validator = context["path_validation"]["validator"]
+                from ..path_validator import PathValidationError
+
+                try:
+                    validator.validate_path(config.cwd)
+                except PathValidationError as e:
+                    return self._format_error(e)
 
             # Build the complete command with arguments and flags
             command_list = self._build_command_args(config, context)

@@ -177,6 +177,8 @@ class Tool(BaseModel):
     description: str | None = None
     inputSchema: dict[str, Any] | None = None
     execution: HTTPExecutionConfig | CLIExecutionConfig | FileExecutionConfig | TextExecutionConfig
+    enableAnyPaths: bool = Field(default=False)
+    directoryAllowList: list[str] = Field(default_factory=list)
 
 
 class MCISchema(BaseModel):
@@ -191,6 +193,8 @@ class MCISchema(BaseModel):
     schemaVersion: str
     metadata: Metadata | None = None
     tools: list[Tool]
+    enableAnyPaths: bool = Field(default=False)
+    directoryAllowList: list[str] = Field(default_factory=list)
 
 
 class ExecutionResult(BaseModel):

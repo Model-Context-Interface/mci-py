@@ -31,7 +31,7 @@ class FileExecutor(BaseExecutor):
 
         Args:
             config: File execution configuration with path and enableTemplating flag
-            context: Context dictionary with 'props', 'env', and 'input' keys
+            context: Context dictionary with 'props', 'env', 'input', and 'path_validation' keys
 
         Returns:
             ExecutionResult with file content (possibly templated) or error
@@ -45,6 +45,16 @@ class FileExecutor(BaseExecutor):
         try:
             # Apply basic templating to all config fields (e.g., path)
             self._apply_basic_templating_to_config(config, context)
+
+            # Validate file path if path validation context is provided
+            if context.get("path_validation"):
+                validator = context["path_validation"]["validator"]
+                from ..path_validator import PathValidationError
+
+                try:
+                    validator.validate_path(config.path)
+                except PathValidationError as e:
+                    return self._format_error(e)
 
             # Read the file content
             content = self._read_file(config.path)

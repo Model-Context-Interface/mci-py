@@ -84,6 +84,9 @@ class MCIClient:
         elif schema_file_path is None:
             raise MCIClientError("Either 'schema_file_path' or 'json_file_path' must be provided")
 
+        # Store schema file path for path validation
+        self._schema_file_path = schema_file_path
+
         # Load schema using SchemaParser
         try:
             self._schema = SchemaParser.parse_file(schema_file_path)
@@ -93,8 +96,8 @@ class MCIClient:
         # Store environment variables
         self._env_vars = env_vars if env_vars is not None else {}
 
-        # Initialize ToolManager
-        self._tool_manager = ToolManager(self._schema)
+        # Initialize ToolManager with schema file path for path validation
+        self._tool_manager = ToolManager(self._schema, schema_file_path)
 
     def tools(self) -> list[Tool]:
         """

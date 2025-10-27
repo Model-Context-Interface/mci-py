@@ -5,6 +5,7 @@ This module provides the ToolManager class that manages tool definitions
 from an MCISchema, including retrieval, filtering, and execution.
 """
 
+from pathlib import Path
 from typing import Any
 
 from .executors import ExecutorFactory
@@ -26,16 +27,19 @@ class ToolManager:
     appropriate executor based on tool configuration.
     """
 
-    def __init__(self, schema: MCISchema):
+    def __init__(self, schema: MCISchema, schema_file_path: str | None = None):
         """
         Initialize the ToolManager with an MCISchema.
 
         Args:
             schema: MCISchema containing tool definitions
+            schema_file_path: Path to the schema file (for path validation context)
         """
         self.schema = schema
         # Create a mapping for fast tool lookup by name
         self._tool_map: dict[str, Tool] = {tool.name: tool for tool in schema.tools}
+        # Store schema file path for path validation
+        self._schema_file_path = schema_file_path
 
     def get_tool(self, name: str) -> Tool | None:
         """
@@ -129,11 +133,39 @@ class ToolManager:
             self._validate_input_properties(tool, properties)
 
         # Build context for execution
-        context = {
+        context: dict[str, Any] = {
             "props": properties,
             "env": env_vars,
             "input": properties,  # Alias for backward compatibility
         }
+
+        # Build path validation context
+        path_context: dict[str, Any] | None = None
+        if self._schema_file_path:
+            from .path_validator import PathValidator
+
+            # Get context directory from schema file path
+            context_dir = Path(self._schema_file_path).parent
+
+            # Merge schema and tool settings (tool takes precedence)
+            enable_any_paths, directory_allow_list = PathValidator.merge_settings(
+                schema_enable_any_paths=self.schema.enableAnyPaths,
+                schema_directory_allow_list=self.schema.directoryAllowList,
+                tool_enable_any_paths=tool.enableAnyPaths,
+                tool_directory_allow_list=tool.directoryAllowList,
+            )
+
+            # Create path validator
+            path_context = {
+                "validator": PathValidator(
+                    context_dir=context_dir,
+                    enable_any_paths=enable_any_paths,
+                    directory_allow_list=directory_allow_list,
+                )
+            }
+
+        # Add path context to execution context
+        context["path_validation"] = path_context
 
         # Get the appropriate executor based on execution type
         executor = ExecutorFactory.get_executor(tool.execution.type)
