@@ -1,0 +1,71 @@
+{
+  "schemaVersion": "1.0",
+  "metadata": {
+    "name": "File Operations Toolset",
+    "description": "Tools for file system operations",
+    "version": "1.0.0"
+  },
+  "tools": [
+    {
+      "name": "read_file",
+      "description": "Read a file from disk",
+      "tags": ["file", "read"],
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "path": {
+            "type": "string",
+            "description": "File path"
+          }
+        },
+        "required": ["path"]
+      },
+      "execution": {
+        "type": "text",
+        "text": "Reading file: {{props.path}}"
+      }
+    },
+    {
+      "name": "write_file",
+      "description": "Write to a file",
+      "tags": ["file", "write"],
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "path": {
+            "type": "string",
+            "description": "File path"
+          },
+          "content": {
+            "type": "string",
+            "description": "File content"
+          }
+        },
+        "required": ["path", "content"]
+      },
+      "execution": {
+        "type": "text",
+        "text": "Writing to file: {{props.path}}"
+      }
+    },
+    {
+      "name": "delete_file",
+      "description": "Delete a file",
+      "tags": ["file", "write", "admin"],
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "path": {
+            "type": "string",
+            "description": "File path"
+          }
+        },
+        "required": ["path"]
+      },
+      "execution": {
+        "type": "text",
+        "text": "Deleting file: {{props.path}}"
+      }
+    }
+  ]
+}

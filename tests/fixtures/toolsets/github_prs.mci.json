@@ -1,0 +1,71 @@
+{
+  "schemaVersion": "1.0",
+  "metadata": {
+    "name": "GitHub Pull Requests Toolset",
+    "description": "Tools for managing GitHub pull requests",
+    "version": "1.0.0"
+  },
+  "tools": [
+    {
+      "name": "list_prs",
+      "description": "List all pull requests in a repository",
+      "tags": ["github", "read"],
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "repo": {
+            "type": "string",
+            "description": "Repository name"
+          }
+        },
+        "required": ["repo"]
+      },
+      "execution": {
+        "type": "text",
+        "text": "Listing PRs for {{props.repo}}"
+      }
+    },
+    {
+      "name": "create_pr",
+      "description": "Create a new pull request",
+      "tags": ["github", "write"],
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "repo": {
+            "type": "string",
+            "description": "Repository name"
+          },
+          "title": {
+            "type": "string",
+            "description": "PR title"
+          }
+        },
+        "required": ["repo", "title"]
+      },
+      "execution": {
+        "type": "text",
+        "text": "Creating PR in {{props.repo}}: {{props.title}}"
+      }
+    },
+    {
+      "name": "merge_pr",
+      "description": "Merge a pull request",
+      "tags": ["github", "write", "admin"],
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "pr_number": {
+            "type": "number",
+            "description": "PR number"
+          }
+        },
+        "required": ["pr_number"]
+      },
+      "execution": {
+        "type": "text",
+        "text": "Merging PR #{{props.pr_number}}"
+      }
+    }
+  ]
+}
