@@ -943,6 +943,21 @@ All tool executions return a consistent result format.
 | `error`    | string  | Error message (if `isError: true`)                        |
 | `metadata` | object  | Optional metadata (e.g., HTTP status code, CLI exit code) |
 
+### Metadata Fields by Execution Type
+
+Different execution types include specific metadata:
+
+**HTTP Execution Metadata:**
+- `status_code` (integer): HTTP status code
+- `response_time_ms` (integer): Response time in milliseconds
+
+**CLI Execution Metadata:**
+- `exit_code` (integer): Command exit code (0 for success, non-zero for failure)
+- `stdout_bytes` (integer): Size of stdout in bytes
+- `stderr_bytes` (integer): Size of stderr in bytes
+- `stderr` (string): Standard error output (if any)
+- `stdout` (string): Standard output (only included in error results)
+
 ### Successful Result
 
 ```json
@@ -961,6 +976,26 @@ All tool executions return a consistent result format.
 }
 ```
 
+### CLI Successful Result
+
+```json
+{
+  "isError": false,
+  "content": [
+    {
+      "type": "text",
+      "text": "Hello, World!\n"
+    }
+  ],
+  "metadata": {
+    "exit_code": 0,
+    "stdout_bytes": 14,
+    "stderr_bytes": 0,
+    "stderr": ""
+  }
+}
+```
+
 ### Error Result
 
 ```json
@@ -969,6 +1004,22 @@ All tool executions return a consistent result format.
   "error": "HTTP request failed: 404 Not Found",
   "metadata": {
     "status_code": 404
+  }
+}
+```
+
+### CLI Error Result
+
+```json
+{
+  "isError": true,
+  "error": "Command exited with code 1: permission denied",
+  "metadata": {
+    "exit_code": 1,
+    "stdout_bytes": 0,
+    "stderr_bytes": 18,
+    "stderr": "permission denied",
+    "stdout": ""
   }
 }
 ```
