@@ -667,6 +667,8 @@ class TestSchemaParserYAMLSupport:
 
         # Compare results
         assert json_schema.schemaVersion == yaml_schema.schemaVersion
+        assert json_schema.metadata is not None
+        assert yaml_schema.metadata is not None
         assert json_schema.metadata.name == yaml_schema.metadata.name
         assert len(json_schema.tools) == len(yaml_schema.tools)
         assert json_schema.tools[0].name == yaml_schema.tools[0].name

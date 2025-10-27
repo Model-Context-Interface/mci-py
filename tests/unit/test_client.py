@@ -498,7 +498,7 @@ class TestYAMLSupport:
         json_tools = json_client.tools()
         yaml_tools = yaml_client.tools()
         assert len(json_tools) == len(yaml_tools)
-        for json_tool, yaml_tool in zip(json_tools, yaml_tools):
+        for json_tool, yaml_tool in zip(json_tools, yaml_tools, strict=False):
             assert json_tool.name == yaml_tool.name
             assert json_tool.title == yaml_tool.title
 
@@ -517,6 +517,7 @@ class TestYAMLSupport:
         result = client.execute("generate_text", properties={"name": "Test"})
         assert isinstance(result, ExecutionResult)
         assert result.isError is False
+        assert result.content is not None
         assert "Test" in result.content
 
     def test_backward_compatibility_json_file_path(self, sample_schema_dict, tmp_path):
