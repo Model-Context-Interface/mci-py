@@ -320,7 +320,7 @@ class TestCLIExecutor:
             result = executor.execute(config, context)
 
             assert not result.result.isError
-            assert Path(tmpdir).name in result.content or tmpdir in result.content
+            assert Path(tmpdir).name in result.result.content[0].text or tmpdir in result.result.content[0].text
 
     def test_execute_with_templated_cwd(self, executor, context):
         """Test executing command with templated working directory."""
@@ -339,7 +339,7 @@ class TestCLIExecutor:
             result = executor.execute(config, context)
 
             assert not result.result.isError
-            assert Path(tmpdir).name in result.content or tmpdir in result.content
+            assert Path(tmpdir).name in result.result.content[0].text or tmpdir in result.result.content[0].text
 
     def test_execute_wrong_config_type(self, executor, context):
         """Test executing with wrong config type."""
