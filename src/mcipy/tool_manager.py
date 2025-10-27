@@ -117,7 +117,7 @@ class ToolManager:
         # Empty tag list should return no tools
         if not tags:
             return []
-        
+
         tags_set = set(tags)
         tools = [tool for tool in tools if any(tag in tags_set for tag in tool.tags)]
 
@@ -144,7 +144,7 @@ class ToolManager:
         # Empty tag list should return all tools
         if not tags:
             return tools
-        
+
         tags_set = set(tags)
         tools = [tool for tool in tools if not any(tag in tags_set for tag in tool.tags)]
 
