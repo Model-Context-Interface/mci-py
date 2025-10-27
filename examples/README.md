@@ -2,9 +2,11 @@
 
 This directory contains comprehensive example files demonstrating the MCI Python Adapter functionality. Each example file showcases different execution types and features.
 
+**Note:** All examples are available in both JSON and YAML formats. The functionality is identical - choose the format you prefer!
+
 ## Example Files
 
-### 1. `http_example.json`
+### 1. `http_example.json` / `http_example.yaml`
 Demonstrates HTTP execution with various authentication methods:
 - **get_weather**: HTTP GET request with query parameters
 - **create_report**: HTTP POST with Bearer token authentication and JSON body
@@ -46,7 +48,7 @@ Demonstrates file reading with and without templating:
 - Enabling/disabling template processing
 - Reading configuration files
 
-### 4. `text_example.json`
+### 4. `text_example.json` / `text_example.yaml`
 Demonstrates text template execution:
 - **generate_message**: Simple text with placeholders
 - **generate_welcome**: Welcome message with multiple placeholders
@@ -59,7 +61,7 @@ Demonstrates text template execution:
 - Property placeholders
 - Multi-line text templates
 
-### 5. `mixed_example.json`
+### 5. `mixed_example.json` / `mixed_example.yaml`
 Comprehensive example combining all execution types:
 - 2 HTTP tools (GET and POST)
 - 2 CLI tools (grep and ls)
@@ -98,9 +100,15 @@ You can load and use any example file with the MCIClient:
 ```python
 from mcipy import MCIClient
 
-# Load HTTP examples
+# Load HTTP examples (JSON format)
 client = MCIClient(
-    json_file_path="examples/http_example.json",
+    schema_file_path="examples/http_example.json",
+    env_vars={"BEARER_TOKEN": "your-token"}
+)
+
+# Or load from YAML format
+client = MCIClient(
+    schema_file_path="examples/http_example.yaml",
     env_vars={"BEARER_TOKEN": "your-token"}
 )
 

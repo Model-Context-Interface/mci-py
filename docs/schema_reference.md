@@ -1,6 +1,6 @@
 # MCI Schema Reference
 
-This document provides a complete reference for the Model Context Interface (MCI) JSON schema v1. It describes all fields, types, execution configurations, authentication options, and templating syntax supported by the MCI Python adapter.
+This document provides a complete reference for the Model Context Interface (MCI) schema v1. It describes all fields, types, execution configurations, authentication options, and templating syntax supported by the MCI Python adapter.
 
 ## Table of Contents
 
@@ -29,7 +29,9 @@ This document provides a complete reference for the Model Context Interface (MCI
 
 ## Overview
 
-MCI (Model Context Interface) uses a JSON schema to define tools that AI agents can execute. Each tool specifies:
+MCI (Model Context Interface) uses a schema to define tools that AI agents can execute. The schema can be written in either **JSON** or **YAML** format - both are fully supported and produce identical results.
+
+Each tool specifies:
 
 - What it does (metadata and description)
 - What inputs it accepts (JSON Schema)
@@ -38,6 +40,10 @@ MCI (Model Context Interface) uses a JSON schema to define tools that AI agents 
 The schema is designed to be platform-agnostic, secure (secrets via environment variables), and supports multiple execution types.
 
 **Schema Version**: `1.0`
+
+**Supported File Formats**: 
+- JSON (`.json`)
+- YAML (`.yaml`, `.yml`)
 
 ---
 
@@ -51,7 +57,7 @@ The root MCI context file has three main fields:
 | `metadata`      | object | Optional     | Descriptive metadata about the tool collection |
 | `tools`         | array  | **Required** | Array of tool definitions                      |
 
-### Example
+### Example (JSON)
 
 ```json
 {
@@ -65,6 +71,20 @@ The root MCI context file has three main fields:
   },
   "tools": []
 }
+```
+
+### Example (YAML)
+
+```yaml
+schemaVersion: '1.0'
+metadata:
+  name: My API Tools
+  description: Tools for interacting with my API
+  version: 1.0.0
+  license: MIT
+  authors:
+    - John Doe
+tools: []
 ```
 
 ---
@@ -81,7 +101,7 @@ Optional metadata about the tool collection.
 | `license`     | string | Optional | License identifier (e.g., `"MIT"`, `"Apache-2.0"`) |
 | `authors`     | array  | Optional | Array of author names                              |
 
-### Example
+### Example (JSON)
 
 ```json
 {
@@ -91,6 +111,18 @@ Optional metadata about the tool collection.
   "license": "MIT",
   "authors": ["Weather Team", "API Team"]
 }
+```
+
+### Example (YAML)
+
+```yaml
+name: Weather API Tools
+description: Tools for fetching weather information
+version: 1.2.0
+license: MIT
+authors:
+  - Weather Team
+  - API Team
 ```
 
 ---

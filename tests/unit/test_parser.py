@@ -3,6 +3,7 @@
 import json
 
 import pytest
+import yaml
 
 from mcipy.enums import ExecutionType
 from mcipy.models import (
@@ -460,3 +461,215 @@ class TestSchemaParserIntegration:
             SchemaParserError, match="Tool 'invalid_tool' has invalid execution config"
         ):
             SchemaParser.parse_dict(data)
+
+
+class TestSchemaParserYAMLSupport:
+    """Tests for YAML file parsing support."""
+
+    def test_parse_yaml_file_valid_schema(self, tmp_path):
+        """Test parsing a valid YAML schema file."""
+        schema_data = {
+            "schemaVersion": "1.0",
+            "metadata": {"name": "Test Tools", "version": "1.0.0"},
+            "tools": [
+                {
+                    "name": "test_tool",
+                    "execution": {"type": "text", "text": "Hello World"},
+                }
+            ],
+        }
+
+        # Write schema to temporary YAML file
+        schema_file = tmp_path / "test_schema.yaml"
+        schema_file.write_text(yaml.dump(schema_data))
+
+        # Parse the file
+        schema = SchemaParser.parse_file(str(schema_file))
+
+        assert isinstance(schema, MCISchema)
+        assert schema.schemaVersion == "1.0"
+        assert schema.metadata is not None
+        assert schema.metadata.name == "Test Tools"
+        assert len(schema.tools) == 1
+        assert schema.tools[0].name == "test_tool"
+
+    def test_parse_yml_file_valid_schema(self, tmp_path):
+        """Test parsing a valid .yml schema file."""
+        schema_data = {
+            "schemaVersion": "1.0",
+            "metadata": {"name": "Test Tools", "version": "1.0.0"},
+            "tools": [
+                {
+                    "name": "test_tool",
+                    "execution": {"type": "text", "text": "Hello World"},
+                }
+            ],
+        }
+
+        # Write schema to temporary .yml file
+        schema_file = tmp_path / "test_schema.yml"
+        schema_file.write_text(yaml.dump(schema_data))
+
+        # Parse the file
+        schema = SchemaParser.parse_file(str(schema_file))
+
+        assert isinstance(schema, MCISchema)
+        assert schema.schemaVersion == "1.0"
+        assert len(schema.tools) == 1
+
+    def test_parse_yaml_file_invalid_yaml(self, tmp_path):
+        """Test parsing a file with invalid YAML."""
+        schema_file = tmp_path / "invalid.yaml"
+        schema_file.write_text("{ invalid: yaml: content }")
+
+        with pytest.raises(SchemaParserError, match="Invalid YAML"):
+            SchemaParser.parse_file(str(schema_file))
+
+    def test_parse_yaml_complex_schema(self, tmp_path):
+        """Test parsing a complex YAML schema with all execution types."""
+        schema_data = {
+            "schemaVersion": "1.0",
+            "metadata": {
+                "name": "Complex Tools",
+                "description": "A comprehensive tool collection",
+                "version": "1.0.0",
+                "license": "MIT",
+                "authors": ["Developer Team"],
+            },
+            "tools": [
+                {
+                    "name": "get_weather",
+                    "title": "Get Weather",
+                    "description": "Fetch weather data",
+                    "inputSchema": {
+                        "type": "object",
+                        "properties": {"location": {"type": "string"}},
+                    },
+                    "execution": {
+                        "type": "http",
+                        "url": "https://api.weather.com/v1/current",
+                        "method": "GET",
+                        "headers": {"Accept": "application/json"},
+                        "params": {"location": "{{props.location}}"},
+                        "timeout_ms": 5000,
+                    },
+                },
+                {
+                    "name": "list_files",
+                    "execution": {
+                        "type": "cli",
+                        "command": "ls",
+                        "args": ["-la"],
+                        "cwd": "/home",
+                        "timeout_ms": 3000,
+                    },
+                },
+                {
+                    "name": "read_config",
+                    "execution": {
+                        "type": "file",
+                        "path": "/etc/config.txt",
+                        "enableTemplating": True,
+                    },
+                },
+                {
+                    "name": "greeting",
+                    "execution": {"type": "text", "text": "Hello {{props.name}}!"},
+                },
+            ],
+        }
+
+        # Write and parse YAML
+        schema_file = tmp_path / "complex_schema.yaml"
+        schema_file.write_text(yaml.dump(schema_data))
+        schema = SchemaParser.parse_file(str(schema_file))
+
+        # Verify structure
+        assert schema.schemaVersion == "1.0"
+        assert schema.metadata is not None
+        assert schema.metadata.name == "Complex Tools"
+        assert len(schema.tools) == 4
+
+        # Verify HTTP tool
+        http_tool = schema.tools[0]
+        assert http_tool.name == "get_weather"
+        assert http_tool.title == "Get Weather"
+        assert isinstance(http_tool.execution, HTTPExecutionConfig)
+        assert http_tool.execution.url == "https://api.weather.com/v1/current"
+
+        # Verify CLI tool
+        cli_tool = schema.tools[1]
+        assert cli_tool.name == "list_files"
+        assert isinstance(cli_tool.execution, CLIExecutionConfig)
+        assert cli_tool.execution.command == "ls"
+
+        # Verify File tool
+        file_tool = schema.tools[2]
+        assert file_tool.name == "read_config"
+        assert isinstance(file_tool.execution, FileExecutionConfig)
+        assert file_tool.execution.path == "/etc/config.txt"
+
+        # Verify Text tool
+        text_tool = schema.tools[3]
+        assert text_tool.name == "greeting"
+        assert isinstance(text_tool.execution, TextExecutionConfig)
+        assert text_tool.execution.text == "Hello {{props.name}}!"
+
+    def test_parse_unsupported_extension(self, tmp_path):
+        """Test parsing a file with unsupported extension."""
+        schema_file = tmp_path / "test_schema.txt"
+        schema_file.write_text("some content")
+
+        with pytest.raises(SchemaParserError, match="Unsupported file extension"):
+            SchemaParser.parse_file(str(schema_file))
+
+    def test_parse_yaml_empty_file(self, tmp_path):
+        """Test parsing an empty YAML file."""
+        schema_file = tmp_path / "empty.yaml"
+        schema_file.write_text("")
+
+        # Empty YAML returns None, which should fail validation
+        with pytest.raises(SchemaParserError):
+            SchemaParser.parse_file(str(schema_file))
+
+    def test_json_and_yaml_produce_identical_results(self, tmp_path):
+        """Test that JSON and YAML files produce identical schema objects."""
+        schema_data = {
+            "schemaVersion": "1.0",
+            "metadata": {"name": "Test Tools", "version": "1.0.0"},
+            "tools": [
+                {
+                    "name": "http_tool",
+                    "execution": {
+                        "type": "http",
+                        "url": "https://api.example.com",
+                        "method": "GET",
+                    },
+                },
+                {
+                    "name": "cli_tool",
+                    "execution": {"type": "cli", "command": "ls", "args": ["-la"]},
+                },
+            ],
+        }
+
+        # Create JSON file
+        json_file = tmp_path / "schema.json"
+        json_file.write_text(json.dumps(schema_data))
+
+        # Create YAML file
+        yaml_file = tmp_path / "schema.yaml"
+        yaml_file.write_text(yaml.dump(schema_data))
+
+        # Parse both
+        json_schema = SchemaParser.parse_file(str(json_file))
+        yaml_schema = SchemaParser.parse_file(str(yaml_file))
+
+        # Compare results
+        assert json_schema.schemaVersion == yaml_schema.schemaVersion
+        assert json_schema.metadata is not None
+        assert yaml_schema.metadata is not None
+        assert json_schema.metadata.name == yaml_schema.metadata.name
+        assert len(json_schema.tools) == len(yaml_schema.tools)
+        assert json_schema.tools[0].name == yaml_schema.tools[0].name
+        assert json_schema.tools[1].name == yaml_schema.tools[1].name

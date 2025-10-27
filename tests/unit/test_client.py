@@ -440,3 +440,135 @@ class TestEdgeCases:
         # Both should succeed and use different dates from their respective env vars
         assert isinstance(result1.content, str)
         assert isinstance(result2.content, str)
+
+
+class TestYAMLSupport:
+    """Tests for YAML file support in MCIClient."""
+
+    def test_init_with_yaml_file(self, sample_schema_dict, tmp_path):
+        """Test initialization with YAML schema file."""
+        import yaml
+
+        # Create YAML file
+        yaml_file = tmp_path / "schema.yaml"
+        yaml_file.write_text(yaml.dump(sample_schema_dict))
+
+        # Initialize client
+        client = MCIClient(schema_file_path=str(yaml_file))
+
+        # Verify client is functional
+        assert len(client.list_tools()) == 5
+        tools = client.tools()
+        assert len(tools) == 5
+
+    def test_init_with_yml_extension(self, sample_schema_dict, tmp_path):
+        """Test initialization with .yml extension."""
+        import yaml
+
+        # Create .yml file
+        yml_file = tmp_path / "schema.yml"
+        yml_file.write_text(yaml.dump(sample_schema_dict))
+
+        # Initialize client
+        client = MCIClient(schema_file_path=str(yml_file))
+
+        # Verify client is functional
+        assert len(client.list_tools()) == 5
+
+    def test_yaml_and_json_interchangeable(self, sample_schema_dict, tmp_path):
+        """Test that YAML and JSON files work identically."""
+        import yaml
+
+        # Create JSON file
+        json_file = tmp_path / "schema.json"
+        json_file.write_text(json.dumps(sample_schema_dict))
+
+        # Create YAML file
+        yaml_file = tmp_path / "schema.yaml"
+        yaml_file.write_text(yaml.dump(sample_schema_dict))
+
+        # Initialize clients
+        json_client = MCIClient(schema_file_path=str(json_file))
+        yaml_client = MCIClient(schema_file_path=str(yaml_file))
+
+        # Compare tool lists
+        assert json_client.list_tools() == yaml_client.list_tools()
+
+        # Compare tool objects
+        json_tools = json_client.tools()
+        yaml_tools = yaml_client.tools()
+        assert len(json_tools) == len(yaml_tools)
+        for json_tool, yaml_tool in zip(json_tools, yaml_tools, strict=False):
+            assert json_tool.name == yaml_tool.name
+            assert json_tool.title == yaml_tool.title
+
+    def test_execute_tool_from_yaml(self, sample_schema_dict, tmp_path):
+        """Test executing a tool loaded from YAML file."""
+        import yaml
+
+        # Create YAML file
+        yaml_file = tmp_path / "schema.yaml"
+        yaml_file.write_text(yaml.dump(sample_schema_dict))
+
+        # Initialize client
+        client = MCIClient(schema_file_path=str(yaml_file))
+
+        # Execute a tool
+        result = client.execute("generate_text", properties={"name": "Test"})
+        assert isinstance(result, ExecutionResult)
+        assert result.isError is False
+        assert result.content is not None
+        assert "Test" in result.content
+
+    def test_backward_compatibility_json_file_path(self, sample_schema_dict, tmp_path):
+        """Test that json_file_path parameter still works for backward compatibility."""
+        # Create JSON file
+        json_file = tmp_path / "schema.json"
+        json_file.write_text(json.dumps(sample_schema_dict))
+
+        # Use old parameter name
+        client = MCIClient(json_file_path=str(json_file))
+
+        # Verify client is functional
+        assert len(client.list_tools()) == 5
+
+    def test_json_file_path_with_yaml_file(self, sample_schema_dict, tmp_path):
+        """Test using json_file_path parameter with YAML file."""
+        import yaml
+
+        # Create YAML file
+        yaml_file = tmp_path / "schema.yaml"
+        yaml_file.write_text(yaml.dump(sample_schema_dict))
+
+        # Use old parameter name with YAML file (should still work)
+        client = MCIClient(json_file_path=str(yaml_file))
+
+        # Verify client is functional
+        assert len(client.list_tools()) == 5
+
+    def test_schema_file_path_takes_precedence(self, sample_schema_dict, tmp_path):
+        """Test that schema_file_path takes precedence over json_file_path."""
+        import yaml
+
+        # Create two different files
+        json_file = tmp_path / "schema.json"
+        json_file.write_text(json.dumps(sample_schema_dict))
+
+        minimal_schema = {
+            "schemaVersion": "1.0",
+            "tools": [{"name": "minimal_tool", "execution": {"type": "text", "text": "Hi"}}],
+        }
+        yaml_file = tmp_path / "minimal.yaml"
+        yaml_file.write_text(yaml.dump(minimal_schema))
+
+        # Provide both parameters - schema_file_path should be used
+        client = MCIClient(schema_file_path=str(yaml_file), json_file_path=str(json_file))
+
+        # Should load from schema_file_path (YAML with minimal tools)
+        assert len(client.list_tools()) == 1
+        assert "minimal_tool" in client.list_tools()
+
+    def test_missing_both_parameters_raises_error(self):
+        """Test that missing both parameters raises an error."""
+        with pytest.raises(MCIClientError, match="must be provided"):
+            MCIClient()

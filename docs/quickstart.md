@@ -67,8 +67,9 @@ from mcipy import MCIClient
 
 ### 2. Create a Tool Schema File
 
-Create a file named `my-tools.mci.json` with your tool definitions:
+Create a file named `my-tools.mci.json` (or `my-tools.mci.yaml` for YAML format) with your tool definitions:
 
+**JSON Format:**
 ```json
 {
   "schemaVersion": "1.0",
@@ -101,18 +102,60 @@ Create a file named `my-tools.mci.json` with your tool definitions:
 }
 ```
 
+**YAML Format:**
+```yaml
+schemaVersion: '1.0'
+metadata:
+  name: My Tools
+  description: A collection of useful tools
+  version: 1.0.0
+tools:
+  - name: greet_user
+    title: User Greeting
+    description: Generate a personalized greeting message
+    inputSchema:
+      type: object
+      properties:
+        username:
+          type: string
+          description: The user's name
+      required:
+        - username
+    execution:
+      type: text
+      text: Hello, {{props.username}}! Welcome to MCI.
+```
+
+> **Note:** MCI supports both JSON (`.json`) and YAML (`.yaml`, `.yml`) formats interchangeably. Choose the format that best suits your preferences!
+
 ### 3. Initialize the Client
 
 ```python
 from mcipy import MCIClient
 
-# Initialize with your schema file
+# Initialize with your JSON schema file
 client = MCIClient(
-    json_file_path="my-tools.mci.json",
+    schema_file_path="my-tools.mci.json",
     env_vars={
         "API_KEY": "your-secret-key",
         "USERNAME": "demo_user"
     }
+)
+
+# Or initialize with YAML schema file
+client = MCIClient(
+    schema_file_path="my-tools.mci.yaml",
+    env_vars={
+        "API_KEY": "your-secret-key",
+        "USERNAME": "demo_user"
+    }
+)
+
+# Note: For backward compatibility, json_file_path still works
+# but schema_file_path is recommended
+client = MCIClient(
+    json_file_path="my-tools.mci.json",  # Works with both .json and .yaml
+    env_vars={"API_KEY": "your-secret-key"}
 )
 ```
 

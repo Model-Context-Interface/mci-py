@@ -34,11 +34,11 @@ This document provides a comprehensive API reference for the Python MCI Adapter 
 
 ## MCIClient Class
 
-The `MCIClient` class is the main entry point for the MCI Python adapter. It provides methods for loading, filtering, and executing MCI tools from a JSON schema file.
+The `MCIClient` class is the main entry point for the MCI Python adapter. It provides methods for loading, filtering, and executing MCI tools from a JSON or YAML schema file.
 
 ### Initialization
 
-#### `MCIClient(json_file_path, env_vars=None)`
+#### `MCIClient(schema_file_path=None, env_vars=None, json_file_path=None)`
 
 Initialize the MCI client with a schema file and optional environment variables.
 
@@ -46,30 +46,42 @@ Initialize the MCI client with a schema file and optional environment variables.
 
 | Name | Type | Required | Description |
 |------|------|----------|-------------|
-| `json_file_path` | `str` | Yes | Path to the MCI JSON schema file |
+| `schema_file_path` | `str` | Conditional* | Path to the MCI schema file (`.json`, `.yaml`, or `.yml`) |
 | `env_vars` | `dict[str, Any]` | No | Environment variables for template substitution (default: `{}`) |
+| `json_file_path` | `str` | Conditional* | **DEPRECATED.** Use `schema_file_path` instead. Kept for backward compatibility. |
+
+*Either `schema_file_path` or `json_file_path` must be provided.
 
 **Raises:**
 
 - `MCIClientError` - If the schema file cannot be loaded or parsed
+- `MCIClientError` - If neither `schema_file_path` nor `json_file_path` is provided
 
 **Example:**
 
 ```python
 from mcipy import MCIClient
 
-# Initialize without environment variables
-client = MCIClient(json_file_path="example.mci.json")
+# Initialize with JSON file (recommended)
+client = MCIClient(schema_file_path="example.mci.json")
+
+# Initialize with YAML file
+client = MCIClient(schema_file_path="example.mci.yaml")
 
 # Initialize with environment variables
 client = MCIClient(
-    json_file_path="example.mci.json",
+    schema_file_path="example.mci.json",
     env_vars={
         "API_KEY": "your-secret-key",
         "USERNAME": "demo_user",
         "BEARER_TOKEN": "token-123"
     }
 )
+
+# Backward compatibility: json_file_path still works
+client = MCIClient(json_file_path="example.mci.json")
+# Works with YAML too
+client = MCIClient(json_file_path="example.mci.yaml")
 ```
 
 **Success Response:**
@@ -81,6 +93,9 @@ Returns an initialized `MCIClient` instance ready to use.
 ```python
 # Raises MCIClientError
 MCIClientError: Failed to load schema from invalid.json: [Errno 2] No such file or directory: 'invalid.json'
+
+# Unsupported file extension
+MCIClientError: Failed to load schema from file.txt: Unsupported file extension '.txt'. Supported extensions: .json, .yaml, .yml
 ```
 
 ---
