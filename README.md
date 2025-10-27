@@ -1,25 +1,25 @@
 # mci-py
 
-**MCI Python Adapter** - A lightweight, Python adapter for the Model Context Interface (MCI), enabling AI agents to execute tools defined in JSON schemas.
+**MCI Python Adapter** - A lightweight, Python adapter for the Model Context Interface (MCI), enabling AI agents to execute tools defined in JSON or YAML schemas.
 
-The **Model Context Interface (MCI)** is an open-source, platform-agnostic system for defining and executing AI agent tools through standardized JSON schemas.
+The **Model Context Interface (MCI)** is an open-source, platform-agnostic system for defining and executing AI agent tools through standardized schemas.
 
-Using the basic features that are supported in **every programming language**, MCI makes it easier to define collections of AI Tools, filter, execute and maintain. Making it a strong alternative or supplement of MCP, which lives right in your project repo and fits in single JSON file. (Check [example.mci.json](https://github.com/Model-Context-Interface/mci-py/blob/main/example.mci.json) & [example.py](https://github.com/Model-Context-Interface/mci-py/blob/main/example.py))
+Using the basic features that are supported in **every programming language**, MCI makes it easier to define collections of AI Tools, filter, execute and maintain. Making it a strong alternative or supplement of MCP, which lives right in your project repo and fits in single JSON or YAML file. (Check [example.mci.json](https://github.com/Model-Context-Interface/mci-py/blob/main/example.mci.json) or [example.mci.yaml](https://github.com/Model-Context-Interface/mci-py/blob/main/example.mci.yaml) & [example.py](https://github.com/Model-Context-Interface/mci-py/blob/main/example.py))
 
-The `mci-py` Python adapter allows you to load tool definitions from JSON files and execute them with full control over authentication, templating, and error handling.
+The `mci-py` Python adapter allows you to load tool definitions from JSON or YAML files and execute them with full control over authentication, templating, and error handling.
 
 ---
 
 ## Features
 
 - 🚀 **Simple API** - Load and execute tools with just a few lines of Python code
-- 📝 **JSON Schema-Based** - Define tools declaratively and statically in JSON files
+- 📝 **Schema-Based** - Define tools declaratively and statically in JSON or YAML files
 - 🔄 **Multiple Execution Types** - Support for HTTP, CLI, File, and Text execution
 - ✔️ **Easy to build** - Share MCI Schema reference and documentation of any REST API or CLI application to LLM to build your favorite tools in minute
 - 🔐 **Built-in Authentication** - API Key, Bearer Token, Basic Auth, and OAuth2 support
-- 🔁 **Easy to share** - All you need to move your toolset to another project, or share it to the world is a single JSON file.
+- 🔁 **Easy to share** - All you need to move your toolset to another project, or share it to the world is a single JSON or YAML file.
 - 🎯 **Template Engine** - Dynamic value substitution for environment variables and properties, as well as advanced templating directives like "@if", "@foreach", etc. to support complex prompting.
-- 🔒 **Secure by design** - All you need is adapter and JSON file, which is easy to review, even by an LLM, compared to the whole servers. No more third-party code or servers accessing your data.
+- 🔒 **Secure by design** - All you need is adapter and schema file, which is easy to review, even by an LLM, compared to the whole servers. No more third-party code or servers accessing your data.
 - 💔 **Flexible separation** - You can have one ".mci.json" file for whole project and filter tools out, or you can have 1 file per agent to include whole toolset of agent, or you can have 1 file per API wrapped, you can even have 10 files from different authors and use only 1 tool from each - you can do anything: it doesn't matter, it's not 10 MCP servers to initialize, it's just 10 files in your repo 🤷
 - 🎨 **Type Safe** - Full type hints and Pydantic validation
 - 🧪 **Well Tested** - 92%+ test coverage with comprehensive test suite
@@ -36,9 +36,17 @@ The `mci-py` Python adapter allows you to load tool definitions from JSON files 
 ```python
 from mcipy import MCIClient
 
-# Initialize with your schema file
+# Initialize with your JSON schema file
 client = MCIClient(
-    json_file_path="my-tools.mci.json",
+    schema_file_path="my-tools.mci.json",
+    env_vars={
+        "API_KEY": "your-secret-key",
+    }
+)
+
+# Or with YAML schema file
+client = MCIClient(
+    schema_file_path="my-tools.mci.yaml",
     env_vars={
         "API_KEY": "your-secret-key",
     }
@@ -61,7 +69,7 @@ result = client.execute(
 
 - [API Reference](docs/api_reference.md) - Comprehensive API documentation
 - [Quickstart Guide](docs/quickstart.md) - Get started quickly with examples
-- [Schema Reference](docs/schema_reference.md) - Complete JSON schema documentation
+- [Schema Reference](docs/schema_reference.md) - Complete schema documentation (JSON & YAML)
 
 ---
 
@@ -69,11 +77,11 @@ result = client.execute(
 
 Explore the [examples directory](./examples/) for comprehensive demonstrations:
 
-- [HTTP Example](./examples/http_example.json) - HTTP API calls with authentication
+- **HTTP Examples** - [JSON](./examples/http_example.json) | [YAML](./examples/http_example.yaml) - HTTP API calls with authentication
 - [CLI Example](./examples/cli_example.json) - Command-line tool execution
 - [File Example](./examples/file_example.json) - File reading with templating
-- [Text Example](./examples/text_example.json) - Text template generation
-- [Mixed Example](./examples/mixed_example.json) - Combined execution types
+- **Text Examples** - [JSON](./examples/text_example.json) | [YAML](./examples/text_example.yaml) - Text template generation
+- **Mixed Examples** - [JSON](./examples/mixed_example.json) | [YAML](./examples/mixed_example.yaml) - Combined execution types
 - [Python Usage Example](./examples/example_usage.py) - Complete Python integration example
 
 ---
