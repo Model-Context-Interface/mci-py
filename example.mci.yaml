@@ -1,7 +1,7 @@
 schemaVersion: '1.0'
 metadata:
   name: Example MCI Tools
-  description: Example JSON file demonstrating various MCI execution types
+  description: Example YAML file demonstrating various MCI execution types
   version: 1.0.0
   license: MIT
   authors:
