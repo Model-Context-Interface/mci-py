@@ -690,10 +690,7 @@ if not weather_result.isError:
 report_result = client.execute(
     tool_name="create_report",
     properties={
-        "annotations": {
-
-          "title": "Q1 Sales Report"
-        },
+        "title": "Q1 Sales Report",
         "content": "Sales increased by 15%"
     }
 )
