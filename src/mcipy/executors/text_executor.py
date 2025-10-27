@@ -7,7 +7,13 @@ It applies templating to text strings and returns the result.
 
 from typing import Any
 
-from ..models import ExecutionConfig, ExecutionResult, TextExecutionConfig
+from ..models import (
+    ExecutionConfig,
+    ExecutionResult,
+    ExecutionResultContent,
+    TextContent,
+    TextExecutionConfig,
+)
 from .base import BaseExecutor
 
 
@@ -48,9 +54,10 @@ class TextExecutor(BaseExecutor):
             result = self.template_engine.render_advanced(config.text, context)
 
             return ExecutionResult(
-                isError=False,
-                content=result,
-                error=None,
+                result=ExecutionResultContent(
+                    isError=False,
+                    content=[TextContent(text=result)],
+                )
             )
 
         except Exception as e:

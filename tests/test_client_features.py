@@ -71,10 +71,10 @@ class TestMCIClientFeatures:
         # Execute a text generation tool (doesn't require network/filesystem)
         result = client.execute("generate_message", properties={"username": "TestUser"})
         assert result is not None
-        assert result.isError is False
-        assert result.content is not None
-        assert isinstance(result.content, str)
-        assert "TestUser" in result.content
+        assert result.result.isError is False
+        assert len(result.result.content) == 1
+        assert isinstance(result.result.content[0].text, str)
+        assert "TestUser" in result.result.content[0].text
 
     def test_client_with_multiple_env_var_scenarios(self):
         """Test client behavior with different environment variable scenarios."""
@@ -186,18 +186,18 @@ class TestMCIClientFeatures:
 
         # Execute with simple properties
         result1 = client.execute("generate_message", properties={"username": "User1"})
-        assert result1.isError is False
-        assert isinstance(result1.content, str)
-        assert "User1" in result1.content
+        assert result1.result.isError is False
+        assert isinstance(result1.result.content[0].text, str)
+        assert "User1" in result1.result.content[0].text
 
         # Execute with different properties
         result2 = client.execute("generate_message", properties={"username": "User2"})
-        assert result2.isError is False
-        assert isinstance(result2.content, str)
-        assert "User2" in result2.content
+        assert result2.result.isError is False
+        assert isinstance(result2.result.content[0].text, str)
+        assert "User2" in result2.result.content[0].text
 
         # Results should be different
-        assert result1.content != result2.content
+        assert result1.result.content[0].text != result2.result.content[0].text
 
     def test_client_state_after_operations(self):
         """Test that client state remains consistent after operations."""

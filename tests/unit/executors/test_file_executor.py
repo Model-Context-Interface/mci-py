@@ -112,9 +112,9 @@ class TestFileExecutor:
 
         result = executor.execute(config, context)
 
-        assert result.isError is False
-        assert result.content == "Hello World"
-        assert result.error is None
+        assert result.result.isError is False
+        assert len(result.result.content) == 1
+        assert result.result.content[0].text == "Hello World"
 
     def test_execute_success_with_templating(self, executor, temp_template_file, context):
         """Test executing file read with templating."""
@@ -122,9 +122,9 @@ class TestFileExecutor:
 
         result = executor.execute(config, context)
 
-        assert result.isError is False
-        assert result.content == "Hello Alice! Your key is secret123."
-        assert result.error is None
+        assert result.result.isError is False
+        assert len(result.result.content) == 1
+        assert result.result.content[0].text == "Hello Alice! Your key is secret123."
 
     def test_execute_file_not_found(self, executor):
         """Test executing with non-existent file returns error."""
@@ -133,9 +133,9 @@ class TestFileExecutor:
 
         result = executor.execute(config, context)
 
-        assert result.isError is True
-        assert "File not found" in result.error
-        assert result.content is None
+        assert result.result.isError is True
+        assert len(result.result.content) == 1
+        assert "File not found" in result.result.content[0].text
 
     def test_execute_templated_path(self, executor, temp_file):
         """Test executing with templated file path."""
@@ -153,8 +153,9 @@ class TestFileExecutor:
 
         result = executor.execute(config, context)
 
-        assert result.isError is False
-        assert result.content == "Hello World"
+        assert result.result.isError is False
+        assert len(result.result.content) == 1
+        assert result.result.content[0].text == "Hello World"
 
     def test_execute_with_all_advanced_features(self, executor):
         """Test executing with file containing all advanced templating features."""
@@ -187,14 +188,14 @@ Test mode active
             config = FileExecutionConfig(path=temp_path, enableTemplating=True)
             result = executor.execute(config, context)
 
-            assert result.isError is False
-            assert "Test Report" in result.content
-            assert "- item1" in result.content
-            assert "- item2" in result.content
-            assert "Number: 0" in result.content
-            assert "Number: 1" in result.content
-            assert "Number: 2" in result.content
-            assert "Test mode active" in result.content
+            assert result.result.isError is False
+            assert "Test Report" in result.result.content[0].text
+            assert "- item1" in result.result.content[0].text
+            assert "- item2" in result.result.content[0].text
+            assert "Number: 0" in result.result.content[0].text
+            assert "Number: 1" in result.result.content[0].text
+            assert "Number: 2" in result.result.content[0].text
+            assert "Test mode active" in result.result.content[0].text
         finally:
             Path(temp_path).unlink(missing_ok=True)
 
@@ -207,6 +208,6 @@ Test mode active
 
         result = executor.execute(config, context)
 
-        assert result.isError is True
-        assert "Expected FileExecutionConfig" in result.error
-        assert result.content is None
+        assert result.result.isError is True
+        assert len(result.result.content) == 1
+        assert "Expected FileExecutionConfig" in result.result.content[0].text

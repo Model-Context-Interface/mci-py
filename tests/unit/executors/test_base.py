@@ -14,7 +14,14 @@ class ConcreteExecutor(BaseExecutor):
 
     def execute(self, config: ExecutionConfig, context: dict[str, Any]) -> ExecutionResult:
         """Simple execute implementation that returns success."""
-        return ExecutionResult(isError=False, content="test", error=None)
+        from mcipy.models import ExecutionResultContent, TextContent
+        return ExecutionResult(
+            result=ExecutionResultContent(
+                isError=False,
+                content=[TextContent(text="test")],
+                metadata=None
+            )
+        )
 
 
 class TestBaseExecutor:
@@ -103,29 +110,29 @@ class TestBaseExecutor:
         result = executor._format_error(error)
 
         assert isinstance(result, ExecutionResult)
-        assert result.isError is True
-        assert result.error == "Something went wrong"
-        assert result.content is None
+        assert result.result.isError is True
+        assert result.result.content[0].text == "Something went wrong"
+        assert result.result.content[0].type == "text"
 
     def test_format_error_different_types(self, executor):
         """Test error formatting with different exception types."""
         # ValueError
         error1 = ValueError("Invalid value")
         result1 = executor._format_error(error1)
-        assert result1.isError is True
-        assert result1.error == "Invalid value"
+        assert result1.result.isError is True
+        assert result1.result.content[0].text == "Invalid value"
 
         # TypeError
         error2 = TypeError("Wrong type")
         result2 = executor._format_error(error2)
-        assert result2.isError is True
-        assert result2.error == "Wrong type"
+        assert result2.result.isError is True
+        assert result2.result.content[0].text == "Wrong type"
 
         # RuntimeError
         error3 = RuntimeError("Runtime issue")
         result3 = executor._format_error(error3)
-        assert result3.isError is True
-        assert result3.error == "Runtime issue"
+        assert result3.result.isError is True
+        assert result3.result.content[0].text == "Runtime issue"
 
     def test_execute_returns_result(self, executor):
         """Test that execute method returns ExecutionResult."""
@@ -135,8 +142,9 @@ class TestBaseExecutor:
         result = executor.execute(config, context)
 
         assert isinstance(result, ExecutionResult)
-        assert result.isError is False
-        assert result.content == "test"
+        assert result.result.isError is False
+        assert len(result.result.content) == 1
+        assert result.result.content[0].text == "test"
 
     def test_apply_basic_templating_to_config_string_fields(self, executor):
         """Test applying basic templating to string fields in config."""

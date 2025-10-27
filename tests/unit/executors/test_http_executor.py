@@ -46,15 +46,18 @@ class TestHTTPExecutor:
             mock_response = Mock()
             mock_response.status_code = 200
             mock_response.text = "Success"
+            mock_response.content = b"Success"
+            mock_response.headers = {"Content-Type": "text/plain"}
             mock_response.json.side_effect = ValueError("Not JSON")
             mock_response.raise_for_status = Mock()
             mock_request.return_value = mock_response
 
             result = executor.execute(config, context)
 
-            assert not result.isError
-            assert result.content == "Success"
-            assert result.error is None
+            assert not result.result.isError
+            assert len(result.result.content) == 1
+            assert result.result.content[0].text == "Success"
+
             mock_request.assert_called_once()
             assert mock_request.call_args[1]["method"] == "GET"
             assert mock_request.call_args[1]["url"] == "https://api.example.com/data"
@@ -70,14 +73,18 @@ class TestHTTPExecutor:
             mock_response = Mock()
             mock_response.status_code = 200
             mock_response.json.return_value = {"status": "ok", "data": [1, 2, 3]}
+            mock_response.headers = {"Content-Type": "application/json"}
+            mock_response.text = ""
             mock_response.raise_for_status = Mock()
             mock_request.return_value = mock_response
 
             result = executor.execute(config, context)
 
-            assert not result.isError
-            assert result.content == {"status": "ok", "data": [1, 2, 3]}
-            assert result.error is None
+            assert not result.result.isError
+            assert len(result.result.content) == 1
+            # Content is JSON formatted as text
+            assert '"status": "ok"' in result.result.content[0].text
+            assert '"data":' in result.result.content[0].text
 
     def test_execute_post_request_with_json_body(self, executor, context):
         """Test executing a POST request with JSON body."""
@@ -93,13 +100,17 @@ class TestHTTPExecutor:
             mock_response = Mock()
             mock_response.status_code = 201
             mock_response.json.return_value = {"created": True}
+            mock_response.headers = {"Content-Type": "application/json"}
+            mock_response.text = ""
             mock_response.raise_for_status = Mock()
             mock_request.return_value = mock_response
 
             result = executor.execute(config, context)
 
-            assert not result.isError
-            assert result.content == {"created": True}
+            assert not result.result.isError
+            assert len(result.result.content) == 1
+            # Content is JSON formatted as text
+            assert '"created": true' in result.result.content[0].text
             mock_request.assert_called_once()
             assert mock_request.call_args[1]["json"] == {"key": "value", "num": 42}
 
@@ -116,12 +127,14 @@ class TestHTTPExecutor:
             mock_response = Mock()
             mock_response.status_code = 200
             mock_response.json.return_value = {"token": "abc123"}
+            mock_response.headers = {"Content-Type": "application/json"}
+            mock_response.text = ""
             mock_response.raise_for_status = Mock()
             mock_request.return_value = mock_response
 
             result = executor.execute(config, context)
 
-            assert not result.isError
+            assert not result.result.isError
             mock_request.assert_called_once()
             assert mock_request.call_args[1]["data"] == {"username": "alice", "password": "secret"}
 
@@ -138,13 +151,15 @@ class TestHTTPExecutor:
             mock_response = Mock()
             mock_response.status_code = 200
             mock_response.text = "OK"
+            mock_response.content = b"OK"
+            mock_response.headers = {"Content-Type": "text/plain"}
             mock_response.json.side_effect = ValueError("Not JSON")
             mock_response.raise_for_status = Mock()
             mock_request.return_value = mock_response
 
             result = executor.execute(config, context)
 
-            assert not result.isError
+            assert not result.result.isError
             mock_request.assert_called_once()
             assert mock_request.call_args[1]["data"] == "plain text data"
 
@@ -160,12 +175,14 @@ class TestHTTPExecutor:
             mock_response = Mock()
             mock_response.status_code = 200
             mock_response.json.return_value = {"results": []}
+            mock_response.headers = {"Content-Type": "application/json"}
+            mock_response.text = ""
             mock_response.raise_for_status = Mock()
             mock_request.return_value = mock_response
 
             result = executor.execute(config, context)
 
-            assert not result.isError
+            assert not result.result.isError
             mock_request.assert_called_once()
             assert mock_request.call_args[1]["params"] == {"q": "test", "limit": 10}
 
@@ -180,13 +197,15 @@ class TestHTTPExecutor:
             mock_response = Mock()
             mock_response.status_code = 200
             mock_response.text = "Data"
+            mock_response.content = b"Data"
+            mock_response.headers = {"Content-Type": "text/plain"}
             mock_response.json.side_effect = ValueError("Not JSON")
             mock_response.raise_for_status = Mock()
             mock_request.return_value = mock_response
 
             result = executor.execute(config, context)
 
-            assert not result.isError
+            assert not result.result.isError
             # URL should have been templated
             assert mock_request.call_args[1]["url"] == "https://api.example.com/users/Alice/data"
 
@@ -202,13 +221,15 @@ class TestHTTPExecutor:
             mock_response = Mock()
             mock_response.status_code = 200
             mock_response.text = "OK"
+            mock_response.content = b"OK"
+            mock_response.headers = {"Content-Type": "text/plain"}
             mock_response.json.side_effect = ValueError("Not JSON")
             mock_response.raise_for_status = Mock()
             mock_request.return_value = mock_response
 
             result = executor.execute(config, context)
 
-            assert not result.isError
+            assert not result.result.isError
             headers = mock_request.call_args[1]["headers"]
             assert headers["X-User"] == "Alice"
             assert headers["X-Location"] == "Seattle"
@@ -225,13 +246,15 @@ class TestHTTPExecutor:
             mock_response = Mock()
             mock_response.status_code = 200
             mock_response.text = "OK"
+            mock_response.content = b"OK"
+            mock_response.headers = {"Content-Type": "text/plain"}
             mock_response.json.side_effect = ValueError("Not JSON")
             mock_response.raise_for_status = Mock()
             mock_request.return_value = mock_response
 
             result = executor.execute(config, context)
 
-            assert not result.isError
+            assert not result.result.isError
             params = mock_request.call_args[1]["params"]
             assert params["location"] == "Seattle"
             assert params["user"] == "Alice"
@@ -251,12 +274,14 @@ class TestHTTPExecutor:
             mock_response = Mock()
             mock_response.status_code = 200
             mock_response.json.return_value = {"ok": True}
+            mock_response.headers = {"Content-Type": "application/json"}
+            mock_response.text = ""
             mock_response.raise_for_status = Mock()
             mock_request.return_value = mock_response
 
             result = executor.execute(config, context)
 
-            assert not result.isError
+            assert not result.result.isError
             json_data = mock_request.call_args[1]["json"]
             assert json_data["location"] == "Seattle"
             assert json_data["user"] == "Alice"
@@ -273,13 +298,15 @@ class TestHTTPExecutor:
             mock_response = Mock()
             mock_response.status_code = 200
             mock_response.text = "OK"
+            mock_response.content = b"OK"
+            mock_response.headers = {"Content-Type": "text/plain"}
             mock_response.json.side_effect = ValueError("Not JSON")
             mock_response.raise_for_status = Mock()
             mock_request.return_value = mock_response
 
             result = executor.execute(config, context)
 
-            assert not result.isError
+            assert not result.result.isError
             # Timeout should be converted to seconds
             assert mock_request.call_args[1]["timeout"] == 5
 
@@ -298,8 +325,8 @@ class TestHTTPExecutor:
 
             result = executor.execute(config, context)
 
-            assert result.isError
-            assert "404 Not Found" in result.error
+            assert result.result.isError
+            assert "404 Not Found" in result.result.content[0].text
 
     def test_execute_with_connection_error(self, executor, context):
         """Test handling of connection errors."""
@@ -313,8 +340,8 @@ class TestHTTPExecutor:
 
             result = executor.execute(config, context)
 
-            assert result.isError
-            assert "Connection failed" in result.error
+            assert result.result.isError
+            assert "Connection failed" in result.result.content[0].text
 
     def test_execute_with_timeout_error(self, executor, context):
         """Test handling of timeout errors."""
@@ -328,8 +355,8 @@ class TestHTTPExecutor:
 
             result = executor.execute(config, context)
 
-            assert result.isError
-            assert "Request timed out" in result.error
+            assert result.result.isError
+            assert "Request timed out" in result.result.content[0].text
 
     def test_execute_with_wrong_config_type(self, executor, context):
         """Test that wrong config type is handled properly."""
@@ -338,8 +365,8 @@ class TestHTTPExecutor:
         config = TextExecutionConfig(text="test")
         result = executor.execute(config, context)
 
-        assert result.isError
-        assert "Expected HTTPExecutionConfig" in result.error
+        assert result.result.isError
+        assert "Expected HTTPExecutionConfig" in result.result.content[0].text
 
     def test_apply_api_key_auth_in_header(self, executor):
         """Test applying API key authentication in header."""
@@ -403,6 +430,8 @@ class TestHTTPExecutor:
             mock_response = Mock()
             mock_response.status_code = 200
             mock_response.json.return_value = {"access_token": "oauth-token-xyz"}
+            mock_response.headers = {"Content-Type": "application/json"}
+            mock_response.text = ""
             mock_response.raise_for_status = Mock()
             mock_post.return_value = mock_response
 
@@ -435,6 +464,8 @@ class TestHTTPExecutor:
             mock_response = Mock()
             mock_response.status_code = 200
             mock_response.json.return_value = {"access_token": "oauth-token"}
+            mock_response.headers = {"Content-Type": "application/json"}
+            mock_response.text = ""
             mock_response.raise_for_status = Mock()
             mock_post.return_value = mock_response
 
@@ -458,6 +489,8 @@ class TestHTTPExecutor:
             mock_response = Mock()
             mock_response.status_code = 200
             mock_response.json.return_value = {"token_type": "bearer"}  # Missing access_token
+            mock_response.headers = {"Content-Type": "application/json"}
+            mock_response.text = ""
             mock_response.raise_for_status = Mock()
             mock_post.return_value = mock_response
 
@@ -490,13 +523,15 @@ class TestHTTPExecutor:
             mock_response = Mock()
             mock_response.status_code = 200
             mock_response.text = "OK"
+            mock_response.content = b"OK"
+            mock_response.headers = {"Content-Type": "text/plain"}
             mock_response.json.side_effect = ValueError("Not JSON")
             mock_response.raise_for_status = Mock()
             mock_request.return_value = mock_response
 
             result = executor.execute(config, context)
 
-            assert not result.isError
+            assert not result.result.isError
             headers = mock_request.call_args[1]["headers"]
             # Value should be templated
             assert headers["X-API-Key"] == "secret123"
@@ -514,13 +549,15 @@ class TestHTTPExecutor:
             mock_response = Mock()
             mock_response.status_code = 200
             mock_response.text = "OK"
+            mock_response.content = b"OK"
+            mock_response.headers = {"Content-Type": "text/plain"}
             mock_response.json.side_effect = ValueError("Not JSON")
             mock_response.raise_for_status = Mock()
             mock_request.return_value = mock_response
 
             result = executor.execute(config, context)
 
-            assert not result.isError
+            assert not result.result.isError
             headers = mock_request.call_args[1]["headers"]
             # Token should be templated
             assert headers["Authorization"] == "Bearer bearer-token"
@@ -538,13 +575,15 @@ class TestHTTPExecutor:
             mock_response = Mock()
             mock_response.status_code = 200
             mock_response.text = "OK"
+            mock_response.content = b"OK"
+            mock_response.headers = {"Content-Type": "text/plain"}
             mock_response.json.side_effect = ValueError("Not JSON")
             mock_response.raise_for_status = Mock()
             mock_request.return_value = mock_response
 
             result = executor.execute(config, context)
 
-            assert not result.isError
+            assert not result.result.isError
             headers = mock_request.call_args[1]["headers"]
             # Username should be templated
             import base64
@@ -699,6 +738,8 @@ class TestHTTPExecutor:
             success_response = Mock()
             success_response.status_code = 200
             success_response.text = "Success"
+            success_response.content = b"Success"
+            success_response.headers = {"Content-Type": "text/plain"}
             success_response.json.side_effect = ValueError("Not JSON")
             success_response.raise_for_status = Mock()
 
@@ -707,8 +748,9 @@ class TestHTTPExecutor:
             with patch("time.sleep"):
                 result = executor.execute(config, context)
 
-            assert not result.isError
-            assert result.content == "Success"
+            assert not result.result.isError
+            assert len(result.result.content) == 1
+            assert result.result.content[0].text == "Success"
             assert mock_request.call_count == 2
 
     def test_execute_with_retry_all_fail(self, executor, context):
@@ -726,8 +768,8 @@ class TestHTTPExecutor:
             with patch("time.sleep"):
                 result = executor.execute(config, context)
 
-            assert result.isError
-            assert "Connection failed" in result.error
+            assert result.result.isError
+            assert "Connection failed" in result.result.content[0].text
             assert mock_request.call_count == 2
 
     def test_execute_returns_metadata_with_status_code(self, executor, context):
@@ -741,12 +783,14 @@ class TestHTTPExecutor:
             mock_response = Mock()
             mock_response.status_code = 201
             mock_response.json.return_value = {"created": True}
+            mock_response.headers = {"Content-Type": "application/json"}
+            mock_response.text = ""
             mock_response.raise_for_status = Mock()
             mock_request.return_value = mock_response
 
             result = executor.execute(config, context)
 
-            assert not result.isError
-            assert result.metadata is not None
-            assert "status_code" in result.metadata
-            assert result.metadata["status_code"] == 201
+            assert not result.result.isError
+            assert result.result.metadata is not None
+            assert "status_code" in result.result.metadata
+            assert result.result.metadata["status_code"] == 201

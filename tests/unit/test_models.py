@@ -487,50 +487,119 @@ class TestExecutionResult:
 
     def test_execution_result_success(self):
         """Test successful execution result."""
-        result = ExecutionResult(isError=False, content={"data": "value"})
-        assert result.isError is False
-        assert result.content == {"data": "value"}
-        assert result.error is None
+        from mcipy import ExecutionResultContent, TextContent
+
+        result = ExecutionResult(
+            result=ExecutionResultContent(
+                isError=False,
+                content=[TextContent(text='{"data": "value"}')],
+            )
+        )
+        assert result.result.isError is False
+        assert len(result.result.content) == 1
+        assert result.result.content[0].type == "text"
+        assert '"data": "value"' in result.result.content[0].text
 
     def test_execution_result_error(self):
         """Test error execution result."""
-        result = ExecutionResult(isError=True, error="Connection timeout")
-        assert result.isError is True
-        assert result.error == "Connection timeout"
-        assert result.content is None
+        from mcipy import ExecutionResultContent, TextContent
+
+        result = ExecutionResult(
+            result=ExecutionResultContent(
+                isError=True,
+                content=[TextContent(text="Connection timeout")],
+            )
+        )
+        assert result.result.isError is True
+        assert len(result.result.content) == 1
+        assert result.result.content[0].text == "Connection timeout"
 
     def test_execution_result_various_content_types(self):
         """Test execution result with various content types."""
-        # String content
-        result1 = ExecutionResult(isError=False, content="text response")
-        assert result1.content == "text response"
+        from mcipy import AudioContent, ExecutionResultContent, ImageContent, TextContent
 
-        # Dict content
-        result2 = ExecutionResult(isError=False, content={"key": "value"})
-        assert result2.content == {"key": "value"}
+        # Text content
+        result1 = ExecutionResult(
+            result=ExecutionResultContent(
+                isError=False,
+                content=[TextContent(text="text response")],
+            )
+        )
+        assert result1.result.content[0].text == "text response"
 
-        # List content
-        result3 = ExecutionResult(isError=False, content=[1, 2, 3])
-        assert result3.content == [1, 2, 3]
+        # Image content
+        result2 = ExecutionResult(
+            result=ExecutionResultContent(
+                isError=False,
+                content=[ImageContent(data="base64data", mimeType="image/png")],
+            )
+        )
+        assert result2.result.content[0].data == "base64data"
+        assert result2.result.content[0].mimeType == "image/png"
 
-        # None content
-        result4 = ExecutionResult(isError=False, content=None)
-        assert result4.content is None
+        # Audio content
+        result3 = ExecutionResult(
+            result=ExecutionResultContent(
+                isError=False,
+                content=[AudioContent(data="base64audio", mimeType="audio/wav")],
+            )
+        )
+        assert result3.result.content[0].data == "base64audio"
+        assert result3.result.content[0].mimeType == "audio/wav"
+
+        # Multiple content objects
+        result4 = ExecutionResult(
+            result=ExecutionResultContent(
+                isError=False,
+                content=[
+                    TextContent(text="First"),
+                    TextContent(text="Second"),
+                ],
+            )
+        )
+        assert len(result4.result.content) == 2
 
     def test_execution_result_with_metadata(self):
         """Test execution result with metadata field."""
+        from mcipy import ExecutionResultContent, TextContent
+
         result = ExecutionResult(
-            isError=False,
-            content={"data": "value"},
-            metadata={"status_code": 200, "execution_time_ms": 150},
+            result=ExecutionResultContent(
+                isError=False,
+                content=[TextContent(text="data")],
+                metadata={"status_code": 200, "execution_time_ms": 150},
+            )
         )
-        assert result.isError is False
-        assert result.content == {"data": "value"}
-        assert result.metadata == {"status_code": 200, "execution_time_ms": 150}
+        assert result.result.isError is False
+        assert result.result.content[0].text == "data"
+        assert result.result.metadata == {"status_code": 200, "execution_time_ms": 150}
 
     def test_execution_result_without_metadata(self):
         """Test execution result without metadata (backward compatibility)."""
-        result = ExecutionResult(isError=False, content="test")
-        assert result.isError is False
-        assert result.content == "test"
-        assert result.metadata is None
+        from mcipy import ExecutionResultContent, TextContent
+
+        result = ExecutionResult(
+            result=ExecutionResultContent(
+                isError=False,
+                content=[TextContent(text="test")],
+            )
+        )
+        assert result.result.isError is False
+        assert result.result.content[0].text == "test"
+        assert result.result.metadata is None
+
+    def test_execution_result_with_jsonrpc_fields(self):
+        """Test execution result with JSON-RPC wrapper fields."""
+        from mcipy import ExecutionResultContent, TextContent
+
+        result = ExecutionResult(
+            result=ExecutionResultContent(
+                isError=False,
+                content=[TextContent(text="test")],
+            ),
+            jsonrpc="2.0",
+            id=1,
+        )
+        assert result.jsonrpc == "2.0"
+        assert result.id == 1
+        assert result.result.isError is False

@@ -344,9 +344,9 @@ class TestExecute:
         """Test executing text tool with properties."""
         result = client.execute("generate_text", properties={"name": "World"})
         assert isinstance(result, ExecutionResult)
-        assert result.isError is False
-        assert isinstance(result.content, str)
-        assert "Hello World!" in result.content
+        assert result.result.isError is False
+        assert isinstance(result.result.content[0].text, str)
+        assert "Hello World!" in result.result.content[0].text
 
     def test_execute_with_none_properties(self, client):
         """Test executing tool with None properties defaults to empty dict."""
@@ -358,11 +358,10 @@ class TestExecute:
         """Test that execute returns ExecutionResult object."""
         result = client.execute("generate_text", properties={"name": "test"})
         assert isinstance(result, ExecutionResult)
-        assert hasattr(result, "isError")
-        assert hasattr(result, "content")
-        assert hasattr(result, "error")
-        assert isinstance(result.content, str)
-        assert "test" in result.content
+        assert hasattr(result.result, "isError")
+        assert hasattr(result.result, "content")
+        assert isinstance(result.result.content[0].text, str)
+        assert "test" in result.result.content[0].text
 
 
 class TestIntegration:
@@ -374,7 +373,7 @@ class TestIntegration:
         assert len(tools) == 1
 
         result = client.execute("generate_text", properties={"name": "Integration"})
-        assert result.isError is False
+        assert result.result.isError is False
 
     def test_list_get_schema_and_execute(self, client):
         """Test listing tools, getting schema, and executing."""
@@ -385,7 +384,7 @@ class TestIntegration:
         assert isinstance(schema, dict)
 
         result = client.execute("generate_text", properties={"name": "Test"})
-        assert result.isError is False
+        assert result.result.isError is False
 
     def test_multiple_clients_same_file(self, temp_schema_file):
         """Test creating multiple clients from same file."""
@@ -439,8 +438,8 @@ class TestEdgeCases:
         result2 = client2.execute("generate_text", properties={"name": "User"})
 
         # Both should succeed and use different dates from their respective env vars
-        assert isinstance(result1.content, str)
-        assert isinstance(result2.content, str)
+        assert isinstance(result1.result.content[0].text, str)
+        assert isinstance(result2.result.content[0].text, str)
 
 
 class TestYAMLSupport:
@@ -519,9 +518,9 @@ class TestYAMLSupport:
         # Execute a tool
         result = client.execute("generate_text", properties={"name": "Test"})
         assert isinstance(result, ExecutionResult)
-        assert result.isError is False
-        assert result.content is not None
-        assert "Test" in result.content
+        assert result.result.isError is False
+        assert len(result.result.content) >= 1
+        assert "Test" in result.result.content[0].text
 
     def test_backward_compatibility_json_file_path(self, sample_schema_dict, tmp_path):
         """Test that json_file_path parameter still works for backward compatibility."""

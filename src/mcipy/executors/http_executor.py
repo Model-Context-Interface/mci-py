@@ -7,6 +7,7 @@ request body types (JSON, form, raw), and retry logic with exponential backoff.
 """
 
 import base64
+import json
 import time
 from collections.abc import Callable
 from typing import Any
@@ -15,15 +16,19 @@ import requests
 
 from ..models import (
     ApiKeyAuth,
+    AudioContent,
     AuthConfig,
     BasicAuth,
     BearerAuth,
     ExecutionConfig,
     ExecutionResult,
+    ExecutionResultContent,
     HTTPBodyConfig,
     HTTPExecutionConfig,
+    ImageContent,
     OAuth2Auth,
     RetryConfig,
+    TextContent,
 )
 from .base import BaseExecutor
 
@@ -117,6 +122,7 @@ class HTTPExecutor(BaseExecutor):
                             request_kwargs["headers"]["Content-Type"] = content_type
 
             # Execute request with retry logic
+            start_time = time.time()
             if config.retries:
                 response = self._apply_retry_logic(
                     lambda: requests.request(**request_kwargs),
@@ -125,24 +131,67 @@ class HTTPExecutor(BaseExecutor):
             else:
                 response = requests.request(**request_kwargs)
 
+            # Calculate response time
+            response_time_ms = int((time.time() - start_time) * 1000)
+
             # Check for HTTP errors
             response.raise_for_status()
 
-            # Try to parse as JSON, otherwise return text
-            try:
-                content = response.json()
-            except ValueError:
-                content = response.text
+            # Build metadata
+            metadata = {
+                "status_code": response.status_code,
+                "response_time_ms": response_time_ms,
+            }
+
+            # Try to parse response content
+            content_objects = self._parse_response_content(response)
 
             return ExecutionResult(
-                isError=False,
-                content=content,
-                error=None,
-                metadata={"status_code": response.status_code},
+                result=ExecutionResultContent(
+                    isError=False,
+                    content=content_objects,
+                    metadata=metadata,
+                )
             )
 
         except Exception as e:
             return self._format_error(e)
+
+    def _parse_response_content(
+        self, response: requests.Response
+    ) -> list[TextContent | ImageContent | AudioContent]:
+        """
+        Parse HTTP response into structured content objects.
+
+        Handles various content types including JSON, text, and images.
+        Returns appropriate content objects based on the response type.
+
+        Args:
+            response: HTTP response object
+
+        Returns:
+            List of content objects (TextContent or ImageContent)
+        """
+        content_type = response.headers.get("Content-Type", "").lower()
+
+        # Handle image responses
+        if content_type.startswith("image/"):
+            image_data = base64.b64encode(response.content).decode("utf-8")
+            return [ImageContent(data=image_data, mimeType=content_type.split(";")[0])]
+
+        # Handle JSON responses
+        if "application/json" in content_type:
+            try:
+                json_data = response.json()
+                # Convert JSON to formatted string for text content
+                text = json.dumps(json_data, indent=2)
+                return [TextContent(text=text)]
+            except ValueError:
+                # JSON parsing failed, fall through to text handling
+                pass
+
+        # Handle all other responses as text
+        return [TextContent(text=response.text)]
 
     def _apply_authentication(self, auth: AuthConfig, request_kwargs: dict[str, Any]) -> None:
         """

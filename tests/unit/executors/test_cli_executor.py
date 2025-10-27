@@ -209,9 +209,9 @@ class TestCLIExecutor:
 
         result = executor.execute(config, context)
 
-        assert not result.isError
-        assert "hello" in result.content
-        assert result.metadata["returncode"] == 0
+        assert not result.result.isError
+        assert "hello" in result.result.content[0].text
+        assert result.result.metadata["returncode"] == 0
 
     def test_execute_command_with_templated_args(self, executor, context):
         """Test executing command with templated arguments."""
@@ -228,8 +228,8 @@ class TestCLIExecutor:
 
         result = executor.execute(config, context)
 
-        assert not result.isError
-        assert "result.txt" in result.content
+        assert not result.result.isError
+        assert "result.txt" in result.result.content[0].text
 
     def test_execute_command_with_templated_command(self, executor, context):
         """Test executing command with templated command name."""
@@ -243,8 +243,8 @@ class TestCLIExecutor:
 
         result = executor.execute(config, context)
 
-        assert not result.isError
-        assert "hello" in result.content
+        assert not result.result.isError
+        assert "hello" in result.result.content[0].text
 
     def test_execute_with_boolean_flags(self, executor, context):
         """Test executing command with boolean flags."""
@@ -266,7 +266,7 @@ class TestCLIExecutor:
             )
 
         result = executor.execute(config, context)
-        assert not result.isError
+        assert not result.result.isError
 
     def test_execute_command_failure(self, executor, context):
         """Test executing a command that fails."""
@@ -277,9 +277,9 @@ class TestCLIExecutor:
 
         result = executor.execute(config, context)
 
-        assert result.isError
-        assert "exited with code 1" in result.error
-        assert result.metadata["returncode"] == 1
+        assert result.result.isError
+        assert "exited with code 1" in result.result.content[0].text
+        assert result.result.metadata["returncode"] == 1
 
     def test_execute_command_not_found(self, executor, context):
         """Test executing a command that doesn't exist."""
@@ -287,8 +287,10 @@ class TestCLIExecutor:
 
         result = executor.execute(config, context)
 
-        assert result.isError
-        assert "FileNotFoundError" in result.error or "No such file" in result.error
+        assert result.result.isError
+        assert (
+            "FileNotFoundError" in result.result.content[0].text or "No such file" in result.result.content[0].text
+        )
 
     def test_execute_with_timeout(self, executor, context):
         """Test executing command with timeout."""
@@ -301,9 +303,9 @@ class TestCLIExecutor:
 
         result = executor.execute(config, context)
 
-        assert result.isError
+        assert result.result.isError
         # The error message contains "timed out" (from subprocess.TimeoutExpired)
-        assert "timed out" in result.error.lower()
+        assert "timed out" in result.result.content[0].text.lower()
 
     def test_execute_with_cwd(self, executor, context):
         """Test executing command with working directory."""
@@ -317,8 +319,8 @@ class TestCLIExecutor:
 
             result = executor.execute(config, context)
 
-            assert not result.isError
-            assert Path(tmpdir).name in result.content or tmpdir in result.content
+            assert not result.result.isError
+            assert Path(tmpdir).name in result.result.content[0].text or tmpdir in result.result.content[0].text
 
     def test_execute_with_templated_cwd(self, executor, context):
         """Test executing command with templated working directory."""
@@ -336,8 +338,8 @@ class TestCLIExecutor:
 
             result = executor.execute(config, context)
 
-            assert not result.isError
-            assert Path(tmpdir).name in result.content or tmpdir in result.content
+            assert not result.result.isError
+            assert Path(tmpdir).name in result.result.content[0].text or tmpdir in result.result.content[0].text
 
     def test_execute_wrong_config_type(self, executor, context):
         """Test executing with wrong config type."""
@@ -346,8 +348,8 @@ class TestCLIExecutor:
         config = HTTPExecutionConfig(url="https://example.com")
         result = executor.execute(config, context)
 
-        assert result.isError
-        assert "Expected CLIExecutionConfig" in result.error
+        assert result.result.isError
+        assert "Expected CLIExecutionConfig" in result.result.content[0].text
 
     def test_execute_captures_stderr(self, executor, context):
         """Test that stderr is captured when command fails."""
@@ -360,10 +362,10 @@ class TestCLIExecutor:
 
         result = executor.execute(config, context)
 
-        assert result.isError
-        assert result.metadata["returncode"] == 1
+        assert result.result.isError
+        assert result.result.metadata["returncode"] == 1
         # stderr should be captured in metadata
-        assert "error" in result.metadata["stderr"] or result.metadata["stderr"] != ""
+        assert "error" in result.result.metadata["stderr"] or result.result.metadata["stderr"] != ""
 
     def test_execute_with_all_features(self, executor, context):
         """Test executing with command, args, flags, cwd, and timeout all together."""
@@ -391,8 +393,8 @@ class TestCLIExecutor:
 
             result = executor.execute(config, context)
 
-            assert not result.isError
-            assert "result.txt" in result.content
+            assert not result.result.isError
+            assert "result.txt" in result.result.content[0].text
 
     def test_apply_flags_with_numeric_value(self, executor):
         """Test that numeric flag values are converted to strings."""

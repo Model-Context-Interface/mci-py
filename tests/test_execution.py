@@ -108,9 +108,9 @@ class TestTextExecutionE2E:
         )
         result = executor.execute(config, context)
 
-        assert not result.isError
-        assert result.content == "Hello Alice, Developer at ACME Corp!"
-        assert result.error is None
+        assert not result.result.isError
+        assert len(result.result.content) == 1
+        assert result.result.content[0].text == "Hello Alice, Developer at ACME Corp!"
 
     def test_text_execution_with_foreach(self, context):
         """Test text execution with @foreach directive."""
@@ -123,11 +123,12 @@ class TestTextExecutionE2E:
         )
         result = executor.execute(config, context)
 
-        assert not result.isError
-        assert result.content is not None
-        assert "Task 1" in result.content
-        assert "Task 2" in result.content
-        assert "Task 3" in result.content
+        assert not result.result.isError
+        assert len(result.result.content) == 1
+        text_content = result.result.content[0].text
+        assert "Task 1" in text_content
+        assert "Task 2" in text_content
+        assert "Task 3" in text_content
 
     def test_text_execution_with_if(self, context):
         """Test text execution with @if directive."""
@@ -140,9 +141,9 @@ class TestTextExecutionE2E:
         )
         result = executor.execute(config, context)
 
-        assert not result.isError
-        assert result.content is not None
-        assert "High Priority" in result.content
+        assert not result.result.isError
+        assert len(result.result.content) == 1
+        assert "High Priority" in result.result.content[0].text
 
 
 class TestFileExecutionE2E:
@@ -175,11 +176,12 @@ class TestFileExecutionE2E:
         config = FileExecutionConfig(path=temp_file, enableTemplating=True)
         result = executor.execute(config, context)
 
-        assert not result.isError
-        assert result.content is not None
-        assert "User: Bob" in result.content
-        assert "Role: Manager" in result.content
-        assert "Company: TechCorp" in result.content
+        assert not result.result.isError
+        assert len(result.result.content) == 1
+        text_content = result.result.content[0].text
+        assert "User: Bob" in text_content
+        assert "Role: Manager" in text_content
+        assert "Company: TechCorp" in text_content
 
     def test_file_execution_without_templating(self, temp_file, context):
         """Test file reading with templating disabled."""
@@ -187,11 +189,12 @@ class TestFileExecutionE2E:
         config = FileExecutionConfig(path=temp_file, enableTemplating=False)
         result = executor.execute(config, context)
 
-        assert not result.isError
-        assert result.content is not None
-        assert "{{props.username}}" in result.content
-        assert "{{props.role}}" in result.content
-        assert "{{env.COMPANY}}" in result.content
+        assert not result.result.isError
+        assert len(result.result.content) == 1
+        text_content = result.result.content[0].text
+        assert "{{props.username}}" in text_content
+        assert "{{props.role}}" in text_content
+        assert "{{env.COMPANY}}" in text_content
 
     def test_file_execution_file_not_found(self, context):
         """Test error handling when file doesn't exist."""
@@ -199,9 +202,10 @@ class TestFileExecutionE2E:
         config = FileExecutionConfig(path="/nonexistent/file.txt", enableTemplating=False)
         result = executor.execute(config, context)
 
-        assert result.isError
-        assert result.error is not None
-        assert "File not found" in result.error or "No such file" in result.error
+        assert result.result.isError
+        assert len(result.result.content) == 1
+        error_text = result.result.content[0].text
+        assert "File not found" in error_text or "No such file" in error_text
 
 
 class TestCLIExecutionE2E:
@@ -222,9 +226,9 @@ class TestCLIExecutionE2E:
         config = CLIExecutionConfig(command="echo", args=["Hello from CLI"])
         result = executor.execute(config, context)
 
-        assert not result.isError
-        assert result.content is not None
-        assert "Hello from CLI" in result.content
+        assert not result.result.isError
+        assert len(result.result.content) == 1
+        assert "Hello from CLI" in result.result.content[0].text
 
     def test_cli_execution_with_templating(self, context):
         """Test command execution with templating in args."""
@@ -232,9 +236,9 @@ class TestCLIExecutionE2E:
         config = CLIExecutionConfig(command="echo", args=["{{props.message}}"])
         result = executor.execute(config, context)
 
-        assert not result.isError
-        assert result.content is not None
-        assert "Hello World" in result.content
+        assert not result.result.isError
+        assert len(result.result.content) == 1
+        assert "Hello World" in result.result.content[0].text
 
     def test_cli_execution_command_not_found(self, context):
         """Test error handling when command doesn't exist."""
@@ -242,8 +246,8 @@ class TestCLIExecutionE2E:
         config = CLIExecutionConfig(command="nonexistent_command_xyz_12345")
         result = executor.execute(config, context)
 
-        assert result.isError
-        assert result.error is not None
+        assert result.result.isError
+        assert len(result.result.content) == 1
 
 
 class TestHTTPExecutionE2E:
@@ -270,13 +274,16 @@ class TestHTTPExecutionE2E:
             mock_response = Mock()
             mock_response.status_code = 200
             mock_response.json.return_value = {"temperature": 22, "condition": "sunny"}
+            mock_response.headers = {"Content-Type": "application/json"}
             mock_response.raise_for_status = Mock()
             mock_request.return_value = mock_response
 
             result = executor.execute(config, context)
 
-            assert not result.isError
-            assert result.content == {"temperature": 22, "condition": "sunny"}
+            assert not result.result.isError
+            assert len(result.result.content) == 1
+            # Content should be JSON formatted as text
+            assert '"temperature": 22' in result.result.content[0].text
             # Verify URL was templated correctly
             call_args = mock_request.call_args
             assert "city=London" in call_args[1]["url"]
@@ -295,13 +302,16 @@ class TestHTTPExecutionE2E:
             mock_response = Mock()
             mock_response.status_code = 201
             mock_response.json.return_value = {"id": 123, "status": "created"}
+            mock_response.headers = {"Content-Type": "application/json"}
             mock_response.raise_for_status = Mock()
             mock_request.return_value = mock_response
 
             result = executor.execute(config, context)
 
-            assert not result.isError
-            assert result.content == {"id": 123, "status": "created"}
+            assert not result.result.isError
+            assert len(result.result.content) == 1
+            # Content should be JSON formatted as text
+            assert '"id": 123' in result.result.content[0].text
             # Verify auth header was set correctly
             call_kwargs = mock_request.call_args[1]
             assert call_kwargs["headers"]["X-API-Key"] == "test-key-123"
@@ -320,12 +330,13 @@ class TestHTTPExecutionE2E:
             mock_response = Mock()
             mock_response.status_code = 200
             mock_response.json.return_value = {"results": []}
+            mock_response.headers = {"Content-Type": "application/json"}
             mock_response.raise_for_status = Mock()
             mock_request.return_value = mock_response
 
             result = executor.execute(config, context)
 
-            assert not result.isError
+            assert not result.result.isError
             # Verify JSON body was templated correctly
             call_kwargs = mock_request.call_args[1]
             assert call_kwargs["json"] == {"city": "London"}
@@ -343,9 +354,9 @@ class TestHTTPExecutionE2E:
 
             result = executor.execute(config, context)
 
-            assert result.isError
-            assert result.error is not None
-            assert "Connection error" in result.error
+            assert result.result.isError
+            assert len(result.result.content) == 1
+            assert "Connection error" in result.result.content[0].text
 
 
 class TestExecutionFullStack:
@@ -374,6 +385,7 @@ class TestExecutionFullStack:
             mock_response = Mock()
             mock_response.status_code = 200
             mock_response.json.return_value = {"status": "ok"}
+            mock_response.headers = {"Content-Type": "application/json"}
             mock_response.raise_for_status = Mock()
             mock_request.return_value = mock_response
 
@@ -381,9 +393,9 @@ class TestExecutionFullStack:
             result = executor.execute(config, context)
 
             # 6. Verify result structure
-            assert not result.isError
-            assert result.content is not None
-            assert result.error is None
+            assert not result.result.isError
+            assert len(result.result.content) >= 1
+            assert result.result.metadata is not None
 
     def test_full_stack_all_executor_types(self):
         """Test that all executor types can be resolved and executed."""
@@ -404,5 +416,6 @@ class TestExecutionFullStack:
             result = executor.execute(config, context)
             # Just verify we get a result (success or error both ok)
             assert result is not None
-            assert hasattr(result, "isError")
-            assert hasattr(result, "content") or hasattr(result, "error")
+            assert hasattr(result, "result")
+            assert hasattr(result.result, "isError")
+            assert hasattr(result.result, "content")

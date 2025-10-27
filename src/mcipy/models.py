@@ -215,16 +215,65 @@ class MCISchema(BaseModel):
     directoryAllowList: list[str] = Field(default_factory=list)
 
 
+class TextContent(BaseModel):
+    """
+    Text content object for execution results.
+
+    Represents textual content in MCP-compatible format.
+    """
+
+    type: str = Field(default="text")
+    text: str
+
+
+class ImageContent(BaseModel):
+    """
+    Image content object for execution results.
+
+    Represents base64-encoded image data in MCP-compatible format.
+    """
+
+    type: str = Field(default="image")
+    data: str
+    mimeType: str
+
+
+class AudioContent(BaseModel):
+    """
+    Audio content object for execution results.
+
+    Represents base64-encoded audio data in MCP-compatible format.
+    """
+
+    type: str = Field(default="audio")
+    data: str
+    mimeType: str
+
+
+ContentObject = TextContent | ImageContent | AudioContent
+
+
+class ExecutionResultContent(BaseModel):
+    """
+    Inner result object containing execution result data.
+
+    Contains the structured content array, error status, and optional metadata.
+    """
+
+    content: list[ContentObject]
+    isError: bool
+    metadata: dict[str, Any] | None = None
+
+
 class ExecutionResult(BaseModel):
     """
-    Execution result format.
+    Execution result format with MCP compatibility.
 
-    Represents the result of executing a tool, including whether
-    an error occurred and the content or error message.
-    This provides a consistent format for all execution results.
+    Represents the result of executing a tool in MCP-compatible format
+    with optional JSON-RPC wrapper fields and structured content array.
+    The main result data is contained in the 'result' field.
     """
 
-    isError: bool
-    content: Any | None = None
-    error: str | None = None
-    metadata: dict[str, Any] | None = None
+    result: ExecutionResultContent
+    jsonrpc: str | None = Field(default=None)
+    id: int | None = Field(default=None)

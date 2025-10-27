@@ -153,8 +153,8 @@ def test_execution(client: MCIClient):
     result = client.execute("generate_message", properties={"username": "TestUser"})
     print(f"   Tool: generate_message")
     print(f"   Properties: {{'username': 'TestUser'}}")
-    print(f"   Result Error: {result.isError}")
-    print(f"   Result Content: {result.content}")
+    print(f"   Result Error: {result.result.isError}")
+    print(f"   Result Content: {result.result.content[0].text}")
     print(f"   Status: ✓ Success\n")
 
     # Test 2: Execute with missing required properties (error case)
@@ -172,8 +172,8 @@ def test_execution(client: MCIClient):
     result = client.execute("generate_message", properties={"username": "{{env.USERNAME}}"})
     print(f"   Tool: generate_message")
     print(f"   Properties: {{'username': '{{{{env.USERNAME}}}}'}}")
-    print(f"   Result Error: {result.isError}")
-    print(f"   Result Content: {result.content}")
+    print(f"   Result Error: {result.result.isError}")
+    print(f"   Result Content: {result.result.content[0].text}")
     print(f"   Status: ✓ Success\n")
 
     # Test 4: Execute nonexistent tool (error case)
@@ -222,8 +222,8 @@ def test_complete_workflow():
 
     print("5. Execute the tool:")
     result = client.execute("generate_message", properties={"username": "workflow_user"})
-    print(f"   Execution successful: {not result.isError}")
-    print(f"   Content: {result.content}")
+    print(f"   Execution successful: {not result.result.isError}")
+    print(f"   Content: {result.result.content[0].text}")
     print(f"   Status: ✓ Success\n")
 
 

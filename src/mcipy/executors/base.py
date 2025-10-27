@@ -8,7 +8,12 @@ It provides common functionality for context building, timeout handling, and err
 from abc import ABC, abstractmethod
 from typing import Any
 
-from ..models import ExecutionConfig, ExecutionResult
+from ..models import (
+    ExecutionConfig,
+    ExecutionResult,
+    ExecutionResultContent,
+    TextContent,
+)
 from ..templating import TemplateEngine
 
 
@@ -90,7 +95,7 @@ class BaseExecutor(ABC):
         Format an exception into a standardized ExecutionResult error response.
 
         Converts any exception into a consistent error format with isError=True
-        and the error message as a string.
+        and the error message as a text content object.
 
         Args:
             error: Exception that occurred during execution
@@ -99,9 +104,10 @@ class BaseExecutor(ABC):
             ExecutionResult with isError=True and error message
         """
         return ExecutionResult(
-            isError=True,
-            error=str(error),
-            content=None,
+            result=ExecutionResultContent(
+                isError=True,
+                content=[TextContent(text=str(error))],
+            )
         )
 
     def _apply_basic_templating_to_config(

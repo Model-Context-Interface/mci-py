@@ -347,9 +347,9 @@ class TestExecute:
         """Test executing text tool with valid properties."""
         result = tool_manager.execute("generate_message", {"name": "Bob"})
         assert isinstance(result, ExecutionResult)
-        assert result.isError is False
-        assert result.content is not None
-        assert "Hello Bob!" in result.content
+        assert result.result.isError is False
+        assert len(result.result.content) >= 1
+        assert "Hello Bob!" in result.result.content[0].text
 
     def test_execute_with_none_properties(self, tool_manager):
         """Test executing with None properties defaults to empty dict."""
@@ -365,15 +365,22 @@ class TestExecute:
             env_vars={"CURRENT_DATE": "2024-01-01"},
         )
         assert isinstance(result, ExecutionResult)
-        assert result.isError is False
+        assert result.result.isError is False
 
     def test_execute_builds_correct_context(self, tool_manager, monkeypatch):
         """Test that execute builds the correct context."""
         captured_context = {}
 
         def mock_execute(_self, _config, context):
+            from mcipy import ExecutionResultContent, TextContent
+
             captured_context.update(context)
-            return ExecutionResult(isError=False, content="mocked")
+            return ExecutionResult(
+                result=ExecutionResultContent(
+                    isError=False,
+                    content=[TextContent(text="mocked")],
+                )
+            )
 
         # Patch the TextExecutor execute method
         from mcipy.executors.text_executor import TextExecutor
