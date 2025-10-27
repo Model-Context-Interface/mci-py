@@ -200,6 +200,33 @@ class Tool(BaseModel):
     tags: list[str] = Field(default_factory=list)
 
 
+class Toolset(BaseModel):
+    """
+    Toolset definition for loading tools from external files.
+
+    Defines a reference to a toolset file or directory in libraryDir,
+    along with optional filters to apply when loading tools from that toolset.
+    """
+
+    name: str
+    filter: str | None = None  # "only", "except", "tags", "withoutTags"
+    filterValue: str | None = None  # Comma-separated list of tool names or tags
+
+
+class ToolsetFile(BaseModel):
+    """
+    Schema for toolset files loaded from libraryDir.
+
+    Toolset files use the same basic structure as the main schema but
+    only allow schemaVersion, metadata, and tools (required) fields.
+    They cannot set global config like allowlists or nested toolsets.
+    """
+
+    schemaVersion: str
+    metadata: Metadata | None = None
+    tools: list[Tool]
+
+
 class MCISchema(BaseModel):
     """
     Top-level MCI schema.
@@ -211,7 +238,9 @@ class MCISchema(BaseModel):
 
     schemaVersion: str
     metadata: Metadata | None = None
-    tools: list[Tool]
+    tools: list[Tool] | None = Field(default=None)
+    toolsets: list[Toolset] | None = Field(default=None)
+    libraryDir: str = Field(default="./mci")
     enableAnyPaths: bool = Field(default=False)
     directoryAllowList: list[str] = Field(default_factory=list)
 

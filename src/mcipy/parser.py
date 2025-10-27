@@ -25,6 +25,7 @@ from .models import (
     HTTPExecutionConfig,
     MCISchema,
     TextExecutionConfig,
+    ToolsetFile,
 )
 from .schema_config import SUPPORTED_SCHEMA_VERSIONS
 
@@ -123,20 +124,23 @@ class SchemaParser:
         if "schemaVersion" not in data:
             raise SchemaParserError("Missing required field 'schemaVersion'")
 
-        if "tools" not in data:
-            raise SchemaParserError("Missing required field 'tools'")
-
         # Validate schema version
         SchemaParser._validate_schema_version(data["schemaVersion"])
 
-        # Validate tools is a list
-        if not isinstance(data["tools"], list):
-            raise SchemaParserError(
-                f"Field 'tools' must be a list, got {type(data['tools']).__name__}"
-            )
+        # Validate that either tools or toolsets is provided
+        has_tools = "tools" in data and data["tools"] is not None
+        has_toolsets = "toolsets" in data and data["toolsets"] is not None
 
-        # Validate tools
-        SchemaParser._validate_tools(data["tools"])
+        if not has_tools and not has_toolsets:
+            raise SchemaParserError("Schema must have either 'tools' or 'toolsets' field (or both)")
+
+        # Validate tools if present
+        if has_tools:
+            if not isinstance(data["tools"], list):
+                raise SchemaParserError(
+                    f"Field 'tools' must be a list, got {type(data['tools']).__name__}"
+                )
+            SchemaParser._validate_tools(data["tools"])
 
         # Use Pydantic to validate and build the schema
         try:
@@ -145,6 +149,120 @@ class SchemaParser:
             raise SchemaParserError(f"Schema validation failed: {e}") from e
 
         return schema
+
+    @staticmethod
+    def parse_toolset_file(file_path: str) -> ToolsetFile:
+        """
+        Load and validate a toolset file (JSON or YAML).
+
+        Toolset files use a restricted schema that only allows:
+        - schemaVersion (required)
+        - metadata (optional)
+        - tools (required)
+
+        Args:
+            file_path: Path to the toolset file (.json, .yaml, or .yml)
+
+        Returns:
+            Validated ToolsetFile object
+
+        Raises:
+            SchemaParserError: If the file doesn't exist, can't be read,
+                             contains invalid JSON/YAML, has unsupported extension,
+                             or fails validation
+        """
+        path = Path(file_path)
+
+        # Check if file exists
+        if not path.exists():
+            raise SchemaParserError(f"Toolset file not found: {file_path}")
+
+        if not path.is_file():
+            raise SchemaParserError(f"Path is not a file: {file_path}")
+
+        # Determine file type by extension
+        file_extension = path.suffix.lower()
+
+        # Read and parse file based on extension
+        try:
+            with path.open("r", encoding="utf-8") as f:
+                if file_extension == ".json":
+                    data = json.load(f)
+                elif file_extension in (".yaml", ".yml"):
+                    data = yaml.safe_load(f)
+                else:
+                    raise SchemaParserError(
+                        f"Unsupported file extension '{file_extension}'. "
+                        f"Supported extensions: .json, .yaml, .yml"
+                    )
+        except json.JSONDecodeError as e:
+            raise SchemaParserError(f"Invalid JSON in toolset file {file_path}: {e}") from e
+        except yaml.YAMLError as e:
+            raise SchemaParserError(f"Invalid YAML in toolset file {file_path}: {e}") from e
+        except OSError as e:
+            raise SchemaParserError(f"Failed to read toolset file {file_path}: {e}") from e
+
+        # Parse the toolset dictionary
+        return SchemaParser.parse_toolset_dict(data)
+
+    @staticmethod
+    def parse_toolset_dict(data: dict[str, Any]) -> ToolsetFile:
+        """
+        Parse a dictionary into a ToolsetFile object.
+
+        Validates that the dictionary contains only allowed fields for toolsets:
+        - schemaVersion (required)
+        - metadata (optional)
+        - tools (required)
+
+        Args:
+            data: Dictionary containing toolset data
+
+        Returns:
+            Validated ToolsetFile object
+
+        Raises:
+            SchemaParserError: If the dictionary structure is invalid,
+                             schema version is unsupported, or validation fails
+        """
+        if not isinstance(data, dict):
+            raise SchemaParserError(f"Expected dictionary, got {type(data).__name__}")
+
+        # Validate required fields exist
+        if "schemaVersion" not in data:
+            raise SchemaParserError("Toolset missing required field 'schemaVersion'")
+
+        if "tools" not in data:
+            raise SchemaParserError("Toolset missing required field 'tools'")
+
+        # Validate schema version
+        SchemaParser._validate_schema_version(data["schemaVersion"])
+
+        # Validate tools is a list
+        if not isinstance(data["tools"], list):
+            raise SchemaParserError(
+                f"Toolset field 'tools' must be a list, got {type(data['tools']).__name__}"
+            )
+
+        # Validate tools
+        SchemaParser._validate_tools(data["tools"])
+
+        # Check for disallowed fields
+        allowed_fields = {"schemaVersion", "metadata", "tools"}
+        disallowed = set(data.keys()) - allowed_fields
+        if disallowed:
+            raise SchemaParserError(
+                f"Toolset files cannot contain fields: {', '.join(sorted(disallowed))}. "
+                f"Allowed fields: {', '.join(sorted(allowed_fields))}"
+            )
+
+        # Use Pydantic to validate and build the toolset
+        try:
+            toolset = ToolsetFile(**data)
+        except ValidationError as e:
+            raise SchemaParserError(f"Toolset validation failed: {e}") from e
+
+        return toolset
 
     @staticmethod
     def _validate_schema_version(version: str) -> None:

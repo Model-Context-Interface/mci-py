@@ -21,6 +21,8 @@ from .models import (
     TextContent,
     TextExecutionConfig,
     Tool,
+    Toolset,
+    ToolsetFile,
 )
 from .parser import SchemaParser, SchemaParserError
 from .tool_manager import ToolManager, ToolManagerError
@@ -52,6 +54,8 @@ __all__ = (
     "TextContent",
     "TextExecutionConfig",
     "Tool",
+    "Toolset",
+    "ToolsetFile",
     # Parser
     "SchemaParser",
     "SchemaParserError",
