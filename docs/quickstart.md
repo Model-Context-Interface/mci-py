@@ -82,11 +82,7 @@ Create a file named `my-tools.mci.json` (or `my-tools.mci.yaml` for YAML format)
     {
       "name": "greet_user",
       "annotations": {
-        "annotations": {
-
-          "title": "User Greeting"
-
-        },
+        "title": "User Greeting",
         "readOnlyHint": true,
         "idempotentHint": true
       },
@@ -226,9 +222,7 @@ All tools in MCI follow a standard JSON schema structure. Here's the complete an
 ```json
 {
   "name": "tool_identifier",
-  "annotations": { "annotations": {
-   "title": "Human-Readable Tool Name"
- } },
+  "annotations": { "title": "Human-Readable Tool Name" },
   "description": "What this tool does",
   "inputSchema": {
     "type": "object",
@@ -273,9 +267,7 @@ Return static or templated text directly. Perfect for simple messages, templates
 {
   "name": "generate_welcome",
   "annotations": {
-
     "title": "Welcome Message Generator"
-
   },
   "description": "Generate a welcome message with current date",
   "inputSchema": {
@@ -322,9 +314,7 @@ Read and return file contents with optional template substitution. Useful for lo
 {
   "name": "load_config",
   "annotations": {
-
     "title": "Load Configuration File"
-
   },
   "description": "Load a configuration file with template substitution",
   "inputSchema": {
@@ -391,9 +381,7 @@ Execute command-line programs and capture their output. Great for running system
 {
   "name": "search_files",
   "annotations": {
-
     "title": "Search Files with Grep"
-
   },
   "description": "Search for text patterns in files",
   "inputSchema": {
@@ -472,9 +460,7 @@ Make HTTP requests to APIs with full support for authentication, headers, query 
 {
   "name": "get_weather",
   "annotations": {
-
     "title": "Get Weather Information"
-
   },
   "description": "Fetch current weather for a location",
   "inputSchema": {
@@ -511,9 +497,7 @@ Make HTTP requests to APIs with full support for authentication, headers, query 
 {
   "name": "create_report",
   "annotations": {
-
     "title": "Create Report"
-
   },
   "description": "Create a new report via API",
   "inputSchema": {
@@ -538,11 +522,7 @@ Make HTTP requests to APIs with full support for authentication, headers, query 
     "body": {
       "type": "json",
       "content": {
-        "annotations": {
-
-          "title": "{{props.title}}"
-
-        },
+        "title": "{{props.title}}",
         "content": "{{props.content}}",
         "timestamp": "{{env.CURRENT_TIMESTAMP}}"
       }
@@ -713,7 +693,6 @@ report_result = client.execute(
         "annotations": {
 
           "title": "Q1 Sales Report"
-
         },
         "content": "Sales increased by 15%"
     }

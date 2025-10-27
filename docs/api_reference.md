@@ -544,9 +544,7 @@ Top-level MCI schema representing the complete MCI context file.
         {
             "name": "get_weather",
             "annotations": {
-
-              "title": "Get Weather"
-
+        "title": "Get Weather"
             },
             "description": "Get weather information",
             "inputSchema": {...},
@@ -579,9 +577,7 @@ Individual tool definition with name, description, input schema, and execution c
 {
     "name": "get_weather",
     "annotations": {
-
-      "title": "Get Weather Information"
-
+        "title": "Get Weather Information"
     },
     "description": "Fetch current weather information for a location",
     "inputSchema": {
@@ -759,11 +755,7 @@ Configuration for HTTP-based tool execution.
     "body": {
         "type": "json",
         "content": {
-            "annotations": {
-
-              "title": "{{props.title}}"
-
-            },
+            "title": "{{props.title}}",
             "content": "{{props.content}}"
         }
     },
