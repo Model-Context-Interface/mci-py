@@ -370,9 +370,7 @@ class SchemaParser:
                 raise SchemaParserError(
                     f"No .mci.json files found in toolset directory: {dir_path}"
                 )
-            # Merge all tools from all files in the directory.
-            # Metadata is not merged - it's only for demonstration purposes in toolset files.
-            # Schema version is validated to ensure compatibility for future parser extensibility.
+            # Merge tools from all files. Metadata is not merged (documentation only). Schema version validated for compatibility.
             all_tools: list[Tool] = []
             schema_version = None
             for toolset_file in toolset_files:
