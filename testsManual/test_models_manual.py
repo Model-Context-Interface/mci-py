@@ -10,11 +10,13 @@ Usage:
 
 
 from mcipy.models import (
+    Annotations,
     ApiKeyAuth,
     BasicAuth,
     BearerAuth,
     CLIExecutionConfig,
     ExecutionResult,
+    ExecutionResultContent,
     FileExecutionConfig,
     FlagConfig,
     HTTPBodyConfig,
@@ -23,9 +25,11 @@ from mcipy.models import (
     Metadata,
     OAuth2Auth,
     RetryConfig,
+    TextContent,
     TextExecutionConfig,
     Tool,
 )
+from mcipy.tool_manager import ToolManager
 
 
 def print_section(title: str):
@@ -56,7 +60,6 @@ def test_http_tool_with_api_key():
         retries=RetryConfig(attempts=3, backoff_ms=1000),
     )
 
-    from mcipy import Annotations
 
     tool = Tool(
         name="get_weather",
@@ -84,7 +87,6 @@ def test_cli_tool():
     """Demonstrate CLI tool configuration."""
     print_section("CLI Tool Configuration")
 
-    from mcipy import Annotations
 
     flags = {
         "-i": FlagConfig(**{"from": "props.ignore_case", "type": "boolean"}),
@@ -118,7 +120,6 @@ def test_file_tool():
     """Demonstrate file reading tool."""
     print_section("File Reading Tool")
 
-    from mcipy import Annotations
 
     execution = FileExecutionConfig(
         path="./templates/report-{{props.report_id}}.txt", enableTemplating=True
@@ -140,7 +141,6 @@ def test_text_tool():
     """Demonstrate text template tool."""
     print_section("Text Template Tool")
 
-    from mcipy import Annotations
 
     execution = TextExecutionConfig(
         text="Report generated for {{input.username}} on {{env.CURRENT_DATE}}"
@@ -161,7 +161,6 @@ def test_full_mci_schema():
     """Demonstrate a complete MCI schema with multiple tools."""
     print_section("Complete MCI Schema")
 
-    from mcipy import Annotations
 
     metadata = Metadata(
         name="Development Tools Context",
@@ -235,7 +234,6 @@ def test_execution_results():
     """Demonstrate execution result models."""
     print_section("Execution Results")
 
-    from mcipy import ExecutionResultContent, TextContent
 
     success_result = ExecutionResult(
         result=ExecutionResultContent(
@@ -358,8 +356,6 @@ def test_tags_filtering():
         print(f"  - {tool.name}: {tool.tags if tool.tags else '(no tags)'}")
 
     # Demonstrate tag filtering with ToolManager
-    from mcipy.tool_manager import ToolManager
-
     manager = ToolManager(schema)
 
     print("\n" + "-" * 70)
