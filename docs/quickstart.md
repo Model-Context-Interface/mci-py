@@ -190,10 +190,10 @@ result = client.execute(
 )
 
 # Check the result
-if result.isError:
-    print(f"Error: {result.error}")
+if result.result.isError:
+    print(f"Error: {result.result.content[0].text}")
 else:
-    print(f"Success: {result.content}")
+    print(f"Success: {result.result.content[0].text}")
 ```
 
 ### 6. Filter Tools
@@ -301,7 +301,7 @@ result = client.execute(
     tool_name="generate_welcome",
     properties={"username": "Alice"}
 )
-print(result.content)  # "Welcome Alice! Today is 2024-01-15."
+print(result.result.content[0].text)  # "Welcome Alice! Today is 2024-01-15."
 ```
 
 ### File Execution
@@ -363,7 +363,7 @@ result = client.execute(
         "database_name": "production_db"
     }
 )
-print(result.content)
+print(result.result.content[0].text)
 # Output:
 # host=localhost
 # port=5432
@@ -432,10 +432,10 @@ result = client.execute(
     }
 )
 
-if result.isError:
-    print(f"Error: {result.error}")
+if result.result.isError:
+    print(f"Error: {result.result.content[0].text}")
 else:
-    print(result.content)  # Output from grep command
+    print(result.result.content[0].text)  # Output from grep command
 ```
 
 **CLI Configuration Options:**
@@ -683,8 +683,8 @@ weather_result = client.execute(
     properties={"location": "New York"}
 )
 
-if not weather_result.isError:
-    print(f"Weather data: {weather_result.content}")
+if not weather_result.result.isError:
+    print(f"Weather data: {weather_result.result.content[0].text}")
 
 # Execute POST request
 report_result = client.execute(
@@ -695,8 +695,8 @@ report_result = client.execute(
     }
 )
 
-if not report_result.isError:
-    print(f"Report created: {report_result.content}")
+if not report_result.result.isError:
+    print(f"Report created: {report_result.result.content[0].text}")
 ```
 
 ## Advanced Features
@@ -708,11 +708,11 @@ Always check the `isError` property of execution results:
 ```python
 result = client.execute(tool_name="my_tool", properties={...})
 
-if result.isError:
-    print(f"Error occurred: {result.error}")
+if result.result.isError:
+    print(f"Error occurred: {result.result.content[0].text}")
     # Handle error case
 else:
-    print(f"Success: {result.content}")
+    print(f"Success: {result.result.content[0].text}")
     # Process successful result
 ```
 
@@ -917,8 +917,8 @@ def main():
         tool_name="generate_welcome",
         properties={"username": "Alice"}
     )
-    if not result.isError:
-        print(f"   Output: {result.content}")
+    if not result.result.isError:
+        print(f"   Output: {result.result.content[0].text}")
     
     # Execute file tool
     print("\n2. Executing file tool...")
@@ -926,8 +926,8 @@ def main():
         tool_name="load_config",
         properties={"config_name": "database"}
     )
-    if not result.isError:
-        print(f"   Config loaded: {len(result.content)} bytes")
+    if not result.result.isError:
+        print(f"   Config loaded: {len(result.result.content[0].text)} bytes")
     
     # Execute CLI tool
     print("\n3. Executing CLI tool...")
@@ -939,8 +939,8 @@ def main():
             "ignore_case": True
         }
     )
-    if not result.isError:
-        print(f"   Found matches: {len(result.content.splitlines())} lines")
+    if not result.result.isError:
+        print(f"   Found matches: {len(result.result.content[0].text.splitlines())} lines")
     
     # Filter tools
     print("\n4. Filtering tools...")

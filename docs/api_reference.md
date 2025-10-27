@@ -338,10 +338,10 @@ result = client.execute(
 )
 
 # Handle result
-if result.isError:
-    print(f"Error: {result.error}")
+if result.result.isError:
+    print(f"Error: {result.result.content[0].text}")
 else:
-    print(f"Success: {result.content}")
+    print(f"Success: {result.result.content[0].text}")
     if result.metadata:
         print(f"Metadata: {result.metadata}")
 ```
@@ -1171,12 +1171,12 @@ The MCI Python adapter includes built-in path validation to prevent unauthorized
 ```python
 result = client.execute("get_weather", {"location": "New York"})
 
-if result.isError:
-    print(f"Error occurred: {result.error}")
+if result.result.isError:
+    print(f"Error occurred: {result.result.content[0].text}")
     if result.metadata:
         print(f"Additional context: {result.metadata}")
 else:
-    print(f"Success: {result.content}")
+    print(f"Success: {result.result.content[0].text}")
 ```
 
 **Try-Except for Client Errors:**
@@ -1186,12 +1186,12 @@ try:
     client = MCIClient(json_file_path="example.mci.json")
     result = client.execute("get_weather", {"location": "New York"})
     
-    if result.isError:
+    if result.result.isError:
         # Handle execution errors
-        print(f"Execution failed: {result.error}")
+        print(f"Execution failed: {result.result.content[0].text}")
     else:
         # Process successful result
-        print(f"Weather data: {result.content}")
+        print(f"Weather data: {result.result.content[0].text}")
         
 except MCIClientError as e:
     # Handle client-level errors (tool not found, invalid schema, etc.)
@@ -1266,13 +1266,13 @@ result = client.execute(
     properties={"location": "New York"}
 )
 
-if result.isError:
+if result.result.isError:
     print(f"\nExecution failed: {result.error}")
     if result.metadata:
         print(f"Error metadata: {result.metadata}")
 else:
     print(f"\nExecution successful!")
-    print(f"Content: {result.content}")
+    print(f"Content: {result.result.content[0].text}")
     if result.metadata:
         print(f"Metadata: {result.metadata}")
 ```

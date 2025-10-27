@@ -234,12 +234,12 @@ def test_execution_results():
     error_result = ExecutionResult(isError=True, error="Connection timeout after 5000ms")
 
     print("Success Result:")
-    print(f"  Is Error: {success_result.isError}")
-    print(f"  Content: {success_result.content}")
+    print(f"  Is Error: {success_result.result.isError}")
+    print(f"  Content: {success_result.result.content[0].text}")
     print()
     print("Error Result:")
-    print(f"  Is Error: {error_result.isError}")
-    print(f"  Error Message: {error_result.error}")
+    print(f"  Is Error: {error_result.result.isError}")
+    print(f"  Error Message: {error_result.result.content[0].text}")
 
 
 def test_auth_types():

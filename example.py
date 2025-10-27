@@ -50,11 +50,11 @@ def main():
     print("   Input: username='Alice'")
     result = client.execute(tool_name="generate_message", properties={"username": "Alice"})
 
-    if result.isError:
-        print(f"   ✗ Error: {result.error}")
+    if result.result.isError:
+        print(f"   ✗ Error: {result.result.content[0].text}")
     else:
         print(f"   ✓ Success!")
-        print(f"   Output: {result.content}")
+        print(f"   Output: {result.result.content[0].text}")
     print()
 
     # Execute the 'load_template' tool
@@ -67,11 +67,11 @@ def main():
     # And allows direct passing of inputSchema to LLMs
     result = client.execute(tool_name="load_template", properties={"username": "Bob", "new_prop": [1, 2, 3]})
 
-    if result.isError:
-        print(f"   ✗ Error: {result.error}")
+    if result.result.isError:
+        print(f"   ✗ Error: {result.result.content[0].text}")
     else:
         print(f"   ✓ Success!")
-        print(f"   Output: {result.content}")
+        print(f"   Output: {result.result.content[0].text}")
     print()
 
     # Show tool filtering

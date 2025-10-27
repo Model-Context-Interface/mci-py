@@ -76,11 +76,11 @@ def demo_cli_examples():
     try:
         result = client.execute(tool_name="count_lines", properties={"file_path": "README.md"})
 
-        if not result.isError:
+        if not result.result.isError:
             print("  ✓ Success!")
-            print(f"  Output: {result.content.strip()}")
+            print(f"  Output: {result.result.content[0].text.strip()}")
         else:
-            print(f"  ✗ Error: {result.error}")
+            print(f"  ✗ Error: {result.result.content[0].text}")
     except Exception as e:
         print(f"  ✗ Exception: {e}")
     print()
@@ -92,16 +92,16 @@ def demo_cli_examples():
             tool_name="list_files", properties={"directory": ".", "show_hidden": False}
         )
 
-        if not result.isError:
+        if not result.result.isError:
             print("  ✓ Success!")
-            lines = result.content.strip().split("\n")
+            lines = result.result.content[0].text.strip().split("\n")
             print("  Output (first 5 lines):")
             for line in lines[:5]:
                 print(f"    {line}")
             if len(lines) > 5:
                 print(f"    ... and {len(lines) - 5} more lines")
         else:
-            print(f"  ✗ Error: {result.error}")
+            print(f"  ✗ Error: {result.result.content[0].text}")
     except Exception as e:
         print(f"  ✗ Exception: {e}")
     print()
@@ -128,11 +128,11 @@ def demo_file_examples():
     try:
         result = client.execute(tool_name="load_template", properties={"username": "Alice"})
 
-        if not result.isError:
+        if not result.result.isError:
             print("  ✓ Success!")
-            print(f"  Content preview: {result.content[:200]}...")
+            print(f"  Content preview: {result.result.content[0].text[:200]}...")
         else:
-            print(f"  ✗ Error: {result.error}")
+            print(f"  ✗ Error: {result.result.content[0].text}")
             print("  (This is expected if text.txt doesn't exist)")
     except Exception as e:
         print(f"  ✗ Exception: {e}")
@@ -162,11 +162,11 @@ def demo_text_examples():
     print("Executing: generate_message")
     result = client.execute(tool_name="generate_message", properties={"username": "Bob"})
 
-    if not result.isError:
+    if not result.result.isError:
         print("  ✓ Success!")
-        print(f"  Output: {result.content}")
+        print(f"  Output: {result.result.content[0].text}")
     else:
-        print(f"  ✗ Error: {result.error}")
+        print(f"  ✗ Error: {result.result.content[0].text}")
     print()
 
     # Execute generate_welcome tool
@@ -175,22 +175,22 @@ def demo_text_examples():
         tool_name="generate_welcome", properties={"username": "Alice", "email": "alice@example.com"}
     )
 
-    if not result.isError:
+    if not result.result.isError:
         print("  ✓ Success!")
-        print(f"  Output: {result.content}")
+        print(f"  Output: {result.result.content[0].text}")
     else:
-        print(f"  ✗ Error: {result.error}")
+        print(f"  ✗ Error: {result.result.content[0].text}")
     print()
 
     # Execute status_message tool
     print("Executing: status_message")
     result = client.execute(tool_name="status_message", properties={"status": "operational"})
 
-    if not result.isError:
+    if not result.result.isError:
         print("  ✓ Success!")
-        print(f"  Output: {result.content}")
+        print(f"  Output: {result.result.content[0].text}")
     else:
-        print(f"  ✗ Error: {result.error}")
+        print(f"  ✗ Error: {result.result.content[0].text}")
     print()
 
 
@@ -225,11 +225,11 @@ def demo_mixed_examples():
     print("Executing: generate_message from mixed example")
     result = client.execute(tool_name="generate_message", properties={"username": "Charlie"})
 
-    if not result.isError:
+    if not result.result.isError:
         print("  ✓ Success!")
-        print(f"  Output: {result.content}")
+        print(f"  Output: {result.result.content[0].text}")
     else:
-        print(f"  ✗ Error: {result.error}")
+        print(f"  ✗ Error: {result.result.content[0].text}")
     print()
 
 

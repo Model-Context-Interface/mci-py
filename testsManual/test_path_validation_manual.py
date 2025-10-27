@@ -57,16 +57,16 @@ def test_basic_path_restriction():
             # Test allowed file access
             print("\n✓ Testing allowed file access (inside schema directory)...")
             result = client.execute("read_allowed")
-            assert not result.isError, "Should allow access to file in schema directory"
-            assert "schema directory" in result.content
+            assert not result.result.isError, "Should allow access to file in schema directory"
+            assert "schema directory" in result.result.content[0].text
             print("  SUCCESS: File read from schema directory")
 
             # Test blocked file access
             print("\n✗ Testing blocked file access (outside schema directory)...")
             result = client.execute("read_blocked")
-            assert result.isError, "Should block access to file outside schema directory"
-            assert "File path access outside context directory" in result.error
-            print(f"  SUCCESS: Access blocked - {result.error[:80]}...")
+            assert result.result.isError, "Should block access to file outside schema directory"
+            assert "File path access outside context directory" in result.result.content[0].text
+            print(f"  SUCCESS: Access blocked - {result.result.content[0].text[:80]}...")
 
         finally:
             blocked_file.unlink(missing_ok=True)
@@ -106,8 +106,8 @@ def test_enable_any_paths():
 
             print("\n✓ Testing file access with enableAnyPaths=True...")
             result = client.execute("read_anywhere")
-            assert not result.isError, "Should allow access when enableAnyPaths=True"
-            assert "Outside file content" in result.content
+            assert not result.result.isError, "Should allow access when enableAnyPaths=True"
+            assert "Outside file content" in result.result.content[0].text
             print("  SUCCESS: Access allowed with enableAnyPaths override")
 
         finally:
@@ -148,8 +148,8 @@ def test_directory_allow_list():
 
             print(f"\n✓ Testing file access from allowed directory: {allowed_path}")
             result = client.execute("read_from_allowed")
-            assert not result.isError, "Should allow access to directoryAllowList directory"
-            assert "allowed directory" in result.content
+            assert not result.result.isError, "Should allow access to directoryAllowList directory"
+            assert "allowed directory" in result.result.content[0].text
             print("  SUCCESS: Access allowed to directory in allow-list")
 
 
@@ -189,15 +189,15 @@ def test_cli_cwd_validation():
         # Test allowed cwd (schema directory)
         print("\n✓ Testing CLI with cwd in schema directory...")
         result = client.execute("list_schema_dir")
-        assert not result.isError, "Should allow cwd in schema directory"
+        assert not result.result.isError, "Should allow cwd in schema directory"
         print("  SUCCESS: CLI allowed to use schema directory as cwd")
 
         # Test blocked cwd (outside schema directory)
         print("\n✗ Testing CLI with cwd outside schema directory...")
         result = client.execute("list_tmp")
-        assert result.isError, "Should block cwd outside schema directory"
-        assert "File path access outside context directory" in result.error
-        print(f"  SUCCESS: CLI blocked from using outside cwd - {result.error[:80]}...")
+        assert result.result.isError, "Should block cwd outside schema directory"
+        assert "File path access outside context directory" in result.result.content[0].text
+        print(f"  SUCCESS: CLI blocked from using outside cwd - {result.result.content[0].text[:80]}...")
 
 
 def main():

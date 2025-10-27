@@ -186,18 +186,18 @@ class TestMCIClientFeatures:
 
         # Execute with simple properties
         result1 = client.execute("generate_message", properties={"username": "User1"})
-        assert result1.isError is False
-        assert isinstance(result1.content, str)
-        assert "User1" in result1.content
+        assert result1.result.isError is False
+        assert isinstance(result1.result.content[0].text, str)
+        assert "User1" in result1.result.content[0].text
 
         # Execute with different properties
         result2 = client.execute("generate_message", properties={"username": "User2"})
-        assert result2.isError is False
-        assert isinstance(result2.content, str)
-        assert "User2" in result2.content
+        assert result2.result.isError is False
+        assert isinstance(result2.result.content[0].text, str)
+        assert "User2" in result2.result.content[0].text
 
         # Results should be different
-        assert result1.content != result2.content
+        assert result1.result.content[0].text != result2.result.content[0].text
 
     def test_client_state_after_operations(self):
         """Test that client state remains consistent after operations."""

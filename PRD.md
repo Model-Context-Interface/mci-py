@@ -62,10 +62,10 @@ result = client.execute(
 )
 
 # Handle result
-if result.isError:
-    print(f"Error: {result.error}")
+if result.result.isError:
+    print(f"Error: {result.result.content[0].text}")
 else:
-    for content in result.content:
+    for content in result.result.content:
         if content.type == "text":
             print(content.text)
 ```

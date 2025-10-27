@@ -147,8 +147,8 @@ def test_execute_tool():
             env_vars={"CURRENT_DATE": "2024-01-15"}
         )
         print(f"   ✓ Execution successful")
-        print(f"     Error: {result.isError}")
-        print(f"     Content: {result.content}")
+        print(f"     Error: {result.result.isError}")
+        print(f"     Content: {result.result.content[0].text}")
     except ToolManagerError as e:
         print(f"   ✗ Error: {e}")
 
@@ -168,10 +168,10 @@ def test_execute_tool():
             properties={"location": "New York"}
         )
         print(f"   ✓ Execution attempted")
-        print(f"     Error: {result.isError}")
+        print(f"     Error: {result.result.isError}")
         # Note: This will fail because we don't have a real API, but validation passed
-        if result.isError:
-            print(f"     Error message: {result.error}")
+        if result.result.isError:
+            print(f"     Error message: {result.result.content[0].text}")
             print(f"     (Expected - no real API endpoint)")
     except ToolManagerError as e:
         print(f"   ✗ Validation error: {e}")
@@ -204,10 +204,10 @@ def test_execute_tool():
             properties={"username": "Bob"}
         )
         print(f"   ✓ Execution attempted")
-        print(f"     Error: {result.isError}")
+        print(f"     Error: {result.result.isError}")
         # Will fail because file might not exist
-        if result.isError:
-            print(f"     Error message: {result.error}")
+        if result.result.isError:
+            print(f"     Error message: {result.result.content[0].text}")
             print(f"     (Expected - template file may not exist)")
     except ToolManagerError as e:
         print(f"   ✗ Validation error: {e}")

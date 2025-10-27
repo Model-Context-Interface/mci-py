@@ -102,9 +102,9 @@ def test_text_execution_e2e():
     config1 = TextExecutionConfig(text="Hello {{props.name}}, {{props.role}} at {{env.COMPANY}}!")
     result1 = executor.execute(config1, context)
     print(f"   Template: 'Hello {{{{props.name}}}}, {{{{props.role}}}} at {{{{env.COMPANY}}}}!'")
-    print(f"   Result:   '{result1.content}'")
+    print(f"   Result:   '{result1.result.content[0].text}'")
     print(f"   Expected: 'Hello Alice, Developer at ACME Corp!'")
-    print(f"   Status: {'✓ Success' if not result1.isError else '✗ Error'}\n")
+    print(f"   Status: {'✓ Success' if not result1.result.isError else '✗ Error'}\n")
 
     # Test 2: Advanced templating with @foreach
     print("2. Advanced Templating (@foreach):")
@@ -115,8 +115,8 @@ def test_text_execution_e2e():
     )
     result2 = executor.execute(config2, context)
     print(f"   Template: Tasks with @foreach loop")
-    print(f"   Result:\n{result2.content}")
-    print(f"   Status: {'✓ Success' if not result2.isError else '✗ Error'}\n")
+    print(f"   Result:\n{result2.result.content[0].text}")
+    print(f"   Status: {'✓ Success' if not result2.result.isError else '✗ Error'}\n")
 
 
 def test_file_execution_e2e():
@@ -145,8 +145,8 @@ def test_file_execution_e2e():
         result1 = executor.execute(config1, context)
         print(f"   Path: {temp_file}")
         print(f"   Templating: enabled")
-        print(f"   Result:\n{result1.content}")
-        print(f"   Status: {'✓ Success' if not result1.isError else '✗ Error'}\n")
+        print(f"   Result:\n{result1.result.content[0].text}")
+        print(f"   Status: {'✓ Success' if not result1.result.isError else '✗ Error'}\n")
 
         # Test 2: File reading without templating
         print("2. File Reading without Templating:")
@@ -154,16 +154,16 @@ def test_file_execution_e2e():
         result2 = executor.execute(config2, context)
         print(f"   Path: {temp_file}")
         print(f"   Templating: disabled")
-        print(f"   Result:\n{result2.content}")
-        print(f"   Status: {'✓ Success' if not result2.isError else '✗ Error'}\n")
+        print(f"   Result:\n{result2.result.content[0].text}")
+        print(f"   Status: {'✓ Success' if not result2.result.isError else '✗ Error'}\n")
 
         # Test 3: Error handling - file not found
         print("3. Error Handling (File Not Found):")
         config3 = FileExecutionConfig(path="/nonexistent/file.txt", enableTemplating=False)
         result3 = executor.execute(config3, context)
         print(f"   Path: /nonexistent/file.txt")
-        print(f"   Status: {'✗ Error (as expected)' if result3.isError else '✓ Success (unexpected!)'}")
-        print(f"   Error: {result3.error}\n")
+        print(f"   Status: {'✗ Error (as expected)' if result3.result.isError else '✓ Success (unexpected!)'}")
+        print(f"   Error: {result3.result.content[0].text}\n")
 
     finally:
         # Cleanup
@@ -189,8 +189,8 @@ def test_cli_execution_e2e():
     config1 = CLIExecutionConfig(command="echo", args=["Hello from CLI executor!"])
     result1 = executor.execute(config1, context)
     print(f"   Command: echo 'Hello from CLI executor!'")
-    print(f"   Result: '{result1.content.strip() if result1.content else 'None'}'")
-    print(f"   Status: {'✓ Success' if not result1.isError else '✗ Error'}\n")
+    print(f"   Result: '{result1.result.content[0].text.strip() if result1.result.content[0].text else 'None'}'")
+    print(f"   Status: {'✓ Success' if not result1.result.isError else '✗ Error'}\n")
 
     # Test 2: Command with templating in args
     print("2. Command with Templating:")
@@ -198,16 +198,16 @@ def test_cli_execution_e2e():
     result2 = executor.execute(config2, context)
     print(f"   Command: ls {{{{props.directory}}}}")
     print(f"   Resolved: ls {context['props']['directory']}")
-    print(f"   Status: {'✓ Success' if not result2.isError else '✗ Error'}")
-    print(f"   Output (first 200 chars): {(result2.content or '')[:200]}\n")
+    print(f"   Status: {'✓ Success' if not result2.result.isError else '✗ Error'}")
+    print(f"   Output (first 200 chars): {(result2.result.content[0].text or '')[:200]}\n")
 
     # Test 3: Error handling - command not found
     print("3. Error Handling (Command Not Found):")
     config3 = CLIExecutionConfig(command="nonexistent_command_12345")
     result3 = executor.execute(config3, context)
     print(f"   Command: nonexistent_command_12345")
-    print(f"   Status: {'✗ Error (as expected)' if result3.isError else '✓ Success (unexpected!)'}")
-    print(f"   Error: {result3.error[:100] if result3.error else 'None'}\n")
+    print(f"   Status: {'✗ Error (as expected)' if result3.result.isError else '✓ Success (unexpected!)'}")
+    print(f"   Error: {result3.result.content[0].text[:100] if result3.result.content[0].text else 'None'}\n")
 
 
 def test_http_execution_e2e():
@@ -246,8 +246,8 @@ def test_http_execution_e2e():
         print(f"   URL: https://api.example.com/weather?city={{{{props.city}}}}")
         print(f"   Resolved: https://api.example.com/weather?city=London")
         print(f"   Method: GET")
-        print(f"   Response: {result1.content}")
-        print(f"   Status: {'✓ Success' if not result1.isError else '✗ Error'}\n")
+        print(f"   Response: {result1.result.content[0].text}")
+        print(f"   Status: {'✓ Success' if not result1.result.isError else '✗ Error'}\n")
 
     # Test 2: HTTP POST with auth
     print("2. HTTP POST Request with Auth (mocked):")
@@ -274,8 +274,8 @@ def test_http_execution_e2e():
         print(f"   URL: https://api.example.com/data")
         print(f"   Method: POST")
         print(f"   Auth header: {call_kwargs.get('headers', {}).get('X-API-Key', 'None')}")
-        print(f"   Response: {result2.content}")
-        print(f"   Status: {'✓ Success' if not result2.isError else '✗ Error'}\n")
+        print(f"   Response: {result2.result.content[0].text}")
+        print(f"   Status: {'✓ Success' if not result2.result.isError else '✗ Error'}\n")
 
 
 def main():
