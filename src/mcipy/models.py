@@ -10,9 +10,9 @@ providing strong typing, validation, and schema enforcement for:
 - Execution results
 """
 
-from typing import Any
+from typing import Any, Literal
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, field_validator
 
 from .enums import ExecutionType
 
@@ -183,7 +183,7 @@ class Annotations(BaseModel):
     Contains hints and metadata about how the tool behaves, including
     display information (title) and behavioral characteristics like
     whether it modifies state, is destructive, idempotent, or interacts
-    with external entities.
+    with external entities. Also includes audience targeting for different roles.
     """
 
     title: str | None = None
@@ -191,6 +191,7 @@ class Annotations(BaseModel):
     destructiveHint: bool | None = None
     idempotentHint: bool | None = None
     openWorldHint: bool | None = None
+    audience: list[Literal["user", "assistant"]] | None = None
 
 
 class Tool(BaseModel):
@@ -305,11 +306,38 @@ class MCISchema(BaseModel):
     schemaVersion: str
     metadata: Metadata | None = None
     tools: list[Tool] | None = Field(default=None)
-    toolsets: list[Toolset] | None = Field(default=None)
+    toolsets: list[Toolset | str] | None = Field(default=None)
     mcp_servers: dict[str, MCPServer] | None = Field(default=None)
     libraryDir: str = Field(default="./mci")
     enableAnyPaths: bool = Field(default=False)
     directoryAllowList: list[str] = Field(default_factory=list)
+
+    @field_validator("toolsets", mode="before")
+    @classmethod
+    def normalize_toolsets(cls, v: Any) -> Any:
+        """
+        Normalize toolsets to always be Toolset objects.
+
+        Converts string toolset names to Toolset objects with just the name field.
+        This allows users to specify simple toolset names without creating full objects
+        when no filtering is needed.
+
+        Examples:
+            "github" -> {"name": "github"}
+            {"name": "github", "filter": "tags", "filterValue": "read"} -> unchanged
+        """
+        if v is None:
+            return v
+
+        normalized = []
+        for item in v:
+            if isinstance(item, str):
+                # Convert string to Toolset dict
+                normalized.append({"name": item})
+            else:
+                # Keep object as is
+                normalized.append(item)
+        return normalized
 
 
 class TextContent(BaseModel):
