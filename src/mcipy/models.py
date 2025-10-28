@@ -10,7 +10,7 @@ providing strong typing, validation, and schema enforcement for:
 - Execution results
 """
 
-from typing import Any
+from typing import Any, Literal
 
 from pydantic import BaseModel, Field
 
@@ -183,7 +183,7 @@ class Annotations(BaseModel):
     Contains hints and metadata about how the tool behaves, including
     display information (title) and behavioral characteristics like
     whether it modifies state, is destructive, idempotent, or interacts
-    with external entities.
+    with external entities. Also includes audience targeting for different roles.
     """
 
     title: str | None = None
@@ -191,6 +191,7 @@ class Annotations(BaseModel):
     destructiveHint: bool | None = None
     idempotentHint: bool | None = None
     openWorldHint: bool | None = None
+    audience: list[Literal["user", "assistant"]] | None = None
 
 
 class Tool(BaseModel):

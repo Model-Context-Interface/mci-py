@@ -37,6 +37,45 @@ class MCPIntegration:
     """
 
     @staticmethod
+    def _annotations_to_tags(mcp_annotations: Any) -> list[str]:
+        """
+        Convert MCP tool annotations to MCI tags.
+
+        Converts boolean annotation hints (readOnlyHint, destructiveHint, etc.) to
+        standardized tags. Also handles audience annotations if present.
+
+        Args:
+            mcp_annotations: MCP ToolAnnotations object
+
+        Returns:
+            List of tags derived from annotations
+        """
+        tags: list[str] = []
+
+        if not mcp_annotations:
+            return tags
+
+        # Convert boolean annotations to tags
+        # Use the exact names from the issue: IsReadOnly, IsDestructive, IsIdempotent, IsOpenWorld
+        if mcp_annotations.readOnlyHint:
+            tags.append("IsReadOnly")
+        if mcp_annotations.destructiveHint:
+            tags.append("IsDestructive")
+        if mcp_annotations.idempotentHint:
+            tags.append("IsIdempotent")
+        if mcp_annotations.openWorldHint:
+            tags.append("IsOpenWorld")
+
+        # Handle audience annotations if present (for future compatibility)
+        # MCP ToolAnnotations doesn't currently have an audience field,
+        # but we check for it dynamically in case it's added
+        if hasattr(mcp_annotations, "audience") and mcp_annotations.audience:
+            for role in mcp_annotations.audience:
+                tags.append(f"audience_{role}")
+
+        return tags
+
+    @staticmethod
     def fetch_and_build_toolset(
         server_name: str,
         server_config: StdioMCPServer | HttpMCPServer,
@@ -133,11 +172,33 @@ class MCPIntegration:
                             # Convert to dict - inputSchema is already a dict
                             input_schema = mcp_tool.inputSchema
 
+                        # Capture annotations from MCP tool
+                        annotations = Annotations()
+                        if mcp_tool.annotations:
+                            # Copy annotation fields from MCP to MCI
+                            annotations.title = mcp_tool.annotations.title
+                            annotations.readOnlyHint = mcp_tool.annotations.readOnlyHint
+                            annotations.destructiveHint = mcp_tool.annotations.destructiveHint
+                            annotations.idempotentHint = mcp_tool.annotations.idempotentHint
+                            annotations.openWorldHint = mcp_tool.annotations.openWorldHint
+
+                            # Check for audience field (for future compatibility)
+                            # MCP ToolAnnotations doesn't currently have this field,
+                            # but we check dynamically in case it's added
+                            if hasattr(mcp_tool.annotations, "audience"):
+                                audience_value = getattr(mcp_tool.annotations, "audience", None)
+                                if audience_value:
+                                    annotations.audience = audience_value
+
+                        # Convert annotations to tags
+                        tags = MCPIntegration._annotations_to_tags(mcp_tool.annotations)
+
                         mci_tool = Tool(
                             name=mcp_tool.name,
                             description=mcp_tool.description or "",
-                            annotations=Annotations(),
+                            annotations=annotations,
                             inputSchema=input_schema,
+                            tags=tags,
                             execution=MCPExecutionConfig(
                                 type=ExecutionType.MCP,
                                 serverName=server_name,
