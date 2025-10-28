@@ -79,6 +79,8 @@ All examples in these guides use:
 - **Plain text** for other templates
 
 **No adapter-specific code** (Python, JavaScript, etc.) is included in these concept guides. For adapter-specific usage, see:
+
+*Currently, only the Python adapter is available; documentation for other adapters will be added as they are released.*
 - [Basic Usage Guide](../basic_usage.md) - Python adapter examples
 - [API Reference](../api_reference.md) - Python API documentation
 
