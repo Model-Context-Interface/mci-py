@@ -62,7 +62,7 @@ The root MCI context file has these main fields:
 | `enableAnyPaths`      | boolean | Optional     | Allow any file path (default: `false`)             |
 | `directoryAllowList`  | array   | Optional     | Additional allowed directories (default: `[]`)     |
 
-**\* Note**: Either `tools`, `toolsets`, or `mcp_servers` (or any combination) must be provided.
+**Note:** Either `tools`, `toolsets`, or `mcp_servers` (or any combination) must be provided.
 
 ### Toolsets
 
