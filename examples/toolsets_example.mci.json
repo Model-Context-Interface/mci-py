@@ -47,8 +47,6 @@
       "filter": "withoutTags",
       "filterValue": "destructive"
     },
-    {
-      "name": "github"
-    }
+    "github"
   ]
 }

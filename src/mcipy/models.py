@@ -12,7 +12,7 @@ providing strong typing, validation, and schema enforcement for:
 
 from typing import Any, Literal
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, field_validator
 
 from .enums import ExecutionType
 
@@ -306,11 +306,38 @@ class MCISchema(BaseModel):
     schemaVersion: str
     metadata: Metadata | None = None
     tools: list[Tool] | None = Field(default=None)
-    toolsets: list[Toolset] | None = Field(default=None)
+    toolsets: list[Toolset | str] | None = Field(default=None)
     mcp_servers: dict[str, MCPServer] | None = Field(default=None)
     libraryDir: str = Field(default="./mci")
     enableAnyPaths: bool = Field(default=False)
     directoryAllowList: list[str] = Field(default_factory=list)
+
+    @field_validator("toolsets", mode="before")
+    @classmethod
+    def normalize_toolsets(cls, v: Any) -> Any:
+        """
+        Normalize toolsets to always be Toolset objects.
+
+        Converts string toolset names to Toolset objects with just the name field.
+        This allows users to specify simple toolset names without creating full objects
+        when no filtering is needed.
+
+        Examples:
+            "github" -> {"name": "github"}
+            {"name": "github", "filter": "tags", "filterValue": "read"} -> unchanged
+        """
+        if v is None:
+            return v
+
+        normalized = []
+        for item in v:
+            if isinstance(item, str):
+                # Convert string to Toolset dict
+                normalized.append({"name": item})
+            else:
+                # Keep object as is
+                normalized.append(item)
+        return normalized
 
 
 class TextContent(BaseModel):

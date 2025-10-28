@@ -908,3 +908,182 @@ class TestToolsetSchemaValidation:
         
         # Metadata should not be merged from toolset files
         # (it stays as the main schema's metadata or None)
+
+
+class TestStringToolsets:
+    """Test using string toolset names instead of objects."""
+
+    def test_single_string_toolset(self, tmp_path):
+        """Test using a string toolset name instead of object."""
+        # Create library directory and toolset file
+        lib_dir = tmp_path / "mci"
+        lib_dir.mkdir()
+        
+        toolset_file = lib_dir / "weather.mci.json"
+        toolset_file.write_text(json.dumps({
+            "schemaVersion": "1.0",
+            "tools": [
+                {
+                    "name": "get_weather",
+                    "execution": {"type": "text", "text": "Weather data"}
+                }
+            ]
+        }))
+        
+        # Create main schema with string toolset reference
+        main_schema = tmp_path / "main.mci.json"
+        main_schema.write_text(json.dumps({
+            "schemaVersion": "1.0",
+            "toolsets": ["weather"]  # String instead of object
+        }))
+        
+        # Load schema
+        schema = SchemaParser.parse_file(str(main_schema))
+        
+        # Verify tool was loaded
+        assert schema.tools is not None
+        assert len(schema.tools) == 1
+        assert schema.tools[0].name == "get_weather"
+        assert schema.tools[0].toolset_source == "weather"
+
+    def test_mixed_string_and_object_toolsets(self, tmp_path):
+        """Test mixing string and object toolset definitions."""
+        # Create library directory and toolset files
+        lib_dir = tmp_path / "mci"
+        lib_dir.mkdir()
+        
+        # Weather toolset (will be referenced by string)
+        (lib_dir / "weather.mci.json").write_text(json.dumps({
+            "schemaVersion": "1.0",
+            "tools": [
+                {
+                    "name": "get_weather",
+                    "tags": ["read"],
+                    "execution": {"type": "text", "text": "Weather"}
+                },
+                {
+                    "name": "set_weather",
+                    "tags": ["write"],
+                    "execution": {"type": "text", "text": "Set weather"}
+                }
+            ]
+        }))
+        
+        # GitHub toolset (will be referenced with filter)
+        (lib_dir / "github.mci.json").write_text(json.dumps({
+            "schemaVersion": "1.0",
+            "tools": [
+                {
+                    "name": "list_repos",
+                    "tags": ["read"],
+                    "execution": {"type": "text", "text": "Repos"}
+                },
+                {
+                    "name": "delete_repo",
+                    "tags": ["write", "destructive"],
+                    "execution": {"type": "text", "text": "Delete"}
+                }
+            ]
+        }))
+        
+        # Database toolset (will be referenced by string)
+        (lib_dir / "database.mci.json").write_text(json.dumps({
+            "schemaVersion": "1.0",
+            "tools": [
+                {
+                    "name": "query_data",
+                    "execution": {"type": "text", "text": "Query"}
+                }
+            ]
+        }))
+        
+        # Create main schema with mixed toolset references
+        main_schema = tmp_path / "main.mci.json"
+        main_schema.write_text(json.dumps({
+            "schemaVersion": "1.0",
+            "toolsets": [
+                "weather",  # String - no filtering
+                {
+                    "name": "github",
+                    "filter": "tags",
+                    "filterValue": "read"
+                },  # Object with filtering
+                "database"  # String - no filtering
+            ]
+        }))
+        
+        # Load schema
+        schema = SchemaParser.parse_file(str(main_schema))
+        
+        # Verify tools were loaded correctly
+        assert schema.tools is not None
+        assert len(schema.tools) == 4  # 2 from weather, 1 from github (filtered), 1 from database
+        
+        tool_names = {tool.name for tool in schema.tools}
+        assert tool_names == {"get_weather", "set_weather", "list_repos", "query_data"}
+        
+        # Verify github tools were filtered (only read tag)
+        assert "delete_repo" not in tool_names
+
+    def test_string_toolset_normalized_to_object(self):
+        """Test that string toolsets are normalized to Toolset objects during validation."""
+        # Create schema with string toolsets
+        schema_data = {
+            "schemaVersion": "1.0",
+            "toolsets": ["weather", "github", "database"]
+        }
+        
+        # Parse and validate
+        schema = MCISchema(**schema_data)
+        
+        # Verify toolsets were normalized to Toolset objects
+        assert schema.toolsets is not None
+        assert len(schema.toolsets) == 3
+        
+        # All should be Toolset objects
+        for toolset in schema.toolsets:
+            assert isinstance(toolset, Toolset)
+            assert toolset.filter is None
+            assert toolset.filterValue is None
+        
+        # Verify names
+        toolset_names = [ts.name for ts in schema.toolsets]
+        assert toolset_names == ["weather", "github", "database"]
+
+    def test_empty_string_toolset(self):
+        """Test that empty string toolsets are handled."""
+        schema_data = {
+            "schemaVersion": "1.0",
+            "toolsets": [""]
+        }
+        
+        # Should create a toolset with empty name (will fail during loading, but validation passes)
+        schema = MCISchema(**schema_data)
+        assert schema.toolsets is not None
+        assert len(schema.toolsets) == 1
+        assert schema.toolsets[0].name == ""
+
+    def test_all_object_toolsets_unchanged(self):
+        """Test that object toolsets are not modified by the normalizer."""
+        schema_data = {
+            "schemaVersion": "1.0",
+            "toolsets": [
+                {"name": "weather", "filter": "tags", "filterValue": "read"},
+                {"name": "github"}
+            ]
+        }
+        
+        schema = MCISchema(**schema_data)
+        
+        assert schema.toolsets is not None
+        assert len(schema.toolsets) == 2
+        
+        # First toolset should have filter
+        assert schema.toolsets[0].name == "weather"
+        assert schema.toolsets[0].filter == "tags"
+        assert schema.toolsets[0].filterValue == "read"
+        
+        # Second toolset should have no filter
+        assert schema.toolsets[1].name == "github"
+        assert schema.toolsets[1].filter is None
+        assert schema.toolsets[1].filterValue is None
