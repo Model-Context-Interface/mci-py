@@ -452,7 +452,7 @@ Provide a summary for all {{props.items.length}} items.
 
 **prompts/complex-task.txt:**
 
-```xml
+```text
 You are assisting with: {{props.task_type}}
 
 @if(props.priority == "high")
