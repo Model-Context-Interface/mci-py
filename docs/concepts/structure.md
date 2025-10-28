@@ -110,6 +110,7 @@ my-project/
 - Entry files can share toolsets from the `./mci` directory
 - Use multiple entry files to organize tools by environment, team, or purpose
 - No limit on the number of entry files (1, 3, 10, or more)
+- Each entry file must be loaded separately by the client; multiple entry files are not automatically merged and each requires its own MCIClient instance.
 
 ## Toolsets Directory
 
