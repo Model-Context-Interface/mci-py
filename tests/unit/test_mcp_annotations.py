@@ -4,8 +4,9 @@ from unittest.mock import MagicMock
 
 import pytest
 
+from mcipy.enums import ExecutionType
 from mcipy.mcp_integration import MCPIntegration
-from mcipy.models import Annotations
+from mcipy.models import Annotations, MCPExecutionConfig, Tool
 
 
 class TestAnnotationsToTags:
@@ -226,3 +227,147 @@ class TestAnnotationsModel:
         assert annotations.idempotentHint is True
         assert annotations.openWorldHint is False
         assert annotations.audience == ["user"]
+
+
+class TestMCPToolIntegration:
+    """Integration tests for MCP tool annotation capture and tag conversion."""
+
+    def test_mcp_tool_with_all_annotations(self):
+        """Test that MCP tool annotations are properly captured and converted to tags."""
+        # Create a mock MCP tool with all annotations
+        mock_mcp_tool = MagicMock()
+        mock_mcp_tool.name = "test_tool"
+        mock_mcp_tool.description = "Test tool with all annotations"
+        mock_mcp_tool.inputSchema = {"type": "object", "properties": {}}
+        mock_mcp_tool.annotations = MagicMock()
+        mock_mcp_tool.annotations.title = "Test Tool Title"
+        mock_mcp_tool.annotations.readOnlyHint = True
+        mock_mcp_tool.annotations.destructiveHint = False
+        mock_mcp_tool.annotations.idempotentHint = True
+        mock_mcp_tool.annotations.openWorldHint = True
+
+        # Simulate annotation capture (what happens in mcp_integration.py)
+        annotations = Annotations()
+        annotations.title = mock_mcp_tool.annotations.title
+        annotations.readOnlyHint = mock_mcp_tool.annotations.readOnlyHint
+        annotations.destructiveHint = mock_mcp_tool.annotations.destructiveHint
+        annotations.idempotentHint = mock_mcp_tool.annotations.idempotentHint
+        annotations.openWorldHint = mock_mcp_tool.annotations.openWorldHint
+
+        # Convert annotations to tags
+        tags = MCPIntegration._annotations_to_tags(mock_mcp_tool.annotations)
+
+        # Create MCI tool with annotations and tags
+        mci_tool = Tool(
+            name=mock_mcp_tool.name,
+            description=mock_mcp_tool.description,
+            annotations=annotations,
+            inputSchema=mock_mcp_tool.inputSchema,
+            tags=tags,
+            execution=MCPExecutionConfig(
+                type=ExecutionType.MCP,
+                serverName="test-server",
+                toolName=mock_mcp_tool.name,
+            ),
+        )
+
+        # Verify annotations are captured
+        assert mci_tool.annotations.title == "Test Tool Title"
+        assert mci_tool.annotations.readOnlyHint is True
+        assert mci_tool.annotations.destructiveHint is False
+        assert mci_tool.annotations.idempotentHint is True
+        assert mci_tool.annotations.openWorldHint is True
+
+        # Verify tags are created from annotations
+        assert "IsReadOnly" in mci_tool.tags
+        assert "IsIdempotent" in mci_tool.tags
+        assert "IsOpenWorld" in mci_tool.tags
+        assert "IsDestructive" not in mci_tool.tags
+        assert len(mci_tool.tags) == 3
+
+    def test_mcp_tool_with_no_annotations(self):
+        """Test that MCP tool without annotations creates empty annotations and no tags."""
+        # Create a mock MCP tool without annotations
+        mock_mcp_tool = MagicMock()
+        mock_mcp_tool.name = "simple_tool"
+        mock_mcp_tool.description = "Simple tool without annotations"
+        mock_mcp_tool.inputSchema = {"type": "object", "properties": {}}
+        mock_mcp_tool.annotations = None
+
+        # Simulate annotation capture
+        annotations = Annotations()
+
+        # Convert annotations to tags
+        tags = MCPIntegration._annotations_to_tags(mock_mcp_tool.annotations)
+
+        # Create MCI tool
+        mci_tool = Tool(
+            name=mock_mcp_tool.name,
+            description=mock_mcp_tool.description,
+            annotations=annotations,
+            inputSchema=mock_mcp_tool.inputSchema,
+            tags=tags,
+            execution=MCPExecutionConfig(
+                type=ExecutionType.MCP,
+                serverName="test-server",
+                toolName=mock_mcp_tool.name,
+            ),
+        )
+
+        # Verify empty annotations
+        assert mci_tool.annotations.title is None
+        assert mci_tool.annotations.readOnlyHint is None
+        assert mci_tool.annotations.destructiveHint is None
+        assert mci_tool.annotations.idempotentHint is None
+        assert mci_tool.annotations.openWorldHint is None
+
+        # Verify no tags created
+        assert mci_tool.tags == []
+
+    def test_mcp_tool_with_audience(self):
+        """Test that MCP tool with audience annotation creates audience tags."""
+        # Create a mock MCP tool with audience
+        mock_mcp_tool = MagicMock()
+        mock_mcp_tool.name = "audience_tool"
+        mock_mcp_tool.description = "Tool with audience"
+        mock_mcp_tool.inputSchema = {"type": "object", "properties": {}}
+        mock_mcp_tool.annotations = MagicMock()
+        mock_mcp_tool.annotations.title = None
+        mock_mcp_tool.annotations.readOnlyHint = True
+        mock_mcp_tool.annotations.destructiveHint = None
+        mock_mcp_tool.annotations.idempotentHint = None
+        mock_mcp_tool.annotations.openWorldHint = None
+        mock_mcp_tool.annotations.audience = ["user", "assistant"]
+
+        # Simulate annotation capture
+        annotations = Annotations()
+        annotations.readOnlyHint = mock_mcp_tool.annotations.readOnlyHint
+        annotations.audience = mock_mcp_tool.annotations.audience
+
+        # Convert annotations to tags
+        tags = MCPIntegration._annotations_to_tags(mock_mcp_tool.annotations)
+
+        # Create MCI tool
+        mci_tool = Tool(
+            name=mock_mcp_tool.name,
+            description=mock_mcp_tool.description,
+            annotations=annotations,
+            inputSchema=mock_mcp_tool.inputSchema,
+            tags=tags,
+            execution=MCPExecutionConfig(
+                type=ExecutionType.MCP,
+                serverName="test-server",
+                toolName=mock_mcp_tool.name,
+            ),
+        )
+
+        # Verify annotations
+        assert mci_tool.annotations.readOnlyHint is True
+        assert mci_tool.annotations.audience == ["user", "assistant"]
+
+        # Verify tags include both boolean and audience tags
+        assert "IsReadOnly" in mci_tool.tags
+        assert "audience_user" in mci_tool.tags
+        assert "audience_assistant" in mci_tool.tags
+        assert len(mci_tool.tags) == 3
+
