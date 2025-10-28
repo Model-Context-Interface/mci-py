@@ -46,7 +46,9 @@ def test_mcp_schema_loading():
         return False
 
     try:
-        client = MCIClient(schema_file_path=str(schema_path), env_vars={})
+        client = MCIClient(schema_file_path=str(schema_path), env_vars={
+            "TMP_DIR": "/tmp"
+        })
         print(f"[green]✅ Schema loaded successfully[/green]")
         return True
     except Exception as e:
@@ -62,7 +64,7 @@ def test_mcp_toolset_caching():
     print_section("Test 2: MCP Toolset Caching")
 
     schema_path = Path(__file__).parent.parent / "examples" / "mcp_example.mci.json"
-    mcp_dir = Path(__file__).parent.parent / "mci" / "mcp"
+    mcp_dir = Path(__file__).parent.parent / "examples" / "mci" / "mcp"
 
     # Clean up previous cache
     if mcp_dir.exists():
@@ -74,7 +76,9 @@ def test_mcp_toolset_caching():
                 print(f"[yellow]⚠ Failed to remove cache file {file}: {e}[/yellow]")
 
     try:
-        client = MCIClient(schema_file_path=str(schema_path), env_vars={})
+        client = MCIClient(schema_file_path=str(schema_path), env_vars={
+            "TMP_DIR": "/tmp"
+        })
 
         # Check if cache files were created
         cache_files = list(mcp_dir.glob("*.mci.json"))
@@ -111,7 +115,9 @@ def test_list_mcp_tools():
     schema_path = Path(__file__).parent.parent / "examples" / "mcp_example.mci.json"
 
     try:
-        client = MCIClient(schema_file_path=str(schema_path), env_vars={})
+        client = MCIClient(schema_file_path=str(schema_path), env_vars={
+            "TMP_DIR": "/tmp"
+        })
         tools = client.tools()
 
         print(f"[cyan]Total tools available: {len(tools)}[/cyan]\n")
@@ -151,8 +157,11 @@ def test_execute_regular_tool():
     schema_path = Path(__file__).parent.parent / "examples" / "mcp_example.mci.json"
 
     try:
-        client = MCIClient(schema_file_path=str(schema_path), env_vars={})
+        client = MCIClient(schema_file_path=str(schema_path), env_vars={
+            "TMP_DIR": "/tmp"
+        })
         result = client.execute("echo_test", {"message": "Hello from MCP integration test!"})
+        print(result)
 
         if result.result.isError:
             print(f"[red]❌ Tool execution failed: {result.result.content[0].text}[/red]")
@@ -181,7 +190,9 @@ def test_mcp_tool_filtering():
     EXPECTED_MAX_FILTERED_TOOLS = 3
 
     try:
-        client = MCIClient(schema_file_path=str(schema_path), env_vars={})
+        client = MCIClient(schema_file_path=str(schema_path), env_vars={
+            "TMP_DIR": "/tmp"
+        })
 
         # Test filtering by toolset
         fs_tools = client.toolsets(["filesystem"])
@@ -218,11 +229,13 @@ def test_execute_mcp_tool():
     mcp_dir.mkdir(parents=True, exist_ok=True)
 
     try:
-        client = MCIClient(schema_file_path=str(schema_path), env_vars={})
+        client = MCIClient(schema_file_path=str(schema_path), env_vars={
+            "TMP_DIR": "/tmp"
+        })
 
         # Try to execute list_directory tool on the mcp cache directory
-        result = client.execute("list_directory", {"path": str(mcp_dir)})
-
+        result = client.execute("list_directory", {"path": "/tmp"})
+        print(result)
         if result.result.isError:
             print(f"[yellow]⚠ Tool execution returned error (MCP server may not be available)[/yellow]")
             if result.result.content:
