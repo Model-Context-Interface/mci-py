@@ -82,7 +82,7 @@ Create a file named `my-tools.mci.json`:
 Create a file named `my-tools.mci.yaml`:
 
 ```yaml
-schemaVersion: '1.0'
+schemaVersion: "1.0"
 metadata:
   name: My Tools
   description: A collection of useful tools
@@ -139,9 +139,8 @@ client = MCIClient(
 ### Backward Compatibility
 
 ```python
-# json_file_path parameter still works (deprecated)
 client = MCIClient(
-    json_file_path="my-tools.mci.json",
+    schema_file_path="my-tools.mci.json",
     env_vars={"API_KEY": "your-secret-key"}
 )
 ```
@@ -480,8 +479,8 @@ Make HTTP requests to APIs with full support for authentication, headers, query 
   "inputSchema": {
     "type": "object",
     "properties": {
-      "title": {"type": "string"},
-      "content": {"type": "string"}
+      "title": { "type": "string" },
+      "content": { "type": "string" }
     },
     "required": ["title", "content"]
   },
@@ -622,8 +621,12 @@ Toolsets allow you to organize tools into reusable, modular collections. See the
   "schemaVersion": "1.0",
   "libraryDir": "./mci",
   "toolsets": [
-    {"name": "weather"},
-    {"name": "database", "filter": "withoutTags", "filterValue": "destructive"}
+    { "name": "weather" },
+    {
+      "name": "database",
+      "filter": "withoutTags",
+      "filterValue": "destructive"
+    }
   ]
 }
 ```
@@ -767,12 +770,12 @@ def main():
             "USERNAME": "demo_user"
         }
     )
-    
+
     # List all available tools
     print("Available tools:")
     for tool_name in client.list_tools():
         print(f"  - {tool_name}")
-    
+
     # Execute text tool
     print("\n1. Executing text tool...")
     result = client.execute(
@@ -781,7 +784,7 @@ def main():
     )
     if not result.result.isError:
         print(f"   Output: {result.result.content[0].text}")
-    
+
     # Execute file tool
     print("\n2. Executing file tool...")
     result = client.execute(
@@ -790,7 +793,7 @@ def main():
     )
     if not result.result.isError:
         print(f"   Config loaded: {len(result.result.content[0].text)} bytes")
-    
+
     # Execute CLI tool
     print("\n3. Executing CLI tool...")
     result = client.execute(
@@ -803,12 +806,12 @@ def main():
     )
     if not result.result.isError:
         print(f"   Found matches: {len(result.result.content[0].text.splitlines())} lines")
-    
+
     # Filter tools
     print("\n4. Filtering tools...")
     text_tools = client.only(["generate_welcome"])
     print(f"   Filtered to {len(text_tools)} tools")
-    
+
     print("\n✓ Example completed successfully!")
 
 if __name__ == "__main__":

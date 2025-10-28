@@ -24,10 +24,7 @@ A **toolset** is a separate MCI schema file that contains a collection of relate
   "libraryDir": "./mci",
   "directoryAllowList": ["/data"],
   "enableAnyPaths": false,
-  "toolsets": [
-    {"name": "weather"},
-    {"name": "database"}
-  ],
+  "toolsets": [{ "name": "weather" }, { "name": "database" }],
   "tools": [
     {
       "name": "main_tool",
@@ -41,6 +38,7 @@ A **toolset** is a separate MCI schema file that contains a collection of relate
 ```
 
 **Can contain:**
+
 - `schemaVersion` (required)
 - `metadata` (optional)
 - `tools` (optional)
@@ -92,11 +90,13 @@ A **toolset** is a separate MCI schema file that contains a collection of relate
 ```
 
 **Can contain:**
+
 - `schemaVersion` (required)
 - `metadata` (optional - for documentation only)
 - `tools` (required)
 
 **Cannot contain:**
+
 - `toolsets`
 - `mcp_servers`
 - `libraryDir`
@@ -105,15 +105,15 @@ A **toolset** is a separate MCI schema file that contains a collection of relate
 
 **Key Differences:**
 
-| Feature | Main Entry File | Toolset File |
-|---------|----------------|--------------|
-| Location | Project root | `./mci` directory |
-| Purpose | Configure application | Define tool collection |
-| Can reference toolsets | ✓ Yes | ✗ No |
-| Can register MCP servers | ✓ Yes | ✗ No |
-| Can set security config | ✓ Yes | ✗ No |
-| Metadata merged | ✓ Yes | ✗ No (documentation only) |
-| Tools required | No | Yes |
+| Feature                  | Main Entry File       | Toolset File              |
+| ------------------------ | --------------------- | ------------------------- |
+| Location                 | Project root          | `./mci` directory         |
+| Purpose                  | Configure application | Define tool collection    |
+| Can reference toolsets   | ✓ Yes                 | ✗ No                      |
+| Can register MCP servers | ✓ Yes                 | ✗ No                      |
+| Can set security config  | ✓ Yes                 | ✗ No                      |
+| Metadata merged          | ✓ Yes                 | ✗ No (documentation only) |
+| Tools required           | No                    | Yes                       |
 
 ## Creating Toolsets
 
@@ -140,9 +140,9 @@ Create a file in your toolsets directory:
       "inputSchema": {
         "type": "object",
         "properties": {
-          "title": {"type": "string"},
-          "body": {"type": "string"},
-          "repo": {"type": "string"}
+          "title": { "type": "string" },
+          "body": { "type": "string" },
+          "repo": { "type": "string" }
         },
         "required": ["title", "repo"]
       },
@@ -229,9 +229,9 @@ Toolsets are loaded in the main schema file using the `toolsets` field.
 {
   "schemaVersion": "1.0",
   "toolsets": [
-    {"name": "weather"},
-    {"name": "github"},
-    {"name": "database"}
+    { "name": "weather" },
+    { "name": "github" },
+    { "name": "database" }
   ]
 }
 ```
@@ -242,9 +242,7 @@ Toolsets are loaded in the main schema file using the `toolsets` field.
 {
   "schemaVersion": "1.0",
   "libraryDir": "./toolsets",
-  "toolsets": [
-    {"name": "weather"}
-  ]
+  "toolsets": [{ "name": "weather" }]
 }
 ```
 
@@ -269,8 +267,9 @@ mci/
 ```
 
 Reference:
+
 ```json
-{"toolsets": [{"name": "weather"}]}
+{ "toolsets": [{ "name": "weather" }] }
 ```
 
 Resolves to: `./mci/weather.mci.json`
@@ -286,8 +285,9 @@ mci/
 ```
 
 Reference:
+
 ```json
-{"toolsets": [{"name": "github"}]}
+{ "toolsets": [{ "name": "github" }] }
 ```
 
 Resolves to: All `.mci.json` files in `./mci/github/`
@@ -306,12 +306,10 @@ mci/
 ```
 
 Reference:
+
 ```json
 {
-  "toolsets": [
-    {"name": "apis/github"},
-    {"name": "apis/weather"}
-  ]
+  "toolsets": [{ "name": "apis/github" }, { "name": "apis/weather" }]
 }
 ```
 
@@ -320,6 +318,7 @@ Reference:
 When loading from a directory, all `.mci.json` files are loaded:
 
 **./mci/monitoring/status.mci.json:**
+
 ```json
 {
   "schemaVersion": "1.0",
@@ -330,6 +329,7 @@ When loading from a directory, all `.mci.json` files are loaded:
 ```
 
 **./mci/monitoring/metrics.mci.json:**
+
 ```json
 {
   "schemaVersion": "1.0",
@@ -340,13 +340,15 @@ When loading from a directory, all `.mci.json` files are loaded:
 ```
 
 **Loading:**
+
 ```json
-{"toolsets": [{"name": "monitoring"}]}
+{ "toolsets": [{ "name": "monitoring" }] }
 ```
 
 **Result**: Both `check_health` and `get_metrics` tools are loaded.
 
 **Important Notes:**
+
 - Only tools are merged from directory toolsets
 - Metadata is NOT merged (used for documentation only)
 - All files must use the same `schemaVersion`
@@ -358,12 +360,12 @@ Apply filters when loading toolsets to control which tools are registered.
 
 ### Filter Types
 
-| Filter Type | Description | Example |
-|-------------|-------------|---------|
-| `only` | Include only specified tool names | `"get_weather, get_forecast"` |
-| `except` | Exclude specified tool names | `"delete_user, drop_table"` |
-| `tags` | Include only tools with matching tags | `"read, search"` |
-| `withoutTags` | Exclude tools with matching tags | `"write, delete"` |
+| Filter Type   | Description                           | Example                       |
+| ------------- | ------------------------------------- | ----------------------------- |
+| `only`        | Include only specified tool names     | `"get_weather, get_forecast"` |
+| `except`      | Exclude specified tool names          | `"delete_user, drop_table"`   |
+| `tags`        | Include only tools with matching tags | `"read, search"`              |
+| `withoutTags` | Exclude tools with matching tags      | `"write, delete"`             |
 
 ### Examples
 
@@ -457,6 +459,8 @@ Result: All tools except those tagged with `"write"`, `"delete"`, or `"admin"` a
     }
   ]
 }
+```
+
 ## Sharing Toolsets
 
 Toolsets are designed to be shared across projects and teams.
@@ -516,10 +520,7 @@ npm install @company/mci-toolsets
 ```json
 {
   "libraryDir": "./node_modules/@company/mci-toolsets",
-  "toolsets": [
-    {"name": "github"},
-    {"name": "slack"}
-  ]
+  "toolsets": [{ "name": "github" }, { "name": "slack" }]
 }
 ```
 
@@ -603,11 +604,13 @@ Use semantic versioning in metadata:
 Each toolset should focus on a single domain:
 
 ✓ Good:
+
 - `github.mci.json` - GitHub API tools
 - `slack.mci.json` - Slack API tools
 - `monitoring.mci.json` - Monitoring tools
 
 ✗ Avoid:
+
 - `misc.mci.json` - Mixed unrelated tools
 - `everything.mci.json` - Too broad
 
