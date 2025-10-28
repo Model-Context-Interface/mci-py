@@ -560,7 +560,7 @@ Additional Notes:
   
   "features": {
     @foreach(feature in props.features)
-    "{{feature.name}}": {{feature.enabled}}@if(!isLast(feature)),@endif
+    "{{feature.name}}": {{feature.enabled}}
     @endforeach
   }
 }
