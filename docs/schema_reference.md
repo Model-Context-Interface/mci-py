@@ -116,6 +116,7 @@ Each toolset object supports these fields:
 
 ### MCP Servers
 
+The `mcp_servers` field enables integration with Model Context Protocol servers.
 **`mcp_servers`** (object, optional)
 - Object mapping server names to MCP server configurations
 - Allows integration with Model Context Protocol (MCP) servers
