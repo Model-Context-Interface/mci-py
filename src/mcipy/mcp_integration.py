@@ -146,9 +146,9 @@ class MCPIntegration:
                         )
                         mci_tools.append(mci_tool)
 
-                    # Calculate expiration date
+                    # Calculate expiration date (date only, not datetime)
                     exp_days = templated_config.config.expDays
-                    expires_at = datetime.now(UTC) + timedelta(days=exp_days)
+                    expires_date = (datetime.now(UTC) + timedelta(days=exp_days)).date()
 
                     # Build toolset schema with proper metadata
                     metadata = Metadata(name=server_name, description=f"MCP server: {server_name}")
@@ -157,7 +157,7 @@ class MCPIntegration:
                         schemaVersion=schema_version,
                         metadata=metadata,
                         tools=mci_tools,
-                        expiresAt=expires_at.isoformat(),
+                        expiresAt=expires_date.isoformat(),  # YYYY-MM-DD format
                     )
 
                     return toolset

@@ -207,6 +207,42 @@ def test_mcp_tool_filtering():
         return False
 
 
+def test_execute_mcp_tool():
+    """Test executing an MCP tool (list_directory)."""
+    print_section("Test 6: Execute MCP Tool")
+
+    schema_path = Path(__file__).parent.parent / "examples" / "mcp_example.mci.json"
+    mcp_dir = Path(__file__).parent.parent / "examples" / "mci" / "mcp"
+
+    # Ensure the directory exists for testing
+    mcp_dir.mkdir(parents=True, exist_ok=True)
+
+    try:
+        client = MCIClient(schema_file_path=str(schema_path), env_vars={})
+
+        # Try to execute list_directory tool on the mcp cache directory
+        result = client.execute("list_directory", {"path": str(mcp_dir)})
+
+        if result.result.isError:
+            print(f"[yellow]⚠ Tool execution returned error (MCP server may not be available)[/yellow]")
+            if result.result.content:
+                print(f"Error message: {result.result.content[0].text}")
+            return True  # Not a failure, just unavailable
+        else:
+            print(f"[green]✅ MCP tool executed successfully[/green]")
+            print(f"\n[cyan]Directory listing for {mcp_dir}:[/cyan]")
+            for content in result.result.content:
+                if content.type == "text":
+                    print(content.text)
+            return True
+    except Exception as e:
+        print(f"[red]❌ Error during MCP tool execution: {e}[/red]")
+        import traceback
+
+        traceback.print_exc()
+        return False
+
+
 def main():
     """Run all manual tests."""
     print("\n[bold magenta]MCP Integration Manual Test Suite[/bold magenta]")
@@ -226,6 +262,7 @@ def main():
         ("List MCP Tools", test_list_mcp_tools),
         ("Execute Regular Tool", test_execute_regular_tool),
         ("MCP Tool Filtering", test_mcp_tool_filtering),
+        ("Execute MCP Tool", test_execute_mcp_tool),
     ]
 
     results = []

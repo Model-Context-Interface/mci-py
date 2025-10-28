@@ -52,7 +52,7 @@ class SchemaParser:
     """
 
     @staticmethod
-    def parse_file(file_path: str) -> MCISchema:
+    def parse_file(file_path: str, env_vars: dict[str, Any] | None = None) -> MCISchema:
         """
         Load and validate an MCI schema file (JSON or YAML).
 
@@ -62,6 +62,7 @@ class SchemaParser:
 
         Args:
             file_path: Path to the MCI schema file (.json, .yaml, or .yml)
+            env_vars: Optional environment variables for MCP server templating
 
         Returns:
             Validated MCISchema object
@@ -103,10 +104,14 @@ class SchemaParser:
             raise SchemaParserError(f"Failed to read file {file_path}: {e}") from e
 
         # Parse the dictionary, passing the file path for toolset resolution
-        return SchemaParser.parse_dict(data, schema_file_path=file_path)
+        return SchemaParser.parse_dict(data, schema_file_path=file_path, env_vars=env_vars)
 
     @staticmethod
-    def parse_dict(data: dict[str, Any], schema_file_path: str | None = None) -> MCISchema:
+    def parse_dict(
+        data: dict[str, Any],
+        schema_file_path: str | None = None,
+        env_vars: dict[str, Any] | None = None,
+    ) -> MCISchema:
         """
         Parse a dictionary into an MCISchema object.
 
@@ -117,6 +122,7 @@ class SchemaParser:
         Args:
             data: Dictionary containing MCI schema data
             schema_file_path: Path to the schema file (for resolving relative paths in toolsets)
+            env_vars: Optional environment variables for MCP server templating
 
         Returns:
             Validated MCISchema object
@@ -170,7 +176,11 @@ class SchemaParser:
         # Load MCP servers if present
         if schema.mcp_servers:
             mcp_tools = SchemaParser._load_mcp_servers(
-                schema.mcp_servers, schema.libraryDir, schema_file_path, schema.schemaVersion
+                schema.mcp_servers,
+                schema.libraryDir,
+                schema_file_path,
+                schema.schemaVersion,
+                env_vars,
             )
             # Merge MCP tools with existing tools
             if schema.tools is None:
@@ -568,6 +578,7 @@ class SchemaParser:
         library_dir: str,
         schema_file_path: str | None,
         schema_version: str,
+        env_vars: dict[str, Any] | None = None,
     ) -> list[Tool]:
         """
         Load tools from MCP server definitions.
@@ -580,6 +591,7 @@ class SchemaParser:
             library_dir: Directory to search for cached toolset files (relative to schema file)
             schema_file_path: Path to the main schema file (for resolving relative paths)
             schema_version: Schema version from main file (to use for generated toolsets)
+            env_vars: Optional environment variables for MCP server templating
 
         Returns:
             List of Tool objects loaded from all MCP servers with filters applied
@@ -613,21 +625,27 @@ class SchemaParser:
             if toolset_path.exists():
                 try:
                     toolset_schema = SchemaParser._parse_toolset_file(toolset_path)
-                    # Check expiration
+                    # Check expiration (compare dates, not datetimes)
                     if toolset_schema.expiresAt:
-                        expires_at = datetime.fromisoformat(toolset_schema.expiresAt)
-                        if expires_at > datetime.now(UTC):
-                            should_fetch = False
-                            # Use cached toolset
-                            filtered_tools = SchemaParser._apply_toolset_filter(
-                                toolset_schema.tools,
-                                server_config.config.filter,
-                                server_config.config.filterValue,
-                            )
-                            # Tag each tool with its MCP server source
-                            for tool in filtered_tools:
-                                tool.toolset_source = server_name
-                            all_tools.extend(filtered_tools)
+                        try:
+                            # Parse as date (YYYY-MM-DD format)
+                            expires_date = datetime.fromisoformat(toolset_schema.expiresAt).date()
+                            today = datetime.now(UTC).date()
+                            if expires_date > today:
+                                should_fetch = False
+                                # Use cached toolset
+                                filtered_tools = SchemaParser._apply_toolset_filter(
+                                    toolset_schema.tools,
+                                    server_config.config.filter,
+                                    server_config.config.filterValue,
+                                )
+                                # Tag each tool with its MCP server source
+                                for tool in filtered_tools:
+                                    tool.toolset_source = server_name
+                                all_tools.extend(filtered_tools)
+                        except (ValueError, AttributeError):
+                            # If date parsing fails, re-fetch
+                            should_fetch = True
                 except Exception:
                     # If parsing fails, fetch from server
                     should_fetch = True
@@ -636,7 +654,8 @@ class SchemaParser:
             if should_fetch:
                 # Apply templating to server config (for env variables)
                 template_engine = TemplateEngine()
-                env_context = {"env": dict(os.environ)}
+                # Merge provided env_vars with os.environ, giving priority to env_vars
+                env_context = {"env": {**dict(os.environ), **(env_vars or {})}}
 
                 try:
                     # Fetch and build toolset
