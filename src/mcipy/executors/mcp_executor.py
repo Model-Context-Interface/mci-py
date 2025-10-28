@@ -158,12 +158,18 @@ class MCPExecutor(BaseExecutor):
                             # Default to text if type is unknown
                             content_objects.append(TextContent(text=str(content_item)))
 
+                    # Extract jsonrpc and id if present
+                    jsonrpc_value = getattr(result, "jsonrpc", None)
+                    id_value = getattr(result, "id", None)
+
                     return ExecutionResult(
                         result=ExecutionResultContent(
                             content=content_objects,
                             isError=getattr(result, "isError", False),
                             metadata={"mcp_server": config.serverName, "mcp_tool": config.toolName},
-                        )
+                        ),
+                        jsonrpc=jsonrpc_value,
+                        id=id_value,
                     )
 
         except Exception as e:
