@@ -454,12 +454,9 @@ Result: All tools except those tagged with `"write"`, `"delete"`, or `"admin"` a
     },
     {
       "name": "utilities"
-      // No filter - all tools loaded
     }
   ]
 }
-```
-
 ## Sharing Toolsets
 
 Toolsets are designed to be shared across projects and teams.
