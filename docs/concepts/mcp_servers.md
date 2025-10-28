@@ -10,6 +10,7 @@ MCP (Model Context Protocol) servers provide external tools that can be integrat
 - **Remotely** via HTTP/SSE (web-based endpoints)
 
 Examples of MCP servers:
+
 - Filesystem operations (read, write, list files)
 - Memory/storage services
 - GitHub integration
@@ -31,7 +32,7 @@ Agent → npx @modelcontextprotocol/server-filesystem
   Execute tool #2 (200ms)
   ↓
   Execute tool #3 (200ms)
-  
+
 Total: ~1.1 seconds for startup + 3 tool calls
 ```
 
@@ -47,7 +48,7 @@ Agent → MCI → Cached Toolset (JSON file)
   Execute tool #2 → Reuse connection (150ms)
   ↓
   Execute tool #3 → Reuse connection (150ms)
-  
+
 Total: ~525ms for startup + 3 tool calls
 ```
 
@@ -151,14 +152,15 @@ On subsequent loads:
 
 **Performance Comparison:**
 
-| Operation         | Direct MCP         | MCI Cached |
-|-------------------|--------------------|------------|
-| Tool Discovery    | 500ms              | 25ms       |
-| Tool Execution    | 200ms              | 200ms      |
-| **Total (1st time)** | 700ms           | 525ms      |
+| Operation            | Direct MCP       | MCI Cached |
+| -------------------- | ---------------- | ---------- |
+| Tool Discovery       | 500ms            | 25ms       |
+| Tool Execution       | 200ms            | 200ms      |
+| **Total (1st time)** | 700ms            | 525ms      |
 | **Total (cached)**   | N/A (no caching) | 225ms      |
 
 > **Note:** Direct MCP does not cache tool definitions, so its performance is always 700ms. The "cached" value is not applicable for Direct MCP.
+
 ### 4. Tool Execution
 
 When you execute an MCP tool:
@@ -424,7 +426,7 @@ Set custom expiration in days:
       "command": "npx",
       "args": ["..."],
       "config": {
-        "expDays": 7  // Refresh every 7 days
+        "expDays": 7 // Refresh every 7 days
       }
     }
   }
@@ -434,6 +436,7 @@ Set custom expiration in days:
 **Default**: 30 days
 
 **Recommendations:**
+
 - **Frequently changing APIs**: 1-7 days
 - **Stable services**: 30-90 days
 - **Development**: 1 day
@@ -472,11 +475,11 @@ mci/mcp/
 
 **Scenario**: Agent wants to see all available tools
 
-| Method | Time | Notes |
-|--------|------|-------|
-| Direct MCP | 500ms | Connect to server, fetch tools |
-| MCI Cached | 25ms | Read from JSON file |
-| **Speedup** | **20x faster** | |
+| Method      | Time           | Notes                          |
+| ----------- | -------------- | ------------------------------ |
+| Direct MCP  | 500ms          | Connect to server, fetch tools |
+| MCI Cached  | 25ms           | Read from JSON file            |
+| **Speedup** | **20x faster** |                                |
 
 ### 2. Offline Tool Inspection
 
@@ -494,9 +497,11 @@ cat ./mci/mcp/filesystem.mci.json
 ### 4. Faster Multi-Agent Systems
 
 **Without MCI Caching:**
+
 - 10 agents × 500ms discovery = 5 seconds total
 
 **With MCI Caching:**
+
 - 10 agents × 25ms discovery = 250ms total
 - **20x faster startup**
 
@@ -515,7 +520,11 @@ cat ./mci/mcp/filesystem.mci.json
   "mcp_servers": {
     "filesystem": {
       "command": "npx",
-      "args": ["-y", "@modelcontextprotocol/server-filesystem", "{{env.WORKSPACE|/workspace}}"],
+      "args": [
+        "-y",
+        "@modelcontextprotocol/server-filesystem",
+        "{{env.WORKSPACE|/workspace}}"
+      ],
       "config": {
         "expDays": 1,
         "filter": "except",
@@ -620,7 +629,7 @@ cat ./mci/mcp/filesystem.mci.json
 ```json
 {
   "config": {
-    "expDays": 7  // Balance between freshness and performance
+    "expDays": 7 // Balance between freshness and performance
   }
 }
 ```
@@ -633,7 +642,7 @@ Only load tools you actually need:
 {
   "config": {
     "filter": "only",
-    "filterValue": "read_file,write_file"  // Just what you need
+    "filterValue": "read_file,write_file" // Just what you need
   }
 }
 ```
@@ -685,6 +694,7 @@ rm ./mci/mcp/filesystem.mci.json
 **Error**: `Failed to connect to MCP server: filesystem`
 
 **Solutions**:
+
 1. Check server command is correct
 2. Verify `npx` or `uvx` is installed
 3. Check network connectivity for HTTP servers
@@ -693,6 +703,7 @@ rm ./mci/mcp/filesystem.mci.json
 ### Tools Not Appearing
 
 **Solutions**:
+
 1. Check cache expiration
 2. Verify filter configuration
 3. Delete cache and reload
