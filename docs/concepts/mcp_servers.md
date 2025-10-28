@@ -151,13 +151,14 @@ On subsequent loads:
 
 **Performance Comparison:**
 
-| Operation | Direct MCP | MCI Cached |
-|-----------|------------|------------|
-| Tool Discovery | 500ms | 25ms |
-| Tool Execution | 200ms | 200ms |
-| **Total (1st time)** | 700ms | 525ms |
-| **Total (cached)** | 700ms | 225ms |
+| Operation         | Direct MCP         | MCI Cached |
+|-------------------|--------------------|------------|
+| Tool Discovery    | 500ms              | 25ms       |
+| Tool Execution    | 200ms              | 200ms      |
+| **Total (1st time)** | 700ms           | 525ms      |
+| **Total (cached)**   | N/A (no caching) | 225ms      |
 
+> **Note:** Direct MCP does not cache tool definitions, so its performance is always 700ms. The "cached" value is not applicable for Direct MCP.
 ### 4. Tool Execution
 
 When you execute an MCP tool:
