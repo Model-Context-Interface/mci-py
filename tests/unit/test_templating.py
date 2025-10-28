@@ -79,6 +79,62 @@ class TestRenderBasic:
         assert "{{props.missing}}" in error_msg  # Should show the placeholder format
         assert "not found" in error_msg
 
+    def test_fallback_with_string_literal_single_quote(self, engine, context):
+        """Test fallback to string literal with single quotes."""
+        template = "Dir: {{env.MISSING | '/tmp'}}"
+        result = engine.render_basic(template, context)
+        assert result == "Dir: /tmp"
+
+    def test_fallback_with_string_literal_backtick(self, engine, context):
+        """Test fallback to string literal with backticks."""
+        template = "Dir: {{env.MISSING | `/tmp`}}"
+        result = engine.render_basic(template, context)
+        assert result == "Dir: /tmp"
+
+    def test_fallback_to_another_variable(self, engine, context):
+        """Test fallback to another variable."""
+        template = "User: {{env.MISSING | env.USER}}"
+        result = engine.render_basic(template, context)
+        assert result == "User: testuser"
+
+    def test_fallback_chain_first_works(self, engine, context):
+        """Test fallback chain where first variable works."""
+        template = "Key: {{env.API_KEY | env.MISSING | '/default'}}"
+        result = engine.render_basic(template, context)
+        assert result == "Key: secret123"
+
+    def test_fallback_chain_second_works(self, engine, context):
+        """Test fallback chain where second variable works."""
+        template = "User: {{env.MISSING | env.USER | '/default'}}"
+        result = engine.render_basic(template, context)
+        assert result == "User: testuser"
+
+    def test_fallback_chain_to_string_literal(self, engine, context):
+        """Test fallback chain ending with string literal."""
+        template = "Dir: {{env.MISSING1 | env.MISSING2 | '/tmp'}}"
+        result = engine.render_basic(template, context)
+        assert result == "Dir: /tmp"
+
+    def test_fallback_all_fail_no_literal(self, engine, context):
+        """Test error when all fallbacks fail and no string literal provided."""
+        template = "Value: {{env.MISSING1 | env.MISSING2}}"
+        with pytest.raises(TemplateError) as exc_info:
+            engine.render_basic(template, context)
+        error_msg = str(exc_info.value)
+        assert "Could not resolve any alternative" in error_msg
+
+    def test_fallback_with_whitespace(self, engine, context):
+        """Test fallback syntax with extra whitespace."""
+        template = "Dir: {{ env.MISSING  |  '/tmp'  }}"
+        result = engine.render_basic(template, context)
+        assert result == "Dir: /tmp"
+
+    def test_no_fallback_existing_variable(self, engine, context):
+        """Test that existing variables still work without fallback."""
+        template = "Key: {{env.API_KEY}}"
+        result = engine.render_basic(template, context)
+        assert result == "Key: secret123"
+
 
 class TestResolvePlaceholder:
     """Tests for _resolve_placeholder method."""

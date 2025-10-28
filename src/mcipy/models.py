@@ -162,6 +162,20 @@ class TextExecutionConfig(ExecutionConfig):
     text: str
 
 
+class MCPExecutionConfig(ExecutionConfig):
+    """
+    MCP execution configuration.
+
+    Defines how to execute tools via Model Context Protocol servers.
+    The serverName must match a server registered in the main schema's
+    mcp_servers field, and toolName identifies the specific tool to call.
+    """
+
+    type: ExecutionType = Field(default=ExecutionType.MCP)
+    serverName: str
+    toolName: str
+
+
 class Annotations(BaseModel):
     """
     Optional annotations about tool behavior.
@@ -194,7 +208,13 @@ class Tool(BaseModel):
     annotations: Annotations | None = None
     description: str | None = None
     inputSchema: dict[str, Any] | None = None
-    execution: HTTPExecutionConfig | CLIExecutionConfig | FileExecutionConfig | TextExecutionConfig
+    execution: (
+        HTTPExecutionConfig
+        | CLIExecutionConfig
+        | FileExecutionConfig
+        | TextExecutionConfig
+        | MCPExecutionConfig
+    )
     enableAnyPaths: bool = Field(default=False)
     directoryAllowList: list[str] = Field(default_factory=list)
     tags: list[str] = Field(default_factory=list)
@@ -214,17 +234,63 @@ class Toolset(BaseModel):
     filterValue: str | None = None  # Comma-separated list of tool names or tags
 
 
+class MCPServerConfig(BaseModel):
+    """
+    Configuration for filtering and expiration of MCP toolsets.
+
+    Applied when registering MCP servers to control which tools are loaded
+    and how long the cached toolset remains valid.
+    """
+
+    expDays: int = Field(default=30, ge=1)  # Days until cached toolset expires
+    filter: str | None = None  # One of: "only", "except", "tags", "withoutTags"
+    filterValue: str | None = None  # Comma-separated list of tool names or tags
+
+
+class StdioMCPServer(BaseModel):
+    """
+    STDIO-based MCP server configuration.
+
+    Used for local MCP servers started via command-line tools like npx or uvx.
+    Supports environment variable injection and templating.
+    """
+
+    command: str
+    args: list[str] = Field(default_factory=list)
+    env: dict[str, str] = Field(default_factory=dict)
+    config: MCPServerConfig = Field(default_factory=MCPServerConfig)
+
+
+class HttpMCPServer(BaseModel):
+    """
+    HTTP-based MCP server configuration.
+
+    Used for web-based MCP servers using HTTP with SSE or Streamable HTTP transport.
+    Supports custom headers for authentication and templating.
+    """
+
+    type: str = Field(default="http")
+    url: str
+    headers: dict[str, str] = Field(default_factory=dict)
+    config: MCPServerConfig = Field(default_factory=MCPServerConfig)
+
+
+MCPServer = StdioMCPServer | HttpMCPServer
+
+
 class ToolsetSchema(BaseModel):
     """
     Schema for individual toolset files.
 
-    Toolset files can only contain schemaVersion, optional metadata, and required tools.
+    Toolset files can only contain schemaVersion, optional metadata, required tools,
+    and optional expiresAt field for MCP toolset caching.
     They cannot contain global configuration fields like toolsets, libraryDir, etc.
     """
 
     schemaVersion: str
     metadata: Metadata | None = None
     tools: list[Tool]
+    expiresAt: str | None = None  # ISO 8601 timestamp for MCP toolset expiration
 
 
 class MCISchema(BaseModel):
@@ -232,7 +298,7 @@ class MCISchema(BaseModel):
     Top-level MCI schema.
 
     Represents the complete MCI context file with schema version,
-    optional metadata, and a list of tool definitions.
+    optional metadata, tool definitions, toolsets, and MCP server configurations.
     This is the root model that validates the entire JSON schema.
     """
 
@@ -240,6 +306,7 @@ class MCISchema(BaseModel):
     metadata: Metadata | None = None
     tools: list[Tool] | None = Field(default=None)
     toolsets: list[Toolset] | None = Field(default=None)
+    mcp_servers: dict[str, MCPServer] | None = Field(default=None)
     libraryDir: str = Field(default="./mci")
     enableAnyPaths: bool = Field(default=False)
     directoryAllowList: list[str] = Field(default_factory=list)

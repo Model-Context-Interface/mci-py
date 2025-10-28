@@ -87,14 +87,14 @@ class MCIClient:
         # Store schema file path for path validation
         self._schema_file_path = schema_file_path
 
-        # Load schema using SchemaParser
+        # Store environment variables first (needed for schema parsing)
+        self._env_vars = env_vars if env_vars is not None else {}
+
+        # Load schema using SchemaParser with env_vars for MCP server templating
         try:
-            self._schema = SchemaParser.parse_file(schema_file_path)
+            self._schema = SchemaParser.parse_file(schema_file_path, env_vars=self._env_vars)
         except Exception as e:
             raise MCIClientError(f"Failed to load schema from {schema_file_path}: {e}") from e
-
-        # Store environment variables
-        self._env_vars = env_vars if env_vars is not None else {}
 
         # Initialize ToolManager with schema file path for path validation
         self._tool_manager = ToolManager(self._schema, schema_file_path)

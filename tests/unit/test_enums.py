@@ -26,7 +26,8 @@ def test_execution_type_all_values():
     assert "cli" in types
     assert "file" in types
     assert "text" in types
-    assert len(types) == 4
+    assert "mcp" in types
+    assert len(types) == 5
 
 
 def test_execution_type_from_string():

@@ -17,9 +17,11 @@ class ExecutionType(str, Enum):
     - CLI: Execute command-line tools
     - FILE: Read and parse files
     - TEXT: Return text with placeholder substitution
+    - MCP: Execute tools via Model Context Protocol servers
     """
 
     HTTP = "http"
     CLI = "cli"
     FILE = "file"
     TEXT = "text"
+    MCP = "mcp"

@@ -34,7 +34,10 @@ class TemplateEngine:
         Perform basic placeholder substitution.
 
         Replaces placeholders like {{props.propertyName}} and {{env.VAR_NAME}}
-        with their values from the context.
+        with their values from the context. Supports fallback syntax with | operator:
+        - {{env.VAR | 'default'}} - Use string literal as fallback
+        - {{env.VAR | env.OTHER}} - Use another variable as fallback
+        - {{env.VAR | env.OTHER | '/tmp'}} - Chain multiple fallbacks
 
         Args:
             template: The template string containing placeholders
@@ -44,18 +47,22 @@ class TemplateEngine:
             The template with all placeholders replaced
 
         Raises:
-            TemplateError: If a placeholder cannot be resolved
+            TemplateError: If a placeholder cannot be resolved and no fallback is provided
         """
-        # Pattern to match {{path.to.value}}
+        # Pattern to match {{path.to.value}} or {{path.to.value | fallback | ...}}
         pattern = r"\{\{([^}]+)\}\}"
 
         def replace_placeholder(match: re.Match[str]) -> str:
-            path = match.group(1).strip()
+            full_path = match.group(1).strip()
             try:
-                value = self._resolve_placeholder(path, context)
+                value = self._resolve_placeholder_with_fallback(full_path, context)
                 return str(value)
             except Exception as e:
-                raise TemplateError(f"Failed to resolve placeholder '{{{{{path}}}}}: {e}") from e
+                # Create placeholder string for error message
+                placeholder_str = "{{" + full_path + "}}"
+                raise TemplateError(
+                    f"Failed to resolve placeholder '{placeholder_str}': {e}"
+                ) from e
 
         return re.sub(pattern, replace_placeholder, template)
 
@@ -88,6 +95,50 @@ class TemplateEngine:
         result = self.render_basic(result, context)
 
         return result
+
+    def _resolve_placeholder_with_fallback(self, full_path: str, context: dict[str, Any]) -> Any:
+        """
+        Resolve a placeholder with optional fallback values using | operator.
+
+        Supports:
+        - env.VAR - Simple variable
+        - env.VAR | 'default' - Fallback to string literal (single quotes or backticks)
+        - env.VAR | env.OTHER - Fallback to another variable
+        - env.VAR | env.OTHER | '/tmp' - Chain multiple fallbacks
+
+        Args:
+            full_path: Path with optional fallbacks (e.g., "env.VAR | 'default' | env.OTHER")
+            context: Context dictionary
+
+        Returns:
+            The resolved value or fallback
+
+        Raises:
+            TemplateError: If no path can be resolved and no valid fallback provided
+        """
+        # Split by | to get alternatives
+        alternatives = [alt.strip() for alt in full_path.split("|")]
+
+        errors = []
+        for alt in alternatives:
+            # Check if it's a string literal (single quotes or backticks)
+            if (alt.startswith("'") and alt.endswith("'")) or (
+                alt.startswith("`") and alt.endswith("`")
+            ):
+                # Return the string literal without quotes
+                return alt[1:-1]
+
+            # Try to resolve as a variable path
+            try:
+                return self._resolve_placeholder(alt, context)
+            except TemplateError as e:
+                errors.append(f"{alt}: {e}")
+                continue
+
+        # If all alternatives failed, raise an error
+        raise TemplateError(
+            f"Could not resolve any alternative. Tried: {', '.join(alternatives)}. Errors: {'; '.join(errors)}"
+        )
 
     def _resolve_placeholder(self, path: str, context: dict[str, Any]) -> Any:
         """
