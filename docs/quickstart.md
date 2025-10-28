@@ -1,24 +1,6 @@
 # MCI Python Adapter - Quickstart Guide
 
-Welcome to the MCI Python Adapter! This guide will help you get started quickly with installing, configuring, and using the MCI (Model Context Interface) adapter to define and execute tools in your Python applications.
-
-## Table of Contents
-
-- [Installation](#installation)
-- [Basic Usage](#basic-usage)
-- [Tool Definitions](#tool-definitions)
-- [Execution Types](#execution-types)
-  - [Text Execution](#text-execution)
-  - [File Execution](#file-execution)
-  - [CLI Execution](#cli-execution)
-  - [HTTP Execution](#http-execution)
-- [Advanced Features](#advanced-features)
-  - [Toolsets - Organizing Tools into Libraries](#toolsets---organizing-tools-into-libraries)
-  - [Error Handling](#error-handling)
-  - [Multiple Clients](#multiple-clients)
-  - [Environment Variables](#environment-variables)
-  - [Security: Path Restrictions](#security-path-restrictions)
-- [Next Steps](#next-steps)
+Welcome to the MCI Python Adapter! This guide will help you get started quickly with installing and using the MCI (Model Context Interface) adapter to define and execute tools in your Python applications.
 
 ## Installation
 
@@ -62,36 +44,25 @@ import mcipy
 print("MCI Python Adapter installed successfully!")
 ```
 
-## Basic Usage
+## Quick Example
 
-### 1. Import the Client
+Here's a complete example to get you started in under 5 minutes:
 
-```python
-from mcipy import MCIClient
-```
+### 1. Create a Tool Schema File
 
-### 2. Create a Tool Schema File
+Create a file named `my-tools.mci.json`:
 
-Create a file named `my-tools.mci.json` (or `my-tools.mci.yaml` for YAML format) with your tool definitions:
-
-**JSON Format:**
 ```json
 {
   "schemaVersion": "1.0",
   "metadata": {
-    "name": "My Tools",
-    "description": "A collection of useful tools",
-    "version": "1.0.0"
+    "name": "My First Tools",
+    "description": "A simple collection of tools"
   },
   "tools": [
     {
       "name": "greet_user",
-      "annotations": {
-        "title": "User Greeting",
-        "readOnlyHint": true,
-        "idempotentHint": true
-      },
-      "description": "Generate a personalized greeting message",
+      "description": "Generate a personalized greeting",
       "inputSchema": {
         "type": "object",
         "properties": {
@@ -106,89 +77,54 @@ Create a file named `my-tools.mci.json` (or `my-tools.mci.yaml` for YAML format)
         "type": "text",
         "text": "Hello, {{props.username}}! Welcome to MCI."
       }
+    },
+    {
+      "name": "get_weather",
+      "description": "Fetch weather information",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "location": {
+            "type": "string",
+            "description": "City name"
+          }
+        },
+        "required": ["location"]
+      },
+      "execution": {
+        "type": "http",
+        "method": "GET",
+        "url": "https://api.example.com/weather",
+        "params": {
+          "location": "{{props.location}}"
+        }
+      }
     }
   ]
 }
 ```
 
-**YAML Format:**
-```yaml
-schemaVersion: '1.0'
-metadata:
-  name: My Tools
-  description: A collection of useful tools
-  version: 1.0.0
-tools:
-  - name: greet_user
-    annotations:
-      title: User Greeting
-      readOnlyHint: true
-      idempotentHint: true
-    description: Generate a personalized greeting message
-    inputSchema:
-      type: object
-      properties:
-        username:
-          type: string
-          description: The user's name
-      required:
-        - username
-    execution:
-      type: text
-      text: Hello, {{props.username}}! Welcome to MCI.
-```
+### 2. Write Python Code
 
-> **Note:** MCI supports both JSON (`.json`) and YAML (`.yaml`, `.yml`) formats interchangeably. Choose the format that best suits your preferences!
-
-### 3. Initialize the Client
+Create a file named `example.py`:
 
 ```python
 from mcipy import MCIClient
 
-# Initialize with your JSON schema file
+# Initialize the client
 client = MCIClient(
     schema_file_path="my-tools.mci.json",
     env_vars={
-        "API_KEY": "your-secret-key",
-        "USERNAME": "demo_user"
+        "API_KEY": "your-secret-key"
     }
 )
 
-# Or initialize with YAML schema file
-client = MCIClient(
-    schema_file_path="my-tools.mci.yaml",
-    env_vars={
-        "API_KEY": "your-secret-key",
-        "USERNAME": "demo_user"
-    }
-)
+# List available tools
+print("Available tools:")
+for tool_name in client.list_tools():
+    print(f"  - {tool_name}")
 
-# Note: For backward compatibility, json_file_path still works
-# but schema_file_path is recommended
-client = MCIClient(
-    json_file_path="my-tools.mci.json",  # Works with both .json and .yaml
-    env_vars={"API_KEY": "your-secret-key"}
-)
-```
-
-### 4. List Available Tools
-
-```python
-# Get all tool names
-tool_names = client.list_tools()
-print(f"Available tools: {tool_names}")
-
-# Get full tool objects
-tools = client.tools()
-for tool in tools:
-    title = tool.annotations.title if tool.annotations else tool.name
-    print(f"- {tool.name}: {title}")
-```
-
-### 5. Execute a Tool
-
-```python
-# Execute the tool with properties
+# Execute a tool
 result = client.execute(
     tool_name="greet_user",
     properties={"username": "Alice"}
@@ -201,1195 +137,67 @@ else:
     print(f"Success: {result.result.content[0].text}")
 ```
 
-### 6. Filter Tools
+### 3. Run Your Code
 
-```python
-# Include only specific tools
-weather_tools = client.only(["get_weather", "get_forecast"])
-
-# Exclude specific tools
-safe_tools = client.without(["delete_data", "admin_tools"])
+```bash
+python example.py
 ```
 
-### 7. Get Tool Schema
-
-```python
-# Retrieve input schema for a tool
-schema = client.get_tool_schema("greet_user")
-print(f"Required properties: {schema.get('required', [])}")
-print(f"Properties: {list(schema.get('properties', {}).keys())}")
+**Output:**
+```
+Available tools:
+  - greet_user
+  - get_weather
+Success: Hello, Alice! Welcome to MCI.
 ```
 
-## Tool Definitions
+## What's Next?
 
-All tools in MCI follow a standard JSON schema structure. Here's the complete anatomy of a tool definition:
+Now that you've seen the basics, explore these resources to learn more:
 
-```json
-{
-  "name": "tool_identifier",
-  "annotations": { "title": "Human-Readable Tool Name" },
-  "description": "What this tool does",
-  "inputSchema": {
-    "type": "object",
-    "properties": {
-      "param1": {
-        "type": "string",
-        "description": "Description of parameter 1"
-      },
-      "param2": {
-        "type": "number",
-        "description": "Description of parameter 2"
-      }
-    },
-    "required": ["param1"]
-  },
-  "execution": {
-    "type": "http|cli|file|text",
-    ...
-  }
-}
-```
+- **[Basic Usage Guide](basic_usage.md)** - Detailed usage patterns and examples
+- **[Concepts](concepts/)** - Understand MCI core concepts:
+  - [Structure](concepts/structure.md) - Project structure and organization
+  - [Tools](concepts/tools.md) - Different tool execution types
+  - [Toolsets](concepts/toolsets.md) - Organizing and sharing tools
+  - [MCP Servers](concepts/mcp_servers.md) - Integrating MCP servers
+  - [Templates](concepts/templates.md) - Advanced templating features
+- **[Schema Reference](schema_reference.md)** - Complete schema documentation
+- **[API Reference](api_reference.md)** - Detailed API documentation
+
+## Key Concepts at a Glance
+
+### Execution Types
+
+MCI supports four execution types:
+
+- **Text**: Return templated text directly
+- **File**: Read file contents with template substitution
+- **CLI**: Execute command-line tools
+- **HTTP**: Make HTTP API requests
 
 ### Template Placeholders
 
-MCI supports powerful templating with placeholders:
+Use placeholders in your configurations:
 
-- `{{props.propertyName}}` - Access input properties
+- `{{props.fieldName}}` - Access input properties
 - `{{env.VARIABLE_NAME}}` - Access environment variables
-- `{{input.fieldName}}` - Alias for `{{props.fieldName}}`
 
-## Execution Types
+### Tool Organization
 
-MCI supports four execution types: **Text**, **File**, **CLI**, and **HTTP**. Each type is designed for different use cases.
+- **Tools**: Individual actions defined in your schema
+- **Toolsets**: Reusable collections of tools in separate files
+- **MCP Servers**: Integration with external MCP servers
 
-### Text Execution
+## Common Use Cases
 
-Return static or templated text directly. Perfect for simple messages, templates, or computed strings.
+- **API Integration**: Use HTTP execution to integrate REST APIs
+- **DevOps Automation**: Use CLI execution for system tasks
+- **Configuration Management**: Use File execution for config templates
+- **Reporting**: Use Text execution for formatted reports
+- **Data Processing**: Combine multiple execution types
 
-**Schema Example:**
-
-```json
-{
-  "name": "generate_welcome",
-  "annotations": {
-    "title": "Welcome Message Generator"
-  },
-  "description": "Generate a welcome message with current date",
-  "inputSchema": {
-    "type": "object",
-    "properties": {
-      "username": {
-        "type": "string",
-        "description": "User's name"
-      }
-    },
-    "required": ["username"]
-  },
-  "execution": {
-    "type": "text",
-    "text": "Welcome {{props.username}}! Today is {{env.CURRENT_DATE}}."
-  }
-}
-```
-
-**Python Usage:**
-
-```python
-from datetime import datetime
-
-client = MCIClient(
-    json_file_path="tools.mci.json",
-    env_vars={"CURRENT_DATE": datetime.now().strftime("%Y-%m-%d")}
-)
-
-result = client.execute(
-    tool_name="generate_welcome",
-    properties={"username": "Alice"}
-)
-print(result.result.content[0].text)  # "Welcome Alice! Today is 2024-01-15."
-```
-
-### File Execution
-
-Read and return file contents with optional template substitution. Useful for loading configuration files, templates, or documentation.
-
-**Schema Example:**
-
-```json
-{
-  "name": "load_config",
-  "annotations": {
-    "title": "Load Configuration File"
-  },
-  "description": "Load a configuration file with template substitution",
-  "inputSchema": {
-    "type": "object",
-    "properties": {
-      "config_name": {
-        "type": "string",
-        "description": "Name of the configuration"
-      }
-    },
-    "required": ["config_name"]
-  },
-  "execution": {
-    "type": "file",
-    "path": "./configs/{{props.config_name}}.conf",
-    "enableTemplating": true
-  }
-}
-```
-
-**File Content (configs/database.conf):**
-
-```
-host={{env.DB_HOST}}
-port={{env.DB_PORT}}
-user={{env.DB_USER}}
-database={{props.database_name}}
-```
-
-**Python Usage:**
-
-```python
-client = MCIClient(
-    json_file_path="tools.mci.json",
-    env_vars={
-        "DB_HOST": "localhost",
-        "DB_PORT": "5432",
-        "DB_USER": "admin"
-    }
-)
-
-result = client.execute(
-    tool_name="load_config",
-    properties={
-        "config_name": "database",
-        "database_name": "production_db"
-    }
-)
-print(result.result.content[0].text)
-# Output:
-# host=localhost
-# port=5432
-# user=admin
-# database=production_db
-```
-
-### CLI Execution
-
-Execute command-line programs and capture their output. Great for running system commands, scripts, or CLI tools.
-
-**Schema Example:**
-
-```json
-{
-  "name": "search_files",
-  "annotations": {
-    "title": "Search Files with Grep"
-  },
-  "description": "Search for text patterns in files",
-  "inputSchema": {
-    "type": "object",
-    "properties": {
-      "pattern": {
-        "type": "string",
-        "description": "Search pattern"
-      },
-      "directory": {
-        "type": "string",
-        "description": "Directory to search"
-      },
-      "ignore_case": {
-        "type": "boolean",
-        "description": "Ignore case when searching"
-      }
-    },
-    "required": ["pattern", "directory"]
-  },
-  "execution": {
-    "type": "cli",
-    "command": "grep",
-    "args": ["-r", "-n"],
-    "flags": {
-      "-i": {
-        "from": "props.ignore_case",
-        "type": "boolean"
-      }
-    },
-    "cwd": "{{props.directory}}",
-    "timeout_ms": 8000
-  }
-}
-```
-
-**Python Usage:**
-
-```python
-client = MCIClient(json_file_path="tools.mci.json")
-
-result = client.execute(
-    tool_name="search_files",
-    properties={
-        "pattern": "TODO",
-        "directory": "./src",
-        "ignore_case": True
-    }
-)
-
-if result.result.isError:
-    print(f"Error: {result.result.content[0].text}")
-else:
-    print(result.result.content[0].text)  # Output from grep command
-```
-
-**CLI Configuration Options:**
-
-- `command`: The command to execute (e.g., "grep", "python", "node")
-- `args`: Fixed arguments passed to the command
-- `flags`: Dynamic flags based on input properties
-  - `type: "boolean"`: Include flag only if property is true
-  - `type: "value"`: Include flag with property value (e.g., `--file value`)
-- `cwd`: Working directory for command execution
-- `timeout_ms`: Maximum execution time in milliseconds
-
-### HTTP Execution
-
-Make HTTP requests to APIs with full support for authentication, headers, query parameters, and request bodies.
-
-#### Basic GET Request
-
-**Schema Example:**
-
-```json
-{
-  "name": "get_weather",
-  "annotations": {
-    "title": "Get Weather Information"
-  },
-  "description": "Fetch current weather for a location",
-  "inputSchema": {
-    "type": "object",
-    "properties": {
-      "location": {
-        "type": "string",
-        "description": "City name"
-      }
-    },
-    "required": ["location"]
-  },
-  "execution": {
-    "type": "http",
-    "method": "GET",
-    "url": "https://api.example.com/weather",
-    "params": {
-      "location": "{{props.location}}",
-      "units": "metric"
-    },
-    "headers": {
-      "Accept": "application/json"
-    },
-    "timeout_ms": 5000
-  }
-}
-```
-
-#### POST Request with JSON Body
-
-**Schema Example:**
-
-```json
-{
-  "name": "create_report",
-  "annotations": {
-    "title": "Create Report"
-  },
-  "description": "Create a new report via API",
-  "inputSchema": {
-    "type": "object",
-    "properties": {
-      "title": {
-        "type": "string"
-      },
-      "content": {
-        "type": "string"
-      }
-    },
-    "required": ["title", "content"]
-  },
-  "execution": {
-    "type": "http",
-    "method": "POST",
-    "url": "https://api.example.com/reports",
-    "headers": {
-      "Content-Type": "application/json"
-    },
-    "body": {
-      "type": "json",
-      "content": {
-        "title": "{{props.title}}",
-        "content": "{{props.content}}",
-        "timestamp": "{{env.CURRENT_TIMESTAMP}}"
-      }
-    },
-    "timeout_ms": 10000
-  }
-}
-```
-
-#### Authentication Options
-
-**API Key Authentication (Header):**
-
-```json
-{
-  "execution": {
-    "type": "http",
-    "method": "GET",
-    "url": "https://api.example.com/data",
-    "auth": {
-      "type": "apiKey",
-      "in": "header",
-      "name": "X-API-Key",
-      "value": "{{env.API_KEY}}"
-    }
-  }
-}
-```
-
-**API Key Authentication (Query Parameter):**
-
-```json
-{
-  "execution": {
-    "type": "http",
-    "method": "GET",
-    "url": "https://api.example.com/data",
-    "auth": {
-      "type": "apiKey",
-      "in": "query",
-      "name": "api_key",
-      "value": "{{env.API_KEY}}"
-    }
-  }
-}
-```
-
-**Bearer Token Authentication:**
-
-```json
-{
-  "execution": {
-    "type": "http",
-    "method": "POST",
-    "url": "https://api.example.com/data",
-    "auth": {
-      "type": "bearer",
-      "token": "{{env.BEARER_TOKEN}}"
-    }
-  }
-}
-```
-
-**Basic Authentication:**
-
-```json
-{
-  "execution": {
-    "type": "http",
-    "method": "GET",
-    "url": "https://api.example.com/data",
-    "auth": {
-      "type": "basic",
-      "username": "{{env.USERNAME}}",
-      "password": "{{env.PASSWORD}}"
-    }
-  }
-}
-```
-
-**OAuth2 Client Credentials:**
-
-```json
-{
-  "execution": {
-    "type": "http",
-    "method": "GET",
-    "url": "https://api.example.com/data",
-    "auth": {
-      "type": "oauth2",
-      "flow": "clientCredentials",
-      "tokenUrl": "https://auth.example.com/token",
-      "clientId": "{{env.CLIENT_ID}}",
-      "clientSecret": "{{env.CLIENT_SECRET}}",
-      "scopes": ["read:data"]
-    }
-  }
-}
-```
-
-#### Request Body Types
-
-**JSON Body:**
-
-```json
-{
-  "body": {
-    "type": "json",
-    "content": {
-      "key": "{{props.value}}"
-    }
-  }
-}
-```
-
-**Form Body:**
-
-```json
-{
-  "body": {
-    "type": "form",
-    "content": {
-      "field1": "{{props.value1}}",
-      "field2": "{{props.value2}}"
-    }
-  }
-}
-```
-
-**Raw Body:**
-
-```json
-{
-  "body": {
-    "type": "raw",
-    "content": "custom={{props.data}}&format=xml"
-  }
-}
-```
-
-#### Python Usage Example:
-
-```python
-from datetime import datetime
-
-client = MCIClient(
-    json_file_path="api-tools.mci.json",
-    env_vars={
-        "API_KEY": "your-secret-key",
-        "BEARER_TOKEN": "your-bearer-token",
-        "CURRENT_TIMESTAMP": datetime.now().isoformat()
-    }
-)
-
-# Execute GET request
-weather_result = client.execute(
-    tool_name="get_weather",
-    properties={"location": "New York"}
-)
-
-if not weather_result.result.isError:
-    print(f"Weather data: {weather_result.result.content[0].text}")
-
-# Execute POST request
-report_result = client.execute(
-    tool_name="create_report",
-    properties={
-        "title": "Q1 Sales Report",
-        "content": "Sales increased by 15%"
-    }
-)
-
-if not report_result.result.isError:
-    print(f"Report created: {report_result.result.content[0].text}")
-```
-
-## Advanced Features
-
-### Toolsets - Organizing Tools into Libraries
-
-**Toolsets** allow you to organize tools into reusable, modular collections. This is useful for:
-- Separating tools by domain (weather, database, GitHub, etc.)
-- Sharing tool collections across multiple schemas
-- Applying filters at load time to control which tools are available
-
-#### Creating Toolset Files
-
-Create toolset files in a library directory (default: `./mci`):
-
-**Directory structure:**
-```
-project/
-├── main.mci.json       # Main schema
-└── mci/                # Library directory
-    ├── weather.mci.json
-    ├── database.mci.json
-    └── github/
-        ├── prs.mci.json
-        └── issues.mci.json
-```
-
-**Toolset file** (`mci/weather.mci.json`):
-```json
-{
-  "schemaVersion": "1.0",
-  "metadata": {
-    "name": "Weather Toolset",
-    "description": "Tools for weather information"
-  },
-  "tools": [
-    {
-      "name": "get_weather",
-      "description": "Get current weather",
-      "tags": ["weather", "read"],
-      "execution": {
-        "type": "http",
-        "method": "GET",
-        "url": "https://api.weather.com/current",
-        "params": {
-          "location": "{{props.location}}"
-        }
-      }
-    }
-  ]
-}
-```
-
-#### Loading Toolsets in Main Schema
-
-**Main schema** (`main.mci.json`):
-```json
-{
-  "schemaVersion": "1.0",
-  "metadata": {
-    "name": "My Application"
-  },
-  "libraryDir": "./mci",
-  "toolsets": [
-    {"name": "weather"},
-    {"name": "database"},
-    {"name": "github"}
-  ]
-}
-```
-
-#### Schema-Level Filtering
-
-Apply filters when loading toolsets to control which tools are registered:
-
-```json
-{
-  "schemaVersion": "1.0",
-  "toolsets": [
-    {
-      "name": "weather",
-      "filter": "only",
-      "filterValue": "get_weather, get_forecast"
-    },
-    {
-      "name": "database",
-      "filter": "withoutTags",
-      "filterValue": "destructive"
-    },
-    {
-      "name": "github",
-      "filter": "tags",
-      "filterValue": "read"
-    }
-  ]
-}
-```
-
-**Filter types:**
-- `only`: Include only tools with specified names
-- `except`: Exclude tools with specified names
-- `tags`: Include only tools with at least one matching tag
-- `withoutTags`: Exclude tools with any matching tag
-
-#### Adapter-Level Toolset Filtering
-
-Use the `toolsets()` method to filter tools by their source toolset:
-
-```python
-from mcipy import MCIClient
-
-client = MCIClient(schema_file_path="main.mci.json")
-
-# Get only weather tools
-weather_tools = client.toolsets(["weather"])
-
-# Get tools from multiple toolsets
-api_tools = client.toolsets(["weather", "database"])
-
-# Combine with other filters
-read_only_weather = [
-    tool for tool in client.toolsets(["weather"])
-    if "read" in tool.tags
-]
-```
-
-**Key points:**
-- `toolsets()` only returns tools loaded from toolsets (not main schema tools)
-- Respects schema-level filters (only returns tools that passed the toolset filter)
-- Useful for dynamic tool selection based on context
-
-### Error Handling
-
-Always check the `isError` property of execution results:
-
-```python
-result = client.execute(tool_name="my_tool", properties={...})
-
-if result.result.isError:
-    print(f"Error occurred: {result.result.content[0].text}")
-    # Handle error case
-else:
-    print(f"Success: {result.result.content[0].text}")
-    # Process successful result
-```
-
-### Multiple Clients
-
-You can create multiple client instances for different schema files:
-
-```python
-# Client for API tools
-api_client = MCIClient(
-    json_file_path="api-tools.mci.json",
-    env_vars={"API_KEY": "key1"}
-)
-
-# Client for CLI tools
-cli_client = MCIClient(
-    json_file_path="cli-tools.mci.json",
-    env_vars={"WORKSPACE": "/home/user"}
-)
-```
-
-### Environment Variables
-
-Environment variables are the recommended way to handle secrets and configuration:
-
-```python
-import os
-
-client = MCIClient(
-    json_file_path="tools.mci.json",
-    env_vars={
-        "API_KEY": os.getenv("MY_API_KEY"),
-        "DATABASE_URL": os.getenv("DATABASE_URL"),
-        "ENVIRONMENT": "production"
-    }
-)
-```
-
-### Security: Path Restrictions
-
-**Important Security Feature**: By default, MCI restricts file and directory access to protect against arbitrary file access vulnerabilities.
-
-#### Default Behavior
-
-When executing file-based tools or CLI tools with a working directory (`cwd`), MCI validates that all paths are within the directory containing the schema file:
-
-```python
-# This works - accessing file in schema directory
-client = MCIClient(schema_file_path="/project/tools.mci.json")
-result = client.execute("read_config", {"file": "/project/config.json"})
-# ✓ Allowed: /project/config.json is in same directory as schema
-```
-
-```python
-# This fails - accessing file outside schema directory
-result = client.execute("read_secret", {"file": "/etc/passwd"})
-# ✗ Blocked: Path outside schema directory
-```
-
-#### Allowing Specific Directories
-
-You can allow additional directories using `directoryAllowList`:
-
-**JSON Format:**
-```json
-{
-  "schemaVersion": "1.0",
-  "directoryAllowList": ["/home/user/data", "./configs"],
-  "tools": [
-    {
-      "name": "read_data",
-      "execution": {
-        "type": "file",
-        "path": "/home/user/data/file.txt"
-      }
-    }
-  ]
-}
-```
-
-**YAML Format:**
-```yaml
-schemaVersion: "1.0"
-directoryAllowList:
-  - /home/user/data
-  - ./configs
-tools:
-  - name: read_data
-    execution:
-      type: file
-      path: /home/user/data/file.txt
-```
-
-#### Per-Tool Configuration
-
-You can override security settings for individual tools:
-
-**JSON Format:**
-```json
-{
-  "schemaVersion": "1.0",
-  "tools": [
-    {
-      "name": "read_any_file",
-      "enableAnyPaths": true,
-      "execution": {
-        "type": "file",
-        "path": "{{props.file_path}}"
-      }
-    },
-    {
-      "name": "read_from_allowed_dirs",
-      "directoryAllowList": ["/tmp", "/var/data"],
-      "execution": {
-        "type": "file",
-        "path": "{{props.file_path}}"
-      }
-    }
-  ]
-}
-```
-
-**YAML Format:**
-```yaml
-schemaVersion: "1.0"
-tools:
-  - name: read_any_file
-    enableAnyPaths: true
-    execution:
-      type: file
-      path: "{{props.file_path}}"
-  
-  - name: read_from_allowed_dirs
-    directoryAllowList:
-      - /tmp
-      - /var/data
-    execution:
-      type: file
-      path: "{{props.file_path}}"
-```
-
-#### CLI Working Directory Validation
-
-The same restrictions apply to CLI tools with a working directory (`cwd`):
-
-**JSON Format:**
-```json
-{
-  "schemaVersion": "1.0",
-  "tools": [
-    {
-      "name": "safe_ls",
-      "execution": {
-        "type": "cli",
-        "command": "ls",
-        "cwd": "/project/data"
-      }
-    }
-  ]
-}
-```
-
-**Important Notes:**
-
-1. **Tool-level settings override schema-level settings** - If both are defined, the tool's settings take precedence
-2. **Relative paths are resolved relative to the schema directory** - `./data` means relative to where your `.mci.json`/`.mci.yaml` file is located
-3. **`enableAnyPaths` disables all path validation** - Use with extreme caution
-4. **Subdirectories are automatically allowed** - If schema is in `/project`, all files under `/project/**` are allowed
-
-### Complete Example
-
-Here's a complete example putting it all together:
-
-```python
-#!/usr/bin/env python3
-"""
-Complete MCI example with multiple execution types.
-"""
-
-from datetime import datetime
-from mcipy import MCIClient
-
-def main():
-    # Initialize client with environment variables
-    client = MCIClient(
-        json_file_path="./tools.mci.json",
-        env_vars={
-            "CURRENT_DATE": datetime.now().strftime("%Y-%m-%d"),
-            "API_KEY": "demo-api-key-123",
-            "USERNAME": "demo_user"
-        }
-    )
-    
-    # List all available tools
-    print("Available tools:")
-    for tool_name in client.list_tools():
-        print(f"  - {tool_name}")
-    
-    # Execute text tool
-    print("\n1. Executing text tool...")
-    result = client.execute(
-        tool_name="generate_welcome",
-        properties={"username": "Alice"}
-    )
-    if not result.result.isError:
-        print(f"   Output: {result.result.content[0].text}")
-    
-    # Execute file tool
-    print("\n2. Executing file tool...")
-    result = client.execute(
-        tool_name="load_config",
-        properties={"config_name": "database"}
-    )
-    if not result.result.isError:
-        print(f"   Config loaded: {len(result.result.content[0].text)} bytes")
-    
-    # Execute CLI tool
-    print("\n3. Executing CLI tool...")
-    result = client.execute(
-        tool_name="search_files",
-        properties={
-            "pattern": "TODO",
-            "directory": ".",
-            "ignore_case": True
-        }
-    )
-    if not result.result.isError:
-        print(f"   Found matches: {len(result.result.content[0].text.splitlines())} lines")
-    
-    # Filter tools
-    print("\n4. Filtering tools...")
-    text_tools = client.only(["generate_welcome"])
-    print(f"   Filtered to {len(text_tools)} tools")
-    
-    print("\n✓ Example completed successfully!")
-
-if __name__ == "__main__":
-    main()
-```
-
-## MCP Client Integration
-
-The MCI Python adapter includes `LiteMcpClient`, a lightweight client for integrating with MCP (Model Context Protocol) servers. This allows you to access MCP tool servers via STDIO (e.g., uvx, npx) and HTTP/SSE endpoints.
-
-### What is MCP?
-
-MCP (Model Context Protocol) is a protocol for providing context and tools to AI models. MCP servers expose tools that can be called by clients to perform various operations. The `LiteMcpClient` provides a simple way to connect to these servers from Python.
-
-### Installation
-
-The MCP client integration requires the `mcp` package, which is included as a dependency:
-
-```bash
-# Already included when you install mci-py
-uv pip install mci-py
-
-# Or if you need the CLI extras explicitly
-uv pip install "mcp[cli]"
-```
-
-### Basic MCP Client Usage
-
-#### STDIO Example (using uvx)
-
-```python
-import asyncio
-from mcipy import LiteMcpClient, ClientCfg, StdioCfg
-
-async def main():
-    # Configure STDIO connection to uvx-based server
-    cfg = ClientCfg(
-        server=StdioCfg(
-            command="uvx",
-            args=["mcp-server-memory"]
-        )
-    )
-    
-    # Use as async context manager
-    async with LiteMcpClient(cfg) as client:
-        # List available tools
-        tools = await client.list_tools()
-        print(f"Available tools: {tools}")
-        
-        # Call a tool
-        if "store_memory" in tools:
-            result = await client.call_tool(
-                "store_memory",
-                key="greeting",
-                value="Hello from MCI!"
-            )
-            print(f"Stored: {result}")
-
-# Run the async function
-asyncio.run(main())
-```
-
-#### STDIO Example (using npx)
-
-```python
-import asyncio
-from mcipy import LiteMcpClient, ClientCfg, StdioCfg
-
-async def main():
-    # Configure STDIO connection to npx-based server
-    cfg = ClientCfg(
-        server=StdioCfg(
-            command="npx",
-            args=["-y", "@modelcontextprotocol/server-memory"]
-        )
-    )
-    
-    async with LiteMcpClient(cfg) as client:
-        tools = await client.list_tools()
-        print(f"Available tools: {tools}")
-        
-        # Store some data
-        await client.call_tool(
-            "store_memory",
-            key="user_preference",
-            value="dark_mode"
-        )
-        
-        # Retrieve it back
-        result = await client.call_tool(
-            "retrieve_memory",
-            key="user_preference"
-        )
-        print(f"Retrieved: {result}")
-
-asyncio.run(main())
-```
-
-#### HTTP Example
-
-```python
-import asyncio
-from mcipy import LiteMcpClient, ClientCfg, SseCfg
-
-async def main():
-    # Configure HTTP connection
-    cfg = ClientCfg(
-        server=SseCfg(
-            url="http://localhost:8000/mcp",
-            headers={"Authorization": "Bearer YOUR_TOKEN"}
-        )
-    )
-    
-    async with LiteMcpClient(cfg) as client:
-        tools = await client.list_tools()
-        print(f"Available tools: {tools}")
-        
-        # Call a tool
-        result = await client.call_tool("some_tool", param="value")
-        print(f"Result: {result}")
-
-asyncio.run(main())
-```
-
-### Configuration Options
-
-#### StdioCfg (for local servers)
-
-```python
-from mcipy import StdioCfg
-
-stdio_cfg = StdioCfg(
-    command="uvx",              # or "npx", or any command
-    args=["mcp-server-name"],   # arguments to pass
-    env={"API_KEY": "secret"}   # environment variables
-)
-```
-
-#### SseCfg (for HTTP servers)
-
-```python
-from mcipy import SseCfg
-
-http_cfg = SseCfg(
-    url="https://api.example.com/mcp",
-    headers={
-        "Authorization": "Bearer token",
-        "Custom-Header": "value"
-    }
-)
-```
-
-#### ClientCfg (complete configuration)
-
-```python
-from mcipy import ClientCfg, StdioCfg
-
-client_cfg = ClientCfg(
-    server=StdioCfg(command="uvx", args=["mcp-server"]),
-    request_timeout=120.0  # timeout in seconds
-)
-```
-
-### Common MCP Servers
-
-Here are some popular MCP servers you can use:
-
-#### Memory Server (npx)
-
-```python
-cfg = ClientCfg(
-    server=StdioCfg(
-        command="npx",
-        args=["-y", "@modelcontextprotocol/server-memory"]
-    )
-)
-```
-
-#### Filesystem Server (npx)
-
-```python
-cfg = ClientCfg(
-    server=StdioCfg(
-        command="npx",
-        args=[
-            "-y",
-            "@modelcontextprotocol/server-filesystem",
-            "/path/to/allowed/directory"
-        ]
-    )
-)
-```
-
-#### GitHub MCP (HTTP)
-
-```python
-import os
-
-cfg = ClientCfg(
-    server=SseCfg(
-        url="https://api.githubcopilot.com/mcp/",
-        headers={"Authorization": f"Bearer {os.getenv('GITHUB_MCP_PAT')}"}
-    )
-)
-```
-
-### Error Handling
-
-```python
-import asyncio
-from mcipy import LiteMcpClient, ClientCfg, StdioCfg
-
-async def main():
-    cfg = ClientCfg(server=StdioCfg(command="uvx", args=["mcp-server"]))
-    
-    try:
-        async with LiteMcpClient(cfg) as client:
-            tools = await client.list_tools()
-            result = await client.call_tool("tool_name", param="value")
-    except RuntimeError as e:
-        print(f"Session error: {e}")
-    except Exception as e:
-        print(f"Connection error: {e}")
-
-asyncio.run(main())
-```
-
-### Important Notes
-
-1. **Async Context Manager**: Always use `LiteMcpClient` with `async with` to ensure proper connection management
-2. **Environment Variables**: STDIO configuration merges its `env` dict with the current process environment
-3. **Modern Transport**: HTTP configuration uses Streamable HTTP (successor to SSE)
-4. **Dependencies**: Make sure `uvx` or `npx` is installed and in PATH for STDIO connections
-
-### Complete Example
-
-```python
-import asyncio
-import os
-from mcipy import LiteMcpClient, ClientCfg, StdioCfg
-
-async def use_mcp_server():
-    """Demonstrate full MCP client usage."""
-    
-    # Configure the client
-    cfg = ClientCfg(
-        server=StdioCfg(
-            command="npx",
-            args=["-y", "@modelcontextprotocol/server-memory"],
-            env={}
-        ),
-        request_timeout=60.0
-    )
-    
-    # Connect and use the server
-    async with LiteMcpClient(cfg) as client:
-        # Get available tools
-        tools = await client.list_tools()
-        print(f"Available tools: {tools}")
-        
-        # Store multiple values
-        data = {
-            "user_id": "12345",
-            "theme": "dark",
-            "language": "en"
-        }
-        
-        for key, value in data.items():
-            await client.call_tool("store_memory", key=key, value=value)
-            print(f"Stored: {key} = {value}")
-        
-        # Retrieve values
-        for key in data.keys():
-            result = await client.call_tool("retrieve_memory", key=key)
-            print(f"Retrieved: {key} = {result}")
-        
-        # List all stored memories
-        all_memories = await client.call_tool("list_memories")
-        print(f"All memories: {all_memories}")
-
-if __name__ == "__main__":
-    asyncio.run(use_mcp_server())
-```
-
-## Next Steps
-
-Now that you've learned the basics, explore these resources:
-
-- **[API Reference](api_reference.md)** - Detailed documentation of all classes and methods
-- **[Schema Reference](schema_reference.md)** - Complete JSON schema documentation
-- **[Examples Directory](../examples/)** - More real-world examples
-- **[GitHub Repository](https://github.com/Model-Context-Interface/mci-py)** - Source code and issue tracker
-
-### Common Use Cases
-
-- **API Integration**: Use HTTP execution to integrate with REST APIs
-- **DevOps Automation**: Use CLI execution for system administration tasks
-- **Configuration Management**: Use File execution to load and template config files
-- **Reporting**: Use Text execution to generate formatted reports
-- **Data Processing**: Combine multiple execution types for complex workflows
-
-### Tips and Best Practices
-
-1. **Always use environment variables for secrets** - Never hardcode API keys or passwords in schema files
-2. **Set appropriate timeouts** - Prevent tools from hanging indefinitely
-3. **Check `isError` before using results** - Proper error handling prevents runtime issues
-4. **Use descriptive tool names** - Make your tools easy to discover and understand
-5. **Document input schemas clearly** - Help users understand what each tool requires
-6. **Test with minimal examples first** - Start simple and add complexity gradually
-
-### Getting Help
+## Getting Help
 
 If you encounter issues or have questions:
 
