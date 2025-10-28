@@ -156,7 +156,7 @@ Success: Hello, Alice! Welcome to MCI.
 Now that you've seen the basics, explore these resources to learn more:
 
 - **[Basic Usage Guide](basic_usage.md)** - Detailed usage patterns and examples
-- **[Concepts](concepts/)** - Understand MCI core concepts:
+- **[Concepts](concepts/README.md)** - Understand MCI core concepts:
   - [Structure](concepts/structure.md) - Project structure and organization
   - [Tools](concepts/tools.md) - Different tool execution types
   - [Toolsets](concepts/toolsets.md) - Organizing and sharing tools
