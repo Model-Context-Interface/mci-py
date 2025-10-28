@@ -57,11 +57,12 @@ The root MCI context file has these main fields:
 | `metadata`            | object  | Optional     | Descriptive metadata about the tool collection     |
 | `tools`               | array   | Optional*    | Array of tool definitions                          |
 | `toolsets`            | array   | Optional*    | Array of toolset references to load from library   |
+| `mcp_servers`         | object  | Optional     | MCP servers to register and cache (see [MCP Servers](#mcp-servers)) |
 | `libraryDir`          | string  | Optional     | Directory to find toolset files (default: `"./mci"`) |
 | `enableAnyPaths`      | boolean | Optional     | Allow any file path (default: `false`)             |
 | `directoryAllowList`  | array   | Optional     | Additional allowed directories (default: `[]`)     |
 
-**\* Note**: Either `tools` or `toolsets` (or both) must be provided.
+**Note:** Either `tools`, `toolsets`, or `mcp_servers` (or any combination) must be provided.
 
 ### Toolsets
 
@@ -112,6 +113,122 @@ Each toolset object supports these fields:
 - Can be absolute paths (e.g., `/home/user/data`) or relative to schema directory (e.g., `./configs`)
 - Schema directory is always allowed by default
 - Can be overridden per-tool
+
+### MCP Servers
+
+The `mcp_servers` field enables integration with Model Context Protocol servers.
+**`mcp_servers`** (object, optional)
+- Object mapping server names to MCP server configurations
+- Allows integration with Model Context Protocol (MCP) servers
+- Tools from MCP servers are automatically cached in `{libraryDir}/mcp/` directory
+- Each server configuration can include filtering and expiration settings
+- Supports both STDIO (local command-based) and HTTP (web-based) servers
+
+#### MCP Server Configuration
+
+Each server in the `mcp_servers` object has a unique name as the key and a configuration object with these fields:
+
+**STDIO Configuration:**
+
+| Field     | Type              | Required | Default | Description                                           |
+| --------- | ----------------- | -------- | ------- | ----------------------------------------------------- |
+| `command` | string            | Yes      | -       | Command to execute (e.g., `"npx"`, `"uvx"`)           |
+| `args`    | array of strings  | No       | `[]`    | Arguments to pass to the command                      |
+| `env`     | object            | No       | `{}`    | Environment variables for the server process          |
+| `config`  | object            | No       | -       | Optional caching and filtering configuration          |
+
+**HTTP Configuration:**
+
+| Field     | Type              | Required | Default | Description                                           |
+| --------- | ----------------- | -------- | ------- | ----------------------------------------------------- |
+| `type`    | string            | Yes      | -       | Must be `"http"`                                      |
+| `url`     | string            | Yes      | -       | Server URL endpoint                                   |
+| `headers` | object            | No       | `{}`    | HTTP headers (e.g., for authentication)               |
+| `config`  | object            | No       | -       | Optional caching and filtering configuration          |
+
+**Config Object Fields:**
+
+| Field         | Type    | Required | Default | Description                                                     |
+| ------------- | ------- | -------- | ------- | --------------------------------------------------------------- |
+| `expDays`     | integer | No       | `30`    | Number of days until cached toolset expires                     |
+| `filter`      | string  | No       | -       | Filter type: `"only"`, `"except"`, `"tags"`, `"withoutTags"`    |
+| `filterValue` | string  | No       | -       | Comma-separated list of tool names or tags (required if filter) |
+
+#### MCP Server Examples
+
+**STDIO Server with Filtering:**
+
+```json
+{
+  "mcp_servers": {
+    "filesystem": {
+      "command": "npx",
+      "args": ["-y", "@modelcontextprotocol/server-filesystem", "/workspace"],
+      "env": {
+        "DEBUG": "1"
+      },
+      "config": {
+        "expDays": 7,
+        "filter": "except",
+        "filterValue": "delete_file,format_disk"
+      }
+    }
+  }
+}
+```
+
+**HTTP Server with Authentication:**
+
+```json
+{
+  "mcp_servers": {
+    "api_server": {
+      "type": "http",
+      "url": "https://api.example.com/mcp/",
+      "headers": {
+        "Authorization": "Bearer {{env.API_TOKEN}}"
+      },
+      "config": {
+        "expDays": 30
+      }
+    }
+  }
+}
+```
+
+**Multiple MCP Servers:**
+
+```json
+{
+  "mcp_servers": {
+    "memory": {
+      "command": "uvx",
+      "args": ["mcp-server-memory"]
+    },
+    "github": {
+      "type": "http",
+      "url": "https://api.githubcopilot.com/mcp/",
+      "headers": {
+        "Authorization": "Bearer {{env.GITHUB_MCP_PAT}}"
+      },
+      "config": {
+        "expDays": 14,
+        "filter": "tags",
+        "filterValue": "read,search"
+      }
+    }
+  }
+}
+```
+
+**How MCP Servers Work:**
+
+1. **First Load**: When the schema is loaded, MCI connects to each MCP server and fetches all available tools
+2. **Caching**: Tools are saved as standard MCI toolset files in `{libraryDir}/mcp/{serverName}.mci.json`
+3. **Subsequent Loads**: Cached toolsets are used instead of connecting to the server (much faster)
+4. **Expiration**: When cache expires (based on `expDays`), tools are re-fetched from the server
+5. **Filtering**: Optional filters are applied when tools are registered
+6. **Templating**: Server configurations support `{{env.VAR}}` templating for credentials
 
 ### Example (JSON)
 
