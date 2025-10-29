@@ -23,6 +23,7 @@ The `mci-py` Python adapter allows you to load tool definitions from JSON or YAM
 - 💔 **Flexible separation** - You can have one ".mci.json" file for whole project and filter tools out, or you can have 1 file per agent to include whole toolset of agent, or you can have 1 file per API wrapped, you can even have 10 files from different authors and use only 1 tool from each - you can do anything: it doesn't matter, it's not 10 MCP servers to initialize, it's just 10 files in your repo 🤷
 - 🎨 **Type Safe** - Full type hints and Pydantic validation
 - 🧪 **Well Tested** - 92%+ test coverage with comprehensive test suite
+- ✅ **Schema Validation Mode** - Validate schemas without loading toolsets or MCP servers, perfect for CI/CD and development tools
 
 ### Planned
 
@@ -60,6 +61,14 @@ result = client.execute(
     tool_name="greet_user",
     properties={"username": "Alice"}
 )
+
+# Validating mode: Validate schema without env vars or side effects
+# Perfect for CI/CD pipelines and development tools
+validator = MCIClient(
+    schema_file_path="my-tools.mci.json",
+    validating=True  # No env vars needed!
+)
+print(f"Schema is valid with {len(validator.list_tools())} tools")
 
 ```
 
