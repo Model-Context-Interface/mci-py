@@ -27,15 +27,19 @@ class ToolManager:
     appropriate executor based on tool configuration.
     """
 
-    def __init__(self, schema: MCISchema, schema_file_path: str | None = None):
+    def __init__(
+        self, schema: MCISchema, schema_file_path: str | None = None, validating: bool = False
+    ):
         """
         Initialize the ToolManager with an MCISchema.
 
         Args:
             schema: MCISchema containing tool definitions
             schema_file_path: Path to the schema file (for path validation context)
+            validating: If True, the manager is in validating mode (execution disabled)
         """
         self.schema = schema
+        self._validating = validating
         # Create a mapping for fast tool lookup by name (excluding disabled tools)
         # Handle case where tools might be None (when only toolsets are used)
         tools_list = schema.tools if schema.tools is not None else []

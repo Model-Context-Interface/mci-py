@@ -27,8 +27,10 @@ from .models import (
     ExecutionConfig,
     FileExecutionConfig,
     HTTPExecutionConfig,
+    HttpMCPServer,
     MCISchema,
     MCPExecutionConfig,
+    StdioMCPServer,
     TextExecutionConfig,
     Tool,
     ToolsetSchema,
@@ -52,7 +54,9 @@ class SchemaParser:
     """
 
     @staticmethod
-    def parse_file(file_path: str, env_vars: dict[str, Any] | None = None) -> MCISchema:
+    def parse_file(
+        file_path: str, env_vars: dict[str, Any] | None = None, validating: bool = False
+    ) -> MCISchema:
         """
         Load and validate an MCI schema file (JSON or YAML).
 
@@ -63,6 +67,8 @@ class SchemaParser:
         Args:
             file_path: Path to the MCI schema file (.json, .yaml, or .yml)
             env_vars: Optional environment variables for MCP server templating
+            validating: If True, perform pure schema validation without resolving templates
+                       or loading MCP servers/toolsets (default: False)
 
         Returns:
             Validated MCISchema object
@@ -104,13 +110,16 @@ class SchemaParser:
             raise SchemaParserError(f"Failed to read file {file_path}: {e}") from e
 
         # Parse the dictionary, passing the file path for toolset resolution
-        return SchemaParser.parse_dict(data, schema_file_path=file_path, env_vars=env_vars)
+        return SchemaParser.parse_dict(
+            data, schema_file_path=file_path, env_vars=env_vars, validating=validating
+        )
 
     @staticmethod
     def parse_dict(
         data: dict[str, Any],
         schema_file_path: str | None = None,
         env_vars: dict[str, Any] | None = None,
+        validating: bool = False,
     ) -> MCISchema:
         """
         Parse a dictionary into an MCISchema object.
@@ -123,6 +132,8 @@ class SchemaParser:
             data: Dictionary containing MCI schema data
             schema_file_path: Path to the schema file (for resolving relative paths in toolsets)
             env_vars: Optional environment variables for MCP server templating
+            validating: If True, perform pure schema validation without resolving templates
+                       or loading MCP servers/toolsets (default: False)
 
         Returns:
             Validated MCISchema object
@@ -138,12 +149,15 @@ class SchemaParser:
         if "schemaVersion" not in data:
             raise SchemaParserError("Missing required field 'schemaVersion'")
 
-        # Either tools or toolsets must be provided (or both)
+        # Either tools, toolsets, or mcp_servers must be provided (or any combination)
         has_tools = "tools" in data and data["tools"] is not None
         has_toolsets = "toolsets" in data and data["toolsets"] is not None
+        has_mcp_servers = "mcp_servers" in data and data["mcp_servers"] is not None
 
-        if not has_tools and not has_toolsets:
-            raise SchemaParserError("Either 'tools' or 'toolsets' field must be provided")
+        if not has_tools and not has_toolsets and not has_mcp_servers:
+            raise SchemaParserError(
+                "At least one of 'tools', 'toolsets', or 'mcp_servers' field must be provided"
+            )
 
         # Validate schema version
         SchemaParser._validate_schema_version(data["schemaVersion"])
@@ -162,10 +176,10 @@ class SchemaParser:
         except ValidationError as e:
             raise SchemaParserError(f"Schema validation failed: {e}") from e
 
-        # Load toolsets if present
+        # Load toolsets if present and not in validating mode
         if schema.toolsets:
             toolset_tools = SchemaParser._load_toolsets(
-                schema.toolsets, schema.libraryDir, schema_file_path
+                schema.toolsets, schema.libraryDir, schema_file_path, validating
             )
             # Merge toolset tools with existing tools
             if schema.tools is None:
@@ -173,7 +187,7 @@ class SchemaParser:
             else:
                 schema.tools.extend(toolset_tools)
 
-        # Load MCP servers if present
+        # Load MCP servers if present and not in validating mode
         if schema.mcp_servers:
             mcp_tools = SchemaParser._load_mcp_servers(
                 schema.mcp_servers,
@@ -181,6 +195,7 @@ class SchemaParser:
                 schema_file_path,
                 schema.schemaVersion,
                 env_vars,
+                validating,
             )
             # Merge MCP tools with existing tools
             if schema.tools is None:
@@ -313,7 +328,10 @@ class SchemaParser:
 
     @staticmethod
     def _load_toolsets(
-        toolsets: list[Any], library_dir: str, schema_file_path: str | None
+        toolsets: list[Any],
+        library_dir: str,
+        schema_file_path: str | None,
+        validating: bool = False,
     ) -> list[Tool]:
         """
         Load tools from toolset definitions.
@@ -321,19 +339,21 @@ class SchemaParser:
         Discovers toolset files in the library directory, loads them,
         and applies schema-level filtering based on the toolset configuration.
 
+        In validating mode, only checks if toolset files exist without loading them.
+
         Args:
             toolsets: List of toolset definitions from main schema
             library_dir: Directory to search for toolset files (relative to schema file)
             schema_file_path: Path to the main schema file (for resolving relative paths)
+            validating: If True, only validate file existence without loading
 
         Returns:
             List of Tool objects loaded from all toolsets with filters applied
+            (empty list in validating mode)
 
         Raises:
             SchemaParserError: If toolset files cannot be found or loaded
         """
-        all_tools: list[Tool] = []
-
         # Resolve library directory path
         if schema_file_path:
             base_dir = Path(schema_file_path).parent
@@ -347,6 +367,16 @@ class SchemaParser:
 
         if not lib_path.is_dir():
             raise SchemaParserError(f"Library path is not a directory: {lib_path}")
+
+        # In validating mode, just check that toolset files exist
+        if validating:
+            for toolset in toolsets:
+                # Check if toolset file/directory exists
+                SchemaParser._validate_toolset_exists(toolset.name, lib_path)
+            # Return empty list - we're just validating structure
+            return []
+
+        all_tools: list[Tool] = []
 
         # Process each toolset
         for toolset in toolsets:
@@ -366,6 +396,49 @@ class SchemaParser:
             all_tools.extend(filtered_tools)
 
         return all_tools
+
+    @staticmethod
+    def _validate_toolset_exists(name: str, lib_path: Path) -> None:
+        """
+        Validate that a toolset file or directory exists without loading it.
+
+        Used in validating mode to ensure toolset references are valid.
+
+        Args:
+            name: Name of the toolset (directory, file, or bare prefix)
+            lib_path: Path to the library directory
+
+        Raises:
+            SchemaParserError: If toolset file/directory does not exist
+        """
+        # Try as directory first
+        dir_path = lib_path / name
+        if dir_path.is_dir():
+            return
+
+        # Try as direct file
+        file_path = lib_path / name
+        if file_path.is_file():
+            return
+
+        # Try with .mci.json extension
+        file_with_ext = lib_path / f"{name}.mci.json"
+        if file_with_ext.is_file():
+            return
+
+        # Try with .mci.yaml extension
+        file_with_yaml = lib_path / f"{name}.mci.yaml"
+        if file_with_yaml.is_file():
+            return
+
+        # Try with .mci.yml extension
+        file_with_yml = lib_path / f"{name}.mci.yml"
+        if file_with_yml.is_file():
+            return
+
+        raise SchemaParserError(
+            f"Toolset not found: {name}. Looked for directory, file, or file with .mci.json/.mci.yaml/.mci.yml extension in {lib_path}"
+        )
 
     @staticmethod
     def _load_toolset_file(name: str, lib_path: Path) -> ToolsetSchema:
@@ -579,6 +652,7 @@ class SchemaParser:
         schema_file_path: str | None,
         schema_version: str,
         env_vars: dict[str, Any] | None = None,
+        validating: bool = False,
     ) -> list[Tool]:
         """
         Load tools from MCP server definitions.
@@ -586,19 +660,43 @@ class SchemaParser:
         Checks for cached MCP toolsets in libraryDir/mcp/, fetches tools from
         MCP servers if cache doesn't exist or is expired, and applies filtering.
 
+        In validating mode, only validates the structure without fetching or caching.
+
         Args:
             mcp_servers: Dictionary of MCP server configurations from main schema
             library_dir: Directory to search for cached toolset files (relative to schema file)
             schema_file_path: Path to the main schema file (for resolving relative paths)
             schema_version: Schema version from main file (to use for generated toolsets)
             env_vars: Optional environment variables for MCP server templating
+            validating: If True, only validate structure without fetching or caching
 
         Returns:
             List of Tool objects loaded from all MCP servers with filters applied
+            (empty list in validating mode)
 
         Raises:
             SchemaParserError: If MCP toolset files cannot be loaded or MCP servers are unreachable
         """
+        # In validating mode, just validate the structure
+        if validating:
+            # Validate that each MCP server config has required fields
+            for server_name, server_config in mcp_servers.items():
+                # Just validate the structure - no templating or fetching
+                if isinstance(server_config, StdioMCPServer):
+                    # Validate required fields exist
+                    if not server_config.command:
+                        raise SchemaParserError(
+                            f"MCP server '{server_name}' missing required 'command' field"
+                        )
+                elif isinstance(server_config, HttpMCPServer):
+                    # Validate required fields exist
+                    if not server_config.url:
+                        raise SchemaParserError(
+                            f"MCP server '{server_name}' missing required 'url' field"
+                        )
+            # Return empty list - we're just validating structure
+            return []
+
         from .mcp_integration import MCPIntegration
         from .templating import TemplateEngine
 

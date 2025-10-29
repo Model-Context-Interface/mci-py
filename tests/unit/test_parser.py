@@ -140,10 +140,13 @@ class TestSchemaParserParseDict:
             SchemaParser.parse_dict(data)
 
     def test_parse_dict_missing_tools(self):
-        """Test parsing a dictionary without tools or toolsets."""
+        """Test parsing a dictionary without tools, toolsets, or mcp_servers."""
         data = {"schemaVersion": "1.0"}
 
-        with pytest.raises(SchemaParserError, match="Either 'tools' or 'toolsets' field must be provided"):
+        with pytest.raises(
+            SchemaParserError,
+            match="At least one of 'tools', 'toolsets', or 'mcp_servers' field must be provided",
+        ):
             SchemaParser.parse_dict(data)
 
     def test_parse_dict_tools_not_list(self):

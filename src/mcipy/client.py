@@ -63,6 +63,7 @@ class MCIClient:
         schema_file_path: str | None = None,
         env_vars: dict[str, Any] | None = None,
         json_file_path: str | None = None,
+        validating: bool = False,
     ):
         """
         Initialize the MCI client with a schema file and environment variables.
@@ -74,6 +75,8 @@ class MCIClient:
             schema_file_path: Path to the MCI schema file (.json, .yaml, or .yml)
             env_vars: Environment variables for template substitution (default: empty dict)
             json_file_path: DEPRECATED. Use schema_file_path instead. Kept for backward compatibility.
+            validating: If True, perform pure schema validation without resolving templates,
+                       loading MCP servers, or performing network/file operations (default: False)
 
         Raises:
             MCIClientError: If the schema file cannot be loaded or parsed
@@ -87,17 +90,22 @@ class MCIClient:
         # Store schema file path for path validation
         self._schema_file_path = schema_file_path
 
+        # Store validating flag
+        self._validating = validating
+
         # Store environment variables first (needed for schema parsing)
         self._env_vars = env_vars if env_vars is not None else {}
 
         # Load schema using SchemaParser with env_vars for MCP server templating
         try:
-            self._schema = SchemaParser.parse_file(schema_file_path, env_vars=self._env_vars)
+            self._schema = SchemaParser.parse_file(
+                schema_file_path, env_vars=self._env_vars, validating=validating
+            )
         except Exception as e:
             raise MCIClientError(f"Failed to load schema from {schema_file_path}: {e}") from e
 
         # Initialize ToolManager with schema file path for path validation
-        self._tool_manager = ToolManager(self._schema, schema_file_path)
+        self._tool_manager = ToolManager(self._schema, schema_file_path, validating=validating)
 
     def tools(self) -> list[Tool]:
         """
@@ -201,8 +209,16 @@ class MCIClient:
             ExecutionResult with success/error status and content
 
         Raises:
-            MCIClientError: If tool not found or execution fails with validation error
+            MCIClientError: If tool not found, execution fails with validation error,
+                          or if called in validating mode
         """
+        # Check if in validating mode
+        if self._validating:
+            raise MCIClientError(
+                "Cannot execute tools in validating mode. "
+                "MCIClient was initialized with validating=True, which only allows schema validation."
+            )
+
         try:
             return self._tool_manager.execute(
                 tool_name=tool_name,
