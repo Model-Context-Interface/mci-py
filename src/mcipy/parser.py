@@ -373,9 +373,11 @@ class SchemaParser:
             dir_path = lib_path / name
             if dir_path.is_dir():
                 # Check that directory has at least one .mci.json file
-                toolset_files = list(dir_path.glob("*.mci.json")) + list(
-                    dir_path.glob("*.mci.yaml")
-                ) + list(dir_path.glob("*.mci.yml"))
+                toolset_files = (
+                    list(dir_path.glob("*.mci.json"))
+                    + list(dir_path.glob("*.mci.yaml"))
+                    + list(dir_path.glob("*.mci.yml"))
+                )
                 if not toolset_files:
                     raise SchemaParserError(
                         f"No .mci.json, .mci.yaml, or .mci.yml files found in toolset directory: {dir_path}"
