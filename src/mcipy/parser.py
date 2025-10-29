@@ -14,9 +14,10 @@ MCI schema files. It handles:
 
 import json
 import os
+from collections.abc import Sequence
 from datetime import UTC, datetime
 from pathlib import Path
-from typing import Any
+from typing import Any, cast
 
 import yaml
 from pydantic import ValidationError
@@ -33,6 +34,7 @@ from .models import (
     StdioMCPServer,
     TextExecutionConfig,
     Tool,
+    Toolset,
     ToolsetSchema,
 )
 from .schema_config import SUPPORTED_SCHEMA_VERSIONS
@@ -178,8 +180,13 @@ class SchemaParser:
 
         # Load toolsets if present and not in validating mode
         if schema.toolsets:
+            # After Pydantic validation and normalization, toolsets are always Toolset objects
+            # even though the type annotation allows strings (which are normalized via field_validator)
             toolset_tools = SchemaParser._load_toolsets(
-                schema.toolsets, schema.libraryDir, schema_file_path, validating
+                cast(Sequence[Toolset], schema.toolsets),
+                schema.libraryDir,
+                schema_file_path,
+                validating,
             )
             # Merge toolset tools with existing tools
             if schema.tools is None:
@@ -328,7 +335,7 @@ class SchemaParser:
 
     @staticmethod
     def _load_toolsets(
-        toolsets: list[Any],
+        toolsets: Sequence[Toolset],
         library_dir: str,
         schema_file_path: str | None,
         validating: bool = False,
