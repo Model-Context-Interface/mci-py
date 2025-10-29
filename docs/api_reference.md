@@ -161,8 +161,7 @@ try:
     client.execute("some_tool", {})
 except MCIClientError as e:
     print(f"Expected error: {e}")
-    # Output: Tool execution is disabled in validating mode. 
-    #         Initialize MCIClient with validating=False to execute tools.
+    # Output: Tool execution is disabled in validating mode. Initialize MCIClient with validating=False to execute tools.
 ```
 
 ---
