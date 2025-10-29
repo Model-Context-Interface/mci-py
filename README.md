@@ -63,6 +63,41 @@ result = client.execute(
 
 ```
 
+### Validating Mode
+
+You can use `validating=True` to perform pure schema validation without requiring environment variables or performing any network/file operations. This is useful for CI validation, IDE plugins, or checking schema validity:
+
+```python
+from mcipy import MCIClient
+
+# Validate a schema without env vars or side effects
+client = MCIClient(
+    schema_file_path="my-tools.mci.json",
+    validating=True  # No env vars required, no MCP servers fetched
+)
+
+# List tools (works in validating mode)
+tools = client.list_tools()
+
+# Get tool schemas (works in validating mode)
+schema = client.get_tool_schema("my_tool")
+
+# Execution is disabled in validating mode
+try:
+    result = client.execute("my_tool")  # Raises MCIClientError
+except Exception as e:
+    print(f"Cannot execute in validating mode: {e}")
+```
+
+In validating mode:
+- ✅ Schema structure is validated (types, required fields, etc.)
+- ✅ Toolset files are checked for existence (but not loaded)
+- ✅ MCP server configs are validated (but not fetched)
+- ✅ Template placeholders are accepted (not resolved)
+- ❌ No network requests or file operations
+- ❌ No cache updates or writes
+- ❌ Tool execution is disabled
+
 ---
 
 ## Documentation
