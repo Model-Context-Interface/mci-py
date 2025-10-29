@@ -52,7 +52,9 @@ class SchemaParser:
     """
 
     @staticmethod
-    def parse_file(file_path: str, env_vars: dict[str, Any] | None = None) -> MCISchema:
+    def parse_file(
+        file_path: str, env_vars: dict[str, Any] | None = None, validating: bool = False
+    ) -> MCISchema:
         """
         Load and validate an MCI schema file (JSON or YAML).
 
@@ -63,6 +65,8 @@ class SchemaParser:
         Args:
             file_path: Path to the MCI schema file (.json, .yaml, or .yml)
             env_vars: Optional environment variables for MCP server templating
+            validating: If True, perform pure schema validation without loading MCP servers,
+                       toolsets, or resolving templates (default: False)
 
         Returns:
             Validated MCISchema object
@@ -104,13 +108,16 @@ class SchemaParser:
             raise SchemaParserError(f"Failed to read file {file_path}: {e}") from e
 
         # Parse the dictionary, passing the file path for toolset resolution
-        return SchemaParser.parse_dict(data, schema_file_path=file_path, env_vars=env_vars)
+        return SchemaParser.parse_dict(
+            data, schema_file_path=file_path, env_vars=env_vars, validating=validating
+        )
 
     @staticmethod
     def parse_dict(
         data: dict[str, Any],
         schema_file_path: str | None = None,
         env_vars: dict[str, Any] | None = None,
+        validating: bool = False,
     ) -> MCISchema:
         """
         Parse a dictionary into an MCISchema object.
@@ -123,6 +130,8 @@ class SchemaParser:
             data: Dictionary containing MCI schema data
             schema_file_path: Path to the schema file (for resolving relative paths in toolsets)
             env_vars: Optional environment variables for MCP server templating
+            validating: If True, perform pure schema validation without loading MCP servers,
+                       toolsets, or resolving templates (default: False)
 
         Returns:
             Validated MCISchema object
@@ -162,31 +171,45 @@ class SchemaParser:
         except ValidationError as e:
             raise SchemaParserError(f"Schema validation failed: {e}") from e
 
-        # Load toolsets if present
+        # Load toolsets if present (skip in validating mode)
         if schema.toolsets:
-            toolset_tools = SchemaParser._load_toolsets(
-                schema.toolsets, schema.libraryDir, schema_file_path
-            )
-            # Merge toolset tools with existing tools
-            if schema.tools is None:
-                schema.tools = toolset_tools
+            if validating:
+                # In validating mode, just validate that toolset files exist
+                SchemaParser._validate_toolset_existence(
+                    schema.toolsets, schema.libraryDir, schema_file_path
+                )
             else:
-                schema.tools.extend(toolset_tools)
+                # Normal mode: load toolset files
+                toolset_tools = SchemaParser._load_toolsets(
+                    schema.toolsets, schema.libraryDir, schema_file_path
+                )
+                # Merge toolset tools with existing tools
+                if schema.tools is None:
+                    schema.tools = toolset_tools
+                else:
+                    schema.tools.extend(toolset_tools)
 
-        # Load MCP servers if present
+        # Load MCP servers if present (skip in validating mode)
         if schema.mcp_servers:
-            mcp_tools = SchemaParser._load_mcp_servers(
-                schema.mcp_servers,
-                schema.libraryDir,
-                schema_file_path,
-                schema.schemaVersion,
-                env_vars,
-            )
-            # Merge MCP tools with existing tools
-            if schema.tools is None:
-                schema.tools = mcp_tools
+            if validating:
+                # In validating mode, just validate the structure
+                # MCP server configs are already validated by Pydantic
+                # No need to fetch tools or resolve templates
+                pass
             else:
-                schema.tools.extend(mcp_tools)
+                # Normal mode: fetch and load MCP tools
+                mcp_tools = SchemaParser._load_mcp_servers(
+                    schema.mcp_servers,
+                    schema.libraryDir,
+                    schema_file_path,
+                    schema.schemaVersion,
+                    env_vars,
+                )
+                # Merge MCP tools with existing tools
+                if schema.tools is None:
+                    schema.tools = mcp_tools
+                else:
+                    schema.tools.extend(mcp_tools)
 
         return schema
 
@@ -310,6 +333,81 @@ class SchemaParser:
             raise SchemaParserError(f"Invalid {exec_type} execution config: {e}") from e
 
         return config
+
+    @staticmethod
+    def _validate_toolset_existence(
+        toolsets: list[Any], library_dir: str, schema_file_path: str | None
+    ) -> None:
+        """
+        Validate that toolset files exist without loading them.
+
+        Used in validating mode to check that referenced toolsets exist
+        without actually loading or parsing them.
+
+        Args:
+            toolsets: List of toolset definitions from main schema
+            library_dir: Directory to search for toolset files (relative to schema file)
+            schema_file_path: Path to the main schema file (for resolving relative paths)
+
+        Raises:
+            SchemaParserError: If toolset files cannot be found
+        """
+        # Resolve library directory path
+        if schema_file_path:
+            base_dir = Path(schema_file_path).parent
+            lib_path = base_dir / library_dir
+        else:
+            lib_path = Path(library_dir)
+
+        # Check if library directory exists
+        if not lib_path.exists():
+            raise SchemaParserError(f"Library directory not found: {lib_path}")
+
+        if not lib_path.is_dir():
+            raise SchemaParserError(f"Library path is not a directory: {lib_path}")
+
+        # Validate each toolset exists
+        for toolset in toolsets:
+            name = toolset.name
+            # Try as directory first
+            dir_path = lib_path / name
+            if dir_path.is_dir():
+                # Check that directory has at least one .mci.json file
+                toolset_files = (
+                    list(dir_path.glob("*.mci.json"))
+                    + list(dir_path.glob("*.mci.yaml"))
+                    + list(dir_path.glob("*.mci.yml"))
+                )
+                if not toolset_files:
+                    raise SchemaParserError(
+                        f"No .mci.json, .mci.yaml, or .mci.yml files found in toolset directory: {dir_path}"
+                    )
+                continue
+
+            # Try as direct file
+            file_path = lib_path / name
+            if file_path.is_file():
+                continue
+
+            # Try with .mci.json extension
+            file_with_ext = lib_path / f"{name}.mci.json"
+            if file_with_ext.is_file():
+                continue
+
+            # Try with .mci.yaml extension
+            file_with_yaml = lib_path / f"{name}.mci.yaml"
+            if file_with_yaml.is_file():
+                continue
+
+            # Try with .mci.yml extension
+            file_with_yml = lib_path / f"{name}.mci.yml"
+            if file_with_yml.is_file():
+                continue
+
+            # Toolset not found
+            raise SchemaParserError(
+                f"Toolset not found: {name}. Looked for directory, file, or file with .mci.json/.mci.yaml/.mci.yml extension in {lib_path}"
+            )
 
     @staticmethod
     def _load_toolsets(
