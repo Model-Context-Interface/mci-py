@@ -5,7 +5,7 @@ This module provides the MCPIntegration class for interacting with MCP servers,
 fetching their tool definitions, and building MCI-compatible toolset schemas.
 """
 
-import asyncio
+import asyncio, concurrent.futures
 from datetime import UTC, datetime, timedelta
 from typing import Any
 
@@ -76,6 +76,18 @@ class MCPIntegration:
         return tags
 
     @staticmethod
+    async def fetch_and_build_toolset_async(
+        server_name: str,
+        server_config: StdioMCPServer | HttpMCPServer,
+        schema_version: str,
+        env_context: dict[str, Any],
+        template_engine: TemplateEngine,
+    ) -> ToolsetSchema:
+        return await MCPIntegration._async_fetch_and_build_toolset(
+            server_name, server_config, schema_version, env_context, template_engine
+        )
+
+    @staticmethod
     def fetch_and_build_toolset(
         server_name: str,
         server_config: StdioMCPServer | HttpMCPServer,
@@ -84,30 +96,37 @@ class MCPIntegration:
         template_engine: TemplateEngine,
     ) -> ToolsetSchema:
         """
-        Fetch tools from an MCP server and build a toolset schema.
+        Sync convenience for callers.
 
-        Args:
-            server_name: Name of the MCP server
-            server_config: MCP server configuration (STDIO or HTTP)
-            schema_version: Schema version to use for the toolset
-            env_context: Environment context for templating
-            template_engine: Template engine for processing placeholders
-
-        Returns:
-            ToolsetSchema with tools from the MCP server and expiration date
-
-        Raises:
-            MCPIntegrationError: If MCP server connection or tool fetching fails
+        - If NO event loop is running, use asyncio.run(...) in this thread.
+        - If a loop IS running (e.g., inside an async CLI), offload the async
+          work to a separate thread that owns its own loop, and block until it finishes.
         """
-        # Run async operation in sync context
-        try:
-            result = asyncio.run(
-                MCPIntegration._async_fetch_and_build_toolset(
-                    server_name, server_config, schema_version, env_context, template_engine
-                )
+        async def _coro():
+            return await MCPIntegration.fetch_and_build_toolset_async(
+                server_name, server_config, schema_version, env_context, template_engine
             )
-            return result
+
+        try:
+            # detect running loop
+            try:
+                asyncio.get_running_loop()
+                loop_running = True
+            except RuntimeError:
+                loop_running = False
+
+            if not loop_running:
+                return asyncio.run(_coro())
+
+            # Run in separate thread if a loop is active
+            def _run_in_thread():
+                return asyncio.run(_coro())
+
+            with concurrent.futures.ThreadPoolExecutor(max_workers=1) as ex:
+                return ex.submit(_run_in_thread).result()
+
         except Exception as e:
+            # <-- place your error handler HERE
             raise MCPIntegrationError(
                 f"Failed to fetch from MCP server '{server_name}': {e}"
             ) from e
