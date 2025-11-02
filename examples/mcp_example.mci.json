@@ -23,6 +23,10 @@
         "filterValue": "read_file,write_file,list_directory"
       }
     },
+    "mci": {
+      "url": "https://usemci.dev/mcp",
+      "type": "http"
+    },
     "everything": {
       "command": "npx",
       "args": [
