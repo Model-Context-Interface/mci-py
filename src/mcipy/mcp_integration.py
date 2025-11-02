@@ -101,16 +101,13 @@ class MCPIntegration:
         """
         # Run async operation in sync context
         try:
-            print(f"[DEBUG MCP] Starting fetch from server: {server_name}")
             result = asyncio.run(
                 MCPIntegration._async_fetch_and_build_toolset(
                     server_name, server_config, schema_version, env_context, template_engine
                 )
             )
-            print(f"[DEBUG MCP] Successfully completed fetch from server: {server_name}")
             return result
         except Exception as e:
-            print(f"[DEBUG MCP] ERROR during fetch from server '{server_name}': {e}")
             raise MCPIntegrationError(
                 f"Failed to fetch from MCP server '{server_name}': {e}"
             ) from e
@@ -132,21 +129,16 @@ class MCPIntegration:
         from mcp.client.stdio import StdioServerParameters, stdio_client
         from mcp.client.streamable_http import streamablehttp_client
 
-        print(f"[DEBUG MCP] _async_fetch_and_build_toolset started for server: {server_name}")
-        
         # Apply templating to server config
-        print(f"[DEBUG MCP] Applying templating to server config...")
         templated_config = MCPIntegration._apply_templating_to_config(
             server_config, env_context, template_engine
         )
-        print(f"[DEBUG MCP] Config type: {type(templated_config).__name__}")
 
         # Connect to MCP server based on type
         if isinstance(templated_config, StdioMCPServer):
             # STDIO server
             import os
 
-            print(f"[DEBUG MCP] Connecting to STDIO server: {templated_config.command}")
             # Merge server env vars with current environment
             merged_env = os.environ.copy()
             merged_env.update(templated_config.env)
@@ -157,30 +149,24 @@ class MCPIntegration:
             transport_ctx = stdio_client(params)
         else:
             # HTTP server
-            print(f"[DEBUG MCP] Connecting to HTTP server: {templated_config.url}")
             transport_ctx = streamablehttp_client(
                 templated_config.url, headers=templated_config.headers or None
             )
 
         # Connect and fetch tools
         try:
-            print(f"[DEBUG MCP] Establishing connection to server...")
             async with transport_ctx as context_result:
                 read, write = context_result[0], context_result[1]
-                print(f"[DEBUG MCP] Connection established, initializing session...")
 
                 async with ClientSession(read, write) as session:
                     await session.initialize()
-                    print(f"[DEBUG MCP] Session initialized, listing tools...")
 
                     # List tools
                     tools_response = await session.list_tools()
-                    print(f"[DEBUG MCP] Received {len(tools_response.tools)} tools from server")
 
                     # Build MCI tools from MCP tools
                     mci_tools = []
                     for mcp_tool in tools_response.tools:
-                        print(f"[DEBUG MCP]   Processing tool: {mcp_tool.name}")
                         # Convert MCP tool to MCI tool format
                         input_schema = None
                         if mcp_tool.inputSchema:
@@ -221,13 +207,10 @@ class MCPIntegration:
                             ),
                         )
                         mci_tools.append(mci_tool)
-                    
-                    print(f"[DEBUG MCP] Converted {len(mci_tools)} MCP tools to MCI format")
 
                     # Calculate expiration date (date only, not datetime)
                     exp_days = templated_config.config.expDays
                     expires_date = (datetime.now(UTC) + timedelta(days=exp_days)).date()
-                    print(f"[DEBUG MCP] Cache expiration date: {expires_date.isoformat()}")
 
                     # Build toolset schema with proper metadata
                     metadata = Metadata(name=server_name, description=f"MCP server: {server_name}")
@@ -238,12 +221,10 @@ class MCPIntegration:
                         tools=mci_tools,
                         expiresAt=expires_date.isoformat(),  # YYYY-MM-DD format
                     )
-                    
-                    print(f"[DEBUG MCP] Toolset schema built successfully, returning to parser")
+
                     return toolset
 
         except Exception as e:
-            print(f"[DEBUG MCP] ERROR in _async_fetch_and_build_toolset: {e}")
             raise MCPIntegrationError(
                 f"Failed to connect to MCP server '{server_name}': {e}"
             ) from e
