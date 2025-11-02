@@ -712,15 +712,23 @@ class SchemaParser:
         # Create mcp subdirectory if it doesn't exist
         mcp_dir = lib_path / "mcp"
         mcp_dir.mkdir(parents=True, exist_ok=True)
+        
+        print(f"[DEBUG] MCP Cache Directory: {mcp_dir}")
+        print(f"[DEBUG] MCP Cache Directory exists: {mcp_dir.exists()}")
 
         # Process each MCP server
         for server_name, server_config in mcp_servers.items():
+            print(f"\n[DEBUG] Processing MCP server: {server_name}")
+            
             # Build path to cached toolset file
             toolset_path = mcp_dir / f"{server_name}.mci.json"
+            print(f"[DEBUG]   Toolset cache path: {toolset_path}")
+            print(f"[DEBUG]   Cache file exists: {toolset_path.exists()}")
 
             # Check if toolset exists and is valid (not expired)
             should_fetch = True
             if toolset_path.exists():
+                print(f"[DEBUG]   Cache file found, checking expiration...")
                 try:
                     toolset_schema = SchemaParser._parse_toolset_file(toolset_path)
                     # Check expiration (compare dates, not datetimes)
@@ -729,8 +737,10 @@ class SchemaParser:
                             # Parse as date (YYYY-MM-DD format)
                             expires_date = datetime.fromisoformat(toolset_schema.expiresAt).date()
                             today = datetime.now(UTC).date()
+                            print(f"[DEBUG]   Expiration date: {expires_date}, Today: {today}")
                             if expires_date > today:
                                 should_fetch = False
+                                print(f"[DEBUG]   Cache is VALID (not expired). Using cached toolset.")
                                 # Use cached toolset
                                 filtered_tools = SchemaParser._apply_toolset_filter(
                                     toolset_schema.tools,
@@ -741,15 +751,23 @@ class SchemaParser:
                                 for tool in filtered_tools:
                                     tool.toolset_source = server_name
                                 all_tools.extend(filtered_tools)
-                        except (ValueError, AttributeError):
+                                print(f"[DEBUG]   Loaded {len(filtered_tools)} tools from cache.")
+                            else:
+                                print(f"[DEBUG]   Cache is EXPIRED. Will fetch from server.")
+                        except (ValueError, AttributeError) as e:
                             # If date parsing fails, re-fetch
+                            print(f"[DEBUG]   Error parsing expiration date: {e}. Will fetch from server.")
                             should_fetch = True
-                except Exception:
+                except Exception as e:
                     # If parsing fails, fetch from server
+                    print(f"[DEBUG]   Error parsing cache file: {e}. Will fetch from server.")
                     should_fetch = True
+            else:
+                print(f"[DEBUG]   No cache file found. Will fetch from server.")
 
             # Fetch from MCP server if needed
             if should_fetch:
+                print(f"[DEBUG]   Fetching tools from MCP server '{server_name}'...")
                 # Apply templating to server config (for env variables)
                 template_engine = TemplateEngine()
                 # Merge provided env_vars with os.environ, giving priority to env_vars
@@ -757,13 +775,17 @@ class SchemaParser:
 
                 try:
                     # Fetch and build toolset
+                    print(f"[DEBUG]   Calling MCPIntegration.fetch_and_build_toolset()...")
                     toolset_schema = MCPIntegration.fetch_and_build_toolset(
                         server_name, server_config, schema_version, env_context, template_engine
                     )
+                    print(f"[DEBUG]   Successfully fetched toolset from server.")
 
                     # Save to cache
+                    print(f"[DEBUG]   Saving toolset to cache: {toolset_path}")
                     with toolset_path.open("w", encoding="utf-8") as f:
                         json.dump(toolset_schema.model_dump(exclude_none=True), f, indent=2)
+                    print(f"[DEBUG]   Toolset saved to cache.")
 
                     # Apply filtering
                     filtered_tools = SchemaParser._apply_toolset_filter(
@@ -771,16 +793,20 @@ class SchemaParser:
                         server_config.config.filter,
                         server_config.config.filterValue,
                     )
+                    print(f"[DEBUG]   Applied filters, {len(filtered_tools)} tools after filtering.")
 
                     # Tag each tool with its MCP server source
                     for tool in filtered_tools:
                         tool.toolset_source = server_name
 
                     all_tools.extend(filtered_tools)
+                    print(f"[DEBUG]   Added {len(filtered_tools)} tools to toolset.")
 
                 except Exception as e:
+                    print(f"[DEBUG]   ERROR fetching from server: {e}")
                     raise SchemaParserError(
                         f"Failed to fetch tools from MCP server '{server_name}': {e}"
                     ) from e
 
+        print(f"\n[DEBUG] MCP loading complete. Total tools loaded: {len(all_tools)}")
         return all_tools
