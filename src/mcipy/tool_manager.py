@@ -227,12 +227,17 @@ class ToolManager:
         # This handles three cases: None (no schema), {} (empty schema), and {...} (schema with properties)
         if tool.inputSchema is not None and tool.inputSchema:
             self._validate_input_properties(tool, properties)
+            # Resolve properties with defaults applied and optional properties skipped
+            resolved_properties = self._resolve_properties_with_defaults(tool, properties)
+        else:
+            # No schema, use properties as-is
+            resolved_properties = properties
 
         # Build context for execution
         context: dict[str, Any] = {
-            "props": properties,
+            "props": resolved_properties,
             "env": env_vars,
-            "input": properties,  # Alias for backward compatibility
+            "input": resolved_properties,  # Alias for backward compatibility
         }
 
         # Build path validation context
@@ -299,3 +304,58 @@ class ToolManager:
                     f"Tool '{tool.name}' requires properties: {', '.join(required)}. "
                     f"Missing: {', '.join(missing_props)}"
                 )
+
+    def _resolve_properties_with_defaults(
+        self, tool: Tool, properties: dict[str, Any]
+    ) -> dict[str, Any]:
+        """
+        Resolve properties with default values and skip optional properties.
+
+        For each property in the input schema:
+        - If provided in properties: use the provided value
+        - Else if has default value in schema: use the default
+        - Else if required: already validated, should not happen
+        - Else (optional without default): skip, don't include in resolved properties
+
+        This prevents template substitution errors for optional properties that
+        are not provided and have no default value.
+
+        Args:
+            tool: Tool object with inputSchema
+            properties: Properties provided by the caller
+
+        Returns:
+            Resolved properties dictionary with defaults applied and optional properties skipped
+        """
+        input_schema = tool.inputSchema
+        if not input_schema:
+            return properties
+
+        # Get schema properties definition
+        schema_properties = input_schema.get("properties", {})
+        if not schema_properties:
+            # No properties defined in schema, return as-is
+            return properties
+
+        # Get required properties list
+        required = set(input_schema.get("required", []))
+
+        # Build resolved properties
+        resolved: dict[str, Any] = {}
+
+        # Process each property in the schema
+        for prop_name, prop_schema in schema_properties.items():
+            if prop_name in properties:
+                # Property was provided, use it
+                resolved[prop_name] = properties[prop_name]
+            elif "default" in prop_schema:
+                # Property not provided but has default, use default
+                resolved[prop_name] = prop_schema["default"]
+            elif prop_name in required:
+                # Required property not provided - this should have been caught by validation
+                # but we'll include it anyway to maintain consistency
+                # (validation should have raised an error before we get here)
+                pass
+            # else: optional property without default - skip it
+
+        return resolved

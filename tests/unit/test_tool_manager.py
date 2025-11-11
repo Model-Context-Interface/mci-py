@@ -824,3 +824,254 @@ class TestTagFiltering:
         assert len(filtered) == 1
         assert "enabled_no_api" in tool_names
         assert "disabled_no_api" not in tool_names
+
+
+class TestDefaultValuesAndOptionalProperties:
+    """Tests for default value support and optional property handling."""
+
+    @pytest.fixture
+    def schema_with_defaults(self):
+        """Create a schema with tools that have default values and optional properties."""
+        from mcipy import Annotations
+
+        tools = [
+            Tool(
+                name="tool_with_defaults",
+                annotations=Annotations(title="Tool With Defaults"),
+                description="Tool with default values",
+                inputSchema={
+                    "type": "object",
+                    "properties": {
+                        "required_prop": {
+                            "type": "string",
+                            "description": "Required property",
+                        },
+                        "optional_with_default": {
+                            "type": "boolean",
+                            "description": "Optional with default",
+                            "default": False,
+                        },
+                        "optional_no_default": {
+                            "type": "string",
+                            "description": "Optional without default",
+                        },
+                        "another_default": {
+                            "type": "string",
+                            "description": "Another property with default",
+                            "default": "default_value",
+                        },
+                    },
+                    "required": ["required_prop"],
+                },
+                execution=TextExecutionConfig(
+                    text="Required: {{props.required_prop}}, "
+                    "OptionalWithDefault: {{props.optional_with_default}}, "
+                    "AnotherDefault: {{props.another_default}}"
+                ),
+            ),
+            Tool(
+                name="tool_all_optional_with_defaults",
+                annotations=Annotations(title="All Optional With Defaults"),
+                description="Tool where all properties have defaults",
+                inputSchema={
+                    "type": "object",
+                    "properties": {
+                        "prop1": {"type": "string", "default": "default1"},
+                        "prop2": {"type": "number", "default": 42},
+                        "prop3": {"type": "boolean", "default": True},
+                    },
+                    "required": [],
+                },
+                execution=TextExecutionConfig(
+                    text="Prop1: {{props.prop1}}, Prop2: {{props.prop2}}, Prop3: {{props.prop3}}"
+                ),
+            ),
+        ]
+        return MCISchema(schemaVersion="1.0", tools=tools)
+
+    def test_default_value_used_when_property_not_provided(self, schema_with_defaults):
+        """Test that default values are used when properties are not provided."""
+        manager = ToolManager(schema_with_defaults)
+
+        # Execute with only required property
+        result = manager.execute(
+            "tool_with_defaults", properties={"required_prop": "test_value"}
+        )
+
+        assert result.result.isError is False
+        content_text = result.result.content[0].text
+        # Should use default values for optional_with_default and another_default
+        assert "Required: test_value" in content_text
+        assert "OptionalWithDefault: False" in content_text
+        assert "AnotherDefault: default_value" in content_text
+
+    def test_provided_value_overrides_default(self, schema_with_defaults):
+        """Test that provided values override default values."""
+        manager = ToolManager(schema_with_defaults)
+
+        # Execute with all properties provided
+        result = manager.execute(
+            "tool_with_defaults",
+            properties={
+                "required_prop": "test_value",
+                "optional_with_default": True,
+                "another_default": "custom_value",
+            },
+        )
+
+        assert result.result.isError is False
+        content_text = result.result.content[0].text
+        # Should use provided values, not defaults
+        assert "Required: test_value" in content_text
+        assert "OptionalWithDefault: True" in content_text
+        assert "AnotherDefault: custom_value" in content_text
+
+    def test_optional_property_without_default_is_skipped(self, schema_with_defaults):
+        """Test that optional properties without defaults don't cause template errors."""
+        manager = ToolManager(schema_with_defaults)
+
+        # Execute with only required property (optional_no_default not provided)
+        # This should not raise an error, even though the template doesn't reference it
+        result = manager.execute(
+            "tool_with_defaults", properties={"required_prop": "test_value"}
+        )
+
+        # The execution should succeed
+        assert result.result.isError is False
+
+    def test_all_defaults_used_when_no_properties_provided(self, schema_with_defaults):
+        """Test that all default values are used when no properties are provided."""
+        manager = ToolManager(schema_with_defaults)
+
+        # Execute with no properties at all
+        result = manager.execute("tool_all_optional_with_defaults", properties={})
+
+        assert result.result.isError is False
+        content_text = result.result.content[0].text
+        # Should use all default values
+        assert "Prop1: default1" in content_text
+        assert "Prop2: 42" in content_text
+        assert "Prop3: True" in content_text
+
+    def test_partial_override_of_defaults(self, schema_with_defaults):
+        """Test that some properties can override defaults while others use defaults."""
+        manager = ToolManager(schema_with_defaults)
+
+        # Execute with only one property overridden
+        result = manager.execute(
+            "tool_all_optional_with_defaults", properties={"prop1": "custom1"}
+        )
+
+        assert result.result.isError is False
+        content_text = result.result.content[0].text
+        # Should use custom value for prop1, defaults for others
+        assert "Prop1: custom1" in content_text
+        assert "Prop2: 42" in content_text
+        assert "Prop3: True" in content_text
+
+    def test_default_values_with_different_types(self, schema_with_defaults):
+        """Test that default values work correctly for different property types."""
+        manager = ToolManager(schema_with_defaults)
+
+        result = manager.execute("tool_all_optional_with_defaults", properties={})
+
+        assert result.result.isError is False
+        # Verify the resolved properties have the correct types
+        # This is an integration test - we just verify execution succeeds
+
+    def test_resolve_properties_with_defaults_method(self, schema_with_defaults):
+        """Test the _resolve_properties_with_defaults method directly."""
+        manager = ToolManager(schema_with_defaults)
+        tool = manager.get_tool("tool_with_defaults")
+
+        # Test with only required property
+        resolved = manager._resolve_properties_with_defaults(
+            tool, {"required_prop": "test"}
+        )
+
+        assert resolved["required_prop"] == "test"
+        assert resolved["optional_with_default"] is False
+        assert resolved["another_default"] == "default_value"
+        # optional_no_default should not be in resolved (skipped)
+        assert "optional_no_default" not in resolved
+
+    def test_resolve_properties_all_provided(self, schema_with_defaults):
+        """Test property resolution when all properties are provided."""
+        manager = ToolManager(schema_with_defaults)
+        tool = manager.get_tool("tool_with_defaults")
+
+        # Test with all properties provided
+        resolved = manager._resolve_properties_with_defaults(
+            tool,
+            {
+                "required_prop": "test",
+                "optional_with_default": True,
+                "optional_no_default": "provided",
+                "another_default": "custom",
+            },
+        )
+
+        assert resolved["required_prop"] == "test"
+        assert resolved["optional_with_default"] is True
+        assert resolved["optional_no_default"] == "provided"
+        assert resolved["another_default"] == "custom"
+
+    def test_resolve_properties_no_schema(self):
+        """Test property resolution when tool has no input schema."""
+        from mcipy import Annotations
+
+        tool = Tool(
+            name="no_schema_tool",
+            annotations=Annotations(title="No Schema"),
+            inputSchema=None,
+            execution=TextExecutionConfig(text="Test"),
+        )
+        schema = MCISchema(schemaVersion="1.0", tools=[tool])
+        manager = ToolManager(schema)
+
+        resolved = manager._resolve_properties_with_defaults(
+            tool, {"custom_prop": "value"}
+        )
+
+        # Should return properties as-is when no schema
+        assert resolved == {"custom_prop": "value"}
+
+    def test_resolve_properties_empty_schema(self):
+        """Test property resolution when tool has empty input schema."""
+        from mcipy import Annotations
+
+        tool = Tool(
+            name="empty_schema_tool",
+            annotations=Annotations(title="Empty Schema"),
+            inputSchema={},
+            execution=TextExecutionConfig(text="Test"),
+        )
+        schema = MCISchema(schemaVersion="1.0", tools=[tool])
+        manager = ToolManager(schema)
+
+        resolved = manager._resolve_properties_with_defaults(
+            tool, {"custom_prop": "value"}
+        )
+
+        # Should return properties as-is when schema is empty
+        assert resolved == {"custom_prop": "value"}
+
+    def test_resolve_properties_schema_without_properties(self):
+        """Test property resolution when schema has no properties field."""
+        from mcipy import Annotations
+
+        tool = Tool(
+            name="no_props_tool",
+            annotations=Annotations(title="No Props"),
+            inputSchema={"type": "object"},
+            execution=TextExecutionConfig(text="Test"),
+        )
+        schema = MCISchema(schemaVersion="1.0", tools=[tool])
+        manager = ToolManager(schema)
+
+        resolved = manager._resolve_properties_with_defaults(
+            tool, {"custom_prop": "value"}
+        )
+
+        # Should return properties as-is when no properties in schema
+        assert resolved == {"custom_prop": "value"}
