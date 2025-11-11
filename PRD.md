@@ -322,7 +322,8 @@ Note: Include metadata field for infos like http status code, CLI exit code, etc
 Basic templating should be enabled in parts where we have templating such as execution part, headers and etc.
 Loops and Control blocks should be applied in large text parts, like text execution and while parsing a file in file execution flow.
 
-- **Basic**: replaces placeholders like `{{props.propertyName}}` and `{{env.VAR_NAME}}` with values.
+- **Basic**: replaces placeholders like `{{props.propertyName}}` and `{{env.VAR_NAME}}` with values (always as strings).
+- **JSON-Native**: resolves placeholders like `{!!props.propertyName!!}` and `{!!env.VAR_NAME!!}` to native JSON types (boolean, number, array, object, null). Must be the sole value in a field.
 - **Loops**: For array and object props or env variables, Adapter should be able to parse `@for` -> `@endfor` and `@foreach` -> `@endforeach`
 - **Control Blocks**: Adapter should be able to use control blocks: `@if` -> `@elseif` -> `@else` -> `@endif`
 
