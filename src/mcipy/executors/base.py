@@ -153,13 +153,22 @@ class BaseExecutor(ABC):
         """
         Apply basic templating to all string values in a dictionary.
 
+        Supports both standard {{...}} placeholders (resolved to strings) and
+        JSON-native {!!...!!} placeholders (resolved to native types).
+
         Args:
             data: Dictionary to process (modified in-place)
             context: Context dictionary for template resolution
         """
         for key, value in data.items():
             if isinstance(value, str):
-                data[key] = self.template_engine.render_basic(value, context)
+                # Check if this is a JSON-native placeholder
+                if self.template_engine.is_json_native_placeholder(value):
+                    # Resolve to native type
+                    data[key] = self.template_engine.resolve_json_native(value, context)
+                else:
+                    # Standard string templating
+                    data[key] = self.template_engine.render_basic(value, context)
             elif isinstance(value, dict):
                 self._apply_basic_templating_to_dict(value, context)
             elif isinstance(value, list):
@@ -169,13 +178,22 @@ class BaseExecutor(ABC):
         """
         Apply basic templating to all string values in a list.
 
+        Supports both standard {{...}} placeholders (resolved to strings) and
+        JSON-native {!!...!!} placeholders (resolved to native types).
+
         Args:
             data: List to process (modified in-place)
             context: Context dictionary for template resolution
         """
         for i, value in enumerate(data):
             if isinstance(value, str):
-                data[i] = self.template_engine.render_basic(value, context)
+                # Check if this is a JSON-native placeholder
+                if self.template_engine.is_json_native_placeholder(value):
+                    # Resolve to native type
+                    data[i] = self.template_engine.resolve_json_native(value, context)
+                else:
+                    # Standard string templating
+                    data[i] = self.template_engine.render_basic(value, context)
             elif isinstance(value, dict):
                 self._apply_basic_templating_to_dict(value, context)
             elif isinstance(value, list):

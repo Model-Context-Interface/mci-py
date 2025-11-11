@@ -419,3 +419,333 @@ class TestExecutionFullStack:
             assert hasattr(result, "result")
             assert hasattr(result.result, "isError")
             assert hasattr(result.result, "content")
+
+
+class TestJSONNativeResolutionIntegration:
+    """Integration tests for JSON-native {!! ... !!} resolution in execution."""
+
+    @pytest.fixture
+    def context_with_types(self):
+        """Fixture for context with various data types."""
+        return {
+            "props": {
+                "include_images": True,
+                "case_sensitive": False,
+                "max_results": 100,
+                "quality": 0.95,
+                "urls": ["https://example.com/api", "https://test.com/api"],
+                "payload": {"key": "value", "count": 42},
+                "tags": ["urgent", "review"],
+                "config": {"debug": False, "retries": 3},
+            },
+            "env": {
+                "FEATURE_ENABLED": True,
+                "MAX_TIMEOUT": 5000,
+            },
+            "input": {
+                "include_images": True,
+            },
+        }
+
+    def test_http_json_body_with_boolean_native(self, context_with_types):
+        """Test HTTP execution with JSON body containing native boolean."""
+        executor = ExecutorFactory.get_executor(ExecutionType.HTTP)
+        body = HTTPBodyConfig(
+            type="json",
+            content={
+                "include_images": "{!!props.include_images!!}",
+                "title": "{{props.title}}",  # Standard string placeholder
+            },
+        )
+        context_with_types["props"]["title"] = "Test Report"
+
+        config = HTTPExecutionConfig(
+            url="https://api.example.com/search",
+            method="POST",
+            body=body,
+        )
+
+        with patch("requests.request") as mock_request:
+            mock_response = Mock()
+            mock_response.status_code = 200
+            mock_response.json.return_value = {"status": "ok"}
+            mock_response.headers = {"Content-Type": "application/json"}
+            mock_response.raise_for_status = Mock()
+            mock_request.return_value = mock_response
+
+            result = executor.execute(config, context_with_types)
+
+            assert not result.result.isError
+
+            # Verify the JSON body was correctly constructed
+            call_kwargs = mock_request.call_args[1]
+            assert call_kwargs["json"]["include_images"] is True  # Native boolean
+            assert isinstance(call_kwargs["json"]["include_images"], bool)
+            assert call_kwargs["json"]["title"] == "Test Report"  # String
+
+    def test_http_json_body_with_array_native(self, context_with_types):
+        """Test HTTP execution with JSON body containing native array."""
+        executor = ExecutorFactory.get_executor(ExecutionType.HTTP)
+        body = HTTPBodyConfig(
+            type="json",
+            content={
+                "urls": "{!!props.urls!!}",
+                "tags": "{!!props.tags!!}",
+            },
+        )
+
+        config = HTTPExecutionConfig(
+            url="https://api.example.com/batch",
+            method="POST",
+            body=body,
+        )
+
+        with patch("requests.request") as mock_request:
+            mock_response = Mock()
+            mock_response.status_code = 200
+            mock_response.json.return_value = {"status": "ok"}
+            mock_response.headers = {"Content-Type": "application/json"}
+            mock_response.raise_for_status = Mock()
+            mock_request.return_value = mock_response
+
+            result = executor.execute(config, context_with_types)
+
+            assert not result.result.isError
+
+            # Verify arrays are native
+            call_kwargs = mock_request.call_args[1]
+            assert call_kwargs["json"]["urls"] == [
+                "https://example.com/api",
+                "https://test.com/api",
+            ]
+            assert isinstance(call_kwargs["json"]["urls"], list)
+            assert call_kwargs["json"]["tags"] == ["urgent", "review"]
+            assert isinstance(call_kwargs["json"]["tags"], list)
+
+    def test_http_json_body_with_object_native(self, context_with_types):
+        """Test HTTP execution with JSON body containing native object."""
+        executor = ExecutorFactory.get_executor(ExecutionType.HTTP)
+        body = HTTPBodyConfig(
+            type="json",
+            content={
+                "payload": "{!!props.payload!!}",
+                "config": "{!!props.config!!}",
+            },
+        )
+
+        config = HTTPExecutionConfig(
+            url="https://api.example.com/data",
+            method="POST",
+            body=body,
+        )
+
+        with patch("requests.request") as mock_request:
+            mock_response = Mock()
+            mock_response.status_code = 200
+            mock_response.json.return_value = {"status": "ok"}
+            mock_response.headers = {"Content-Type": "application/json"}
+            mock_response.raise_for_status = Mock()
+            mock_request.return_value = mock_response
+
+            result = executor.execute(config, context_with_types)
+
+            assert not result.result.isError
+
+            # Verify objects are native
+            call_kwargs = mock_request.call_args[1]
+            assert call_kwargs["json"]["payload"] == {"key": "value", "count": 42}
+            assert isinstance(call_kwargs["json"]["payload"], dict)
+            assert call_kwargs["json"]["config"] == {"debug": False, "retries": 3}
+            assert isinstance(call_kwargs["json"]["config"], dict)
+
+    def test_http_json_body_with_number_native(self, context_with_types):
+        """Test HTTP execution with JSON body containing native numbers."""
+        executor = ExecutorFactory.get_executor(ExecutionType.HTTP)
+        body = HTTPBodyConfig(
+            type="json",
+            content={
+                "max_results": "{!!props.max_results!!}",
+                "quality": "{!!props.quality!!}",
+            },
+        )
+
+        config = HTTPExecutionConfig(
+            url="https://api.example.com/query",
+            method="POST",
+            body=body,
+        )
+
+        with patch("requests.request") as mock_request:
+            mock_response = Mock()
+            mock_response.status_code = 200
+            mock_response.json.return_value = {"status": "ok"}
+            mock_response.headers = {"Content-Type": "application/json"}
+            mock_response.raise_for_status = Mock()
+            mock_request.return_value = mock_response
+
+            result = executor.execute(config, context_with_types)
+
+            assert not result.result.isError
+
+            # Verify numbers are native
+            call_kwargs = mock_request.call_args[1]
+            assert call_kwargs["json"]["max_results"] == 100
+            assert isinstance(call_kwargs["json"]["max_results"], int)
+            assert call_kwargs["json"]["quality"] == 0.95
+            assert isinstance(call_kwargs["json"]["quality"], float)
+
+    def test_http_json_body_mixed_native_and_string(self, context_with_types):
+        """Test HTTP execution with mix of native and string placeholders."""
+        executor = ExecutorFactory.get_executor(ExecutionType.HTTP)
+        body = HTTPBodyConfig(
+            type="json",
+            content={
+                "enabled": "{!!props.include_images!!}",  # Native boolean
+                "count": "{!!props.max_results!!}",  # Native number
+                "urls": "{!!props.urls!!}",  # Native array
+                "name": "{{props.title}}",  # String placeholder
+                "static": "fixed value",  # No placeholder
+            },
+        )
+        context_with_types["props"]["title"] = "My Search"
+
+        config = HTTPExecutionConfig(
+            url="https://api.example.com/complex",
+            method="POST",
+            body=body,
+        )
+
+        with patch("requests.request") as mock_request:
+            mock_response = Mock()
+            mock_response.status_code = 200
+            mock_response.json.return_value = {"status": "ok"}
+            mock_response.headers = {"Content-Type": "application/json"}
+            mock_response.raise_for_status = Mock()
+            mock_request.return_value = mock_response
+
+            result = executor.execute(config, context_with_types)
+
+            assert not result.result.isError
+
+            # Verify mixed types
+            call_kwargs = mock_request.call_args[1]
+            assert call_kwargs["json"]["enabled"] is True
+            assert isinstance(call_kwargs["json"]["enabled"], bool)
+            assert call_kwargs["json"]["count"] == 100
+            assert isinstance(call_kwargs["json"]["count"], int)
+            assert isinstance(call_kwargs["json"]["urls"], list)
+            assert call_kwargs["json"]["name"] == "My Search"
+            assert isinstance(call_kwargs["json"]["name"], str)
+            assert call_kwargs["json"]["static"] == "fixed value"
+
+    def test_http_json_body_nested_object_with_native(self, context_with_types):
+        """Test HTTP execution with nested objects containing native types."""
+        executor = ExecutorFactory.get_executor(ExecutionType.HTTP)
+        body = HTTPBodyConfig(
+            type="json",
+            content={
+                "settings": {
+                    "enabled": "{!!props.include_images!!}",
+                    "max": "{!!props.max_results!!}",
+                    "quality": "{!!props.quality!!}",
+                },
+                "data": {
+                    "tags": "{!!props.tags!!}",
+                },
+            },
+        )
+
+        config = HTTPExecutionConfig(
+            url="https://api.example.com/nested",
+            method="POST",
+            body=body,
+        )
+
+        with patch("requests.request") as mock_request:
+            mock_response = Mock()
+            mock_response.status_code = 200
+            mock_response.json.return_value = {"status": "ok"}
+            mock_response.headers = {"Content-Type": "application/json"}
+            mock_response.raise_for_status = Mock()
+            mock_request.return_value = mock_response
+
+            result = executor.execute(config, context_with_types)
+
+            assert not result.result.isError
+
+            # Verify nested native types
+            call_kwargs = mock_request.call_args[1]
+            assert call_kwargs["json"]["settings"]["enabled"] is True
+            assert isinstance(call_kwargs["json"]["settings"]["enabled"], bool)
+            assert call_kwargs["json"]["settings"]["max"] == 100
+            assert call_kwargs["json"]["settings"]["quality"] == 0.95
+            assert call_kwargs["json"]["data"]["tags"] == ["urgent", "review"]
+            assert isinstance(call_kwargs["json"]["data"]["tags"], list)
+
+    def test_http_params_with_native_types(self, context_with_types):
+        """Test HTTP execution with query params containing native types."""
+        executor = ExecutorFactory.get_executor(ExecutionType.HTTP)
+
+        config = HTTPExecutionConfig(
+            url="https://api.example.com/search",
+            method="GET",
+            params={
+                "enabled": "{!!props.include_images!!}",
+                "max": "{!!props.max_results!!}",
+            },
+        )
+
+        with patch("requests.request") as mock_request:
+            mock_response = Mock()
+            mock_response.status_code = 200
+            mock_response.json.return_value = {"status": "ok"}
+            mock_response.headers = {"Content-Type": "application/json"}
+            mock_response.raise_for_status = Mock()
+            mock_request.return_value = mock_response
+
+            result = executor.execute(config, context_with_types)
+
+            assert not result.result.isError
+
+            # Verify params have native types
+            call_kwargs = mock_request.call_args[1]
+            assert call_kwargs["params"]["enabled"] is True
+            assert isinstance(call_kwargs["params"]["enabled"], bool)
+            assert call_kwargs["params"]["max"] == 100
+            assert isinstance(call_kwargs["params"]["max"], int)
+
+    def test_http_json_native_from_env(self, context_with_types):
+        """Test JSON-native resolution from environment variables."""
+        executor = ExecutorFactory.get_executor(ExecutionType.HTTP)
+        body = HTTPBodyConfig(
+            type="json",
+            content={
+                "feature_enabled": "{!!env.FEATURE_ENABLED!!}",
+                "timeout": "{!!env.MAX_TIMEOUT!!}",
+            },
+        )
+
+        config = HTTPExecutionConfig(
+            url="https://api.example.com/config",
+            method="POST",
+            body=body,
+        )
+
+        with patch("requests.request") as mock_request:
+            mock_response = Mock()
+            mock_response.status_code = 200
+            mock_response.json.return_value = {"status": "ok"}
+            mock_response.headers = {"Content-Type": "application/json"}
+            mock_response.raise_for_status = Mock()
+            mock_request.return_value = mock_response
+
+            result = executor.execute(config, context_with_types)
+
+            assert not result.result.isError
+
+            # Verify env values are native types
+            call_kwargs = mock_request.call_args[1]
+            assert call_kwargs["json"]["feature_enabled"] is True
+            assert isinstance(call_kwargs["json"]["feature_enabled"], bool)
+            assert call_kwargs["json"]["timeout"] == 5000
+            assert isinstance(call_kwargs["json"]["timeout"], int)
