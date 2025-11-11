@@ -5,7 +5,8 @@ This module provides the MCPIntegration class for interacting with MCP servers,
 fetching their tool definitions, and building MCI-compatible toolset schemas.
 """
 
-import asyncio, concurrent.futures
+import asyncio
+import concurrent.futures
 from datetime import UTC, datetime, timedelta
 from typing import Any
 
@@ -102,6 +103,7 @@ class MCPIntegration:
         - If a loop IS running (e.g., inside an async CLI), offload the async
           work to a separate thread that owns its own loop, and block until it finishes.
         """
+
         async def _coro():
             return await MCPIntegration.fetch_and_build_toolset_async(
                 server_name, server_config, schema_version, env_context, template_engine
