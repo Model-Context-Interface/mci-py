@@ -617,6 +617,91 @@ execution:
   url: "https://api.example.com/resources/{{props.id}}"
 ```
 
+### Input Schema and Default Values
+
+The `inputSchema` field uses JSON Schema to define the expected properties for a tool. When executing a tool, the MCI adapter processes properties as follows:
+
+1. **Required Properties**: Must be provided, or execution will fail with a validation error
+2. **Optional Properties with Defaults**: If not provided, the default value is used
+3. **Optional Properties without Defaults**: If not provided, they are skipped (not included in template context)
+
+This behavior prevents template substitution errors for optional properties that aren't needed for a particular execution.
+
+#### Example: Properties with Defaults
+
+```json
+{
+  "name": "search_files",
+  "description": "Search for text in files",
+  "inputSchema": {
+    "type": "object",
+    "properties": {
+      "pattern": {
+        "type": "string",
+        "description": "Search pattern"
+      },
+      "directory": {
+        "type": "string",
+        "description": "Directory to search in"
+      },
+      "include_images": {
+        "type": "boolean",
+        "description": "Include image files in search",
+        "default": false
+      },
+      "case_sensitive": {
+        "type": "boolean",
+        "description": "Use case-sensitive search",
+        "default": true
+      },
+      "max_results": {
+        "type": "number",
+        "description": "Maximum number of results",
+        "default": 100
+      },
+      "file_extensions": {
+        "type": "string",
+        "description": "Optional comma-separated list of file extensions"
+      }
+    },
+    "required": ["pattern", "directory"]
+  },
+  "execution": {
+    "type": "text",
+    "text": "Searching '{{props.pattern}}' in {{props.directory}} (images: {{props.include_images}}, max: {{props.max_results}})"
+  }
+}
+```
+
+**Execution with minimal properties:**
+```python
+# Only required properties provided
+client.execute("search_files", properties={
+    "pattern": "TODO",
+    "directory": "/home/user/projects"
+})
+# Result: include_images=false, case_sensitive=true, max_results=100 (defaults used)
+# file_extensions is skipped (not in template, no default)
+```
+
+**Execution with overridden defaults:**
+```python
+# Some defaults overridden
+client.execute("search_files", properties={
+    "pattern": "FIXME",
+    "directory": "/tmp",
+    "include_images": true,
+    "max_results": 50
+})
+# Result: include_images=true, max_results=50 (overridden), case_sensitive=true (default)
+```
+
+**Property Resolution Rules:**
+- Properties provided at execution time always take precedence over defaults
+- Default values can be any valid JSON type: boolean, number, string, array, object, null
+- Optional properties without defaults are not included in the template context if not provided
+- This prevents `{{props.optional_prop}}` from causing errors when `optional_prop` is not provided
+
 ---
 
 ## Execution Types
