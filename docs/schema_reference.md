@@ -660,18 +660,35 @@ This behavior prevents template substitution errors for optional properties that
         "default": 100
       },
       "file_extensions": {
-        "type": "string",
-        "description": "Optional comma-separated list of file extensions"
+        "type": "array",
+        "description": "Optional list of file extensions",
+        "items": {
+          "type": "string"
+        }
       }
     },
     "required": ["pattern", "directory"]
   },
   "execution": {
-    "type": "text",
-    "text": "Searching '{{props.pattern}}' in {{props.directory}} (images: {{props.include_images}}, max: {{props.max_results}})"
+    "type": "http",
+    "method": "POST",
+    "url": "https://api.example.com/search",
+    "body": {
+      "type": "json",
+      "content": {
+        "pattern": "{{props.pattern}}",
+        "directory": "{{props.directory}}",
+        "include_images": "{!!props.include_images!!}",
+        "case_sensitive": "{!!props.case_sensitive!!}",
+        "max_results": "{!!props.max_results!!}",
+        "file_extensions": "{!!props.file_extensions!!}"
+      }
+    }
   }
 }
 ```
+
+**Note**: Use `{!! ... !!}` syntax for non-string types (boolean, number, array, object) to preserve their native JSON types. See [JSON-Native Placeholders](#json-native-placeholders) for more details.
 
 **Execution with minimal properties:**
 ```python
@@ -690,10 +707,12 @@ client.execute("search_files", properties={
 client.execute("search_files", properties={
     "pattern": "FIXME",
     "directory": "/tmp",
-    "include_images": true,
-    "max_results": 50
+    "include_images": True,
+    "max_results": 50,
+    "file_extensions": [".py", ".js"]
 })
 # Result: include_images=true, max_results=50 (overridden), case_sensitive=true (default)
+# file_extensions=[".py", ".js"] (provided)
 ```
 
 **Property Resolution Rules:**
@@ -1172,6 +1191,210 @@ Replace placeholders with values from the context.
   }
 }
 ```
+
+---
+
+### JSON-Native Placeholders
+
+Resolve placeholders to their native JSON types (boolean, number, array, object, null) instead of strings.
+
+**Syntax**: `{!!path.to.value!!}`
+
+**Important**: JSON-native placeholders must be the **only** content in a field. They cannot be mixed with other text.
+
+#### Supported Types
+
+- **Boolean**: `true` or `false` (not `"true"` or `"false"`)
+- **Number**: Integer or float (not string representation)
+- **Array**: Native JSON array (not stringified)
+- **Object**: Native JSON object (not stringified)
+- **Null**: `null` value (not `"null"` string)
+
+#### Examples
+
+**Boolean Properties**:
+
+```json
+{
+  "execution": {
+    "type": "http",
+    "body": {
+      "type": "json",
+      "content": {
+        "include_images": "{!!props.include_images!!}",
+        "case_sensitive": "{!!props.case_sensitive!!}"
+      }
+    }
+  }
+}
+```
+
+When executed with properties `{"include_images": true, "case_sensitive": false}`, the JSON body will be:
+
+```json
+{
+  "include_images": true,
+  "case_sensitive": false
+}
+```
+
+**Array Properties**:
+
+```json
+{
+  "execution": {
+    "type": "http",
+    "body": {
+      "type": "json",
+      "content": {
+        "urls": "{!!props.urls!!}",
+        "tags": "{!!props.tags!!}"
+      }
+    }
+  }
+}
+```
+
+When executed with properties `{"urls": ["https://a.com", "https://b.com"], "tags": ["urgent", "review"]}`, the JSON body will be:
+
+```json
+{
+  "urls": ["https://a.com", "https://b.com"],
+  "tags": ["urgent", "review"]
+}
+```
+
+**Object Properties**:
+
+```json
+{
+  "execution": {
+    "type": "http",
+    "body": {
+      "type": "json",
+      "content": {
+        "config": "{!!props.config!!}",
+        "metadata": "{!!props.metadata!!}"
+      }
+    }
+  }
+}
+```
+
+When executed with properties `{"config": {"debug": false, "retries": 3}, "metadata": {"version": "1.0"}}`, the JSON body will be:
+
+```json
+{
+  "config": {
+    "debug": false,
+    "retries": 3
+  },
+  "metadata": {
+    "version": "1.0"
+  }
+}
+```
+
+**Number Properties**:
+
+```json
+{
+  "execution": {
+    "type": "http",
+    "body": {
+      "type": "json",
+      "content": {
+        "max_results": "{!!props.max_results!!}",
+        "quality": "{!!props.quality!!}"
+      }
+    }
+  }
+}
+```
+
+When executed with properties `{"max_results": 100, "quality": 0.95}`, the JSON body will be:
+
+```json
+{
+  "max_results": 100,
+  "quality": 0.95
+}
+```
+
+**Mixed Native and String Placeholders**:
+
+```json
+{
+  "execution": {
+    "type": "http",
+    "body": {
+      "type": "json",
+      "content": {
+        "enabled": "{!!props.enabled!!}",
+        "count": "{!!props.count!!}",
+        "name": "{{props.name}}",
+        "description": "Search for {{props.query}}"
+      }
+    }
+  }
+}
+```
+
+When executed with properties `{"enabled": true, "count": 50, "name": "My Search", "query": "testing"}`, the JSON body will be:
+
+```json
+{
+  "enabled": true,
+  "count": 50,
+  "name": "My Search",
+  "description": "Search for testing"
+}
+```
+
+#### Limitations and Error Cases
+
+**✅ Valid Usage**:
+
+```json
+{
+  "enabled": "{!!props.enabled!!}",
+  "items": "{!!props.items!!}",
+  "config": "{!!env.CONFIG!!}"
+}
+```
+
+**❌ Invalid Usage** (will raise errors):
+
+```json
+{
+  "message": "Status: {!!props.enabled!!}",
+  "url": "https://api.com/{!!props.path!!}",
+  "combined": "{!!props.value!!} and more text"
+}
+```
+
+**Error Messages**:
+
+- **Mixed Content**: "Invalid JSON-native placeholder format: 'text {!!props.value!!}'. Must be exactly {!!path!!} with no surrounding content."
+- **Missing Property**: "Failed to resolve JSON-native placeholder '{!!props.missing!!}': Path 'props.missing' not found in context"
+- **Invalid Syntax**: "Invalid JSON-native placeholder format: '{{props.value}}'. Must be exactly {!!path!!} with no surrounding content."
+
+#### When to Use JSON-Native vs String Placeholders
+
+**Use `{!! ... !!}` when**:
+
+- Property must be a native boolean (`true`/`false`) in JSON
+- Property must be a native number (integer or float) in JSON
+- Property is an array that should remain an array in JSON
+- Property is an object that should remain an object in JSON
+- You need to preserve the exact type from input schema
+
+**Use `{{ ... }}` when**:
+
+- Building strings with multiple placeholders
+- Concatenating values: `"User {{props.name}} has ID {{props.id}}"`
+- Property should always be a string in the output
+- Using in URLs, headers, or other string-only contexts
 
 ---
 

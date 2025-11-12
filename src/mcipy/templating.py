@@ -24,10 +24,74 @@ class TemplateEngine:
     Handles both basic placeholder substitution and advanced templating
     features like loops and conditional blocks. The engine supports:
     - Basic placeholders: {{props.propertyName}}, {{env.VAR_NAME}}
+    - JSON-native placeholders: {!!props.propertyName!!}, {!!env.VAR_NAME!!}
     - For loops: @for(i in range(0, 5)) ... @endfor
     - Foreach loops: @foreach(item in items) ... @endforeach
     - Control blocks: @if(condition) ... @elseif(condition) ... @else ... @endif
     """
+
+    # Pattern for JSON-native placeholders: {!!path!!} with optional whitespace
+    _JSON_NATIVE_PATTERN = r"^\{!!\s*([^}]+?)\s*!!\}$"
+
+    def is_json_native_placeholder(self, value: str) -> bool:
+        """
+        Check if a string is a JSON-native placeholder (and only that).
+
+        A valid JSON-native placeholder must be exactly in the format:
+        {!!path.to.value!!} with optional whitespace around the path.
+
+        Args:
+            value: String to check
+
+        Returns:
+            True if the string is exactly a JSON-native placeholder, False otherwise
+        """
+        if not isinstance(value, str):
+            return False
+
+        # Pattern: exactly {!! ... !!} with nothing before or after
+        return bool(re.match(self._JSON_NATIVE_PATTERN, value))
+
+    def resolve_json_native(self, placeholder: str, context: dict[str, Any]) -> Any:
+        """
+        Resolve a JSON-native placeholder to its native type.
+
+        Extracts the path from {!!path!!} syntax and resolves it to the actual
+        value without converting to string. This preserves booleans, numbers,
+        arrays, objects, and null values.
+
+        Args:
+            placeholder: The placeholder string (e.g., "{!!props.include_images!!}")
+            context: Context dictionary with 'props', 'env', and 'input' keys
+
+        Returns:
+            The resolved value in its native type
+
+        Raises:
+            TemplateError: If the placeholder is invalid or cannot be resolved
+        """
+        # Validate it's a JSON-native placeholder
+        if not self.is_json_native_placeholder(placeholder):
+            raise TemplateError(
+                f"Invalid JSON-native placeholder format: '{placeholder}'. "
+                "Must be exactly {!!path!!} with no surrounding content."
+            )
+
+        # Extract the path from {!! ... !!}
+        match = re.match(self._JSON_NATIVE_PATTERN, placeholder)
+        if not match:
+            raise TemplateError(f"Failed to extract path from placeholder: '{placeholder}'")
+
+        path = match.group(1).strip()
+
+        # Resolve the path to its native value
+        try:
+            value = self._resolve_placeholder(path, context)
+            return value
+        except Exception as e:
+            raise TemplateError(
+                f"Failed to resolve JSON-native placeholder '{placeholder}': {e}"
+            ) from e
 
     def render_basic(self, template: str, context: dict[str, Any]) -> str:
         """

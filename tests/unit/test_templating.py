@@ -463,3 +463,198 @@ Production mode active
 
         # Should produce: "Alice,Alice;Bob,Bob;"
         assert result3 == "Alice,Alice;Bob,Bob;"
+
+
+class TestJSONNativeResolution:
+    """Tests for JSON-native {!! ... !!} placeholder resolution."""
+
+    @pytest.fixture
+    def json_context(self) -> dict[str, Any]:
+        """Fixture for context with various data types."""
+        return {
+            "props": {
+                "include_images": True,
+                "case_sensitive": False,
+                "max_results": 100,
+                "quality": 0.95,
+                "urls": ["https://example.com", "https://test.com"],
+                "payload": {"key": "value", "count": 42},
+                "items": [1, 2, 3],
+                "metadata": {"name": "test", "enabled": True},
+                "nothing": None,
+            },
+            "env": {
+                "FEATURE_FLAG": True,
+                "MAX_RETRIES": 3,
+                "CONFIG": {"debug": False, "timeout": 30},
+            },
+            "input": {
+                "include_images": True,
+            },
+        }
+
+    def test_is_json_native_placeholder_valid(self, engine):
+        """Test detection of valid JSON-native placeholders."""
+        assert engine.is_json_native_placeholder("{!!props.value!!}") is True
+        assert engine.is_json_native_placeholder("{!! props.value !!}") is True
+        assert engine.is_json_native_placeholder("{!!env.VAR!!}") is True
+
+    def test_is_json_native_placeholder_invalid(self, engine):
+        """Test detection rejects invalid formats."""
+        # Standard placeholders
+        assert engine.is_json_native_placeholder("{{props.value}}") is False
+
+        # Mixed content
+        assert engine.is_json_native_placeholder("prefix {!!props.value!!}") is False
+        assert engine.is_json_native_placeholder("{!!props.value!!} suffix") is False
+        assert engine.is_json_native_placeholder("text {!!props.value!!} more") is False
+
+        # Invalid syntax
+        assert engine.is_json_native_placeholder("{!props.value!}") is False
+        assert engine.is_json_native_placeholder("{!!props.value}") is False
+        assert engine.is_json_native_placeholder("props.value") is False
+        assert engine.is_json_native_placeholder("") is False
+
+        # Non-string types
+        assert engine.is_json_native_placeholder(123) is False  # pyright: ignore[reportArgumentType]
+        assert engine.is_json_native_placeholder(None) is False  # pyright: ignore[reportArgumentType]
+
+    def test_resolve_boolean_true(self, engine, json_context):
+        """Test resolving boolean true value."""
+        result = engine.resolve_json_native("{!!props.include_images!!}", json_context)
+        assert result is True
+        assert isinstance(result, bool)
+
+    def test_resolve_boolean_false(self, engine, json_context):
+        """Test resolving boolean false value."""
+        result = engine.resolve_json_native("{!!props.case_sensitive!!}", json_context)
+        assert result is False
+        assert isinstance(result, bool)
+
+    def test_resolve_number_integer(self, engine, json_context):
+        """Test resolving integer value."""
+        result = engine.resolve_json_native("{!!props.max_results!!}", json_context)
+        assert result == 100
+        assert isinstance(result, int)
+
+    def test_resolve_number_float(self, engine, json_context):
+        """Test resolving float value."""
+        result = engine.resolve_json_native("{!!props.quality!!}", json_context)
+        assert result == 0.95
+        assert isinstance(result, float)
+
+    def test_resolve_array(self, engine, json_context):
+        """Test resolving array value."""
+        result = engine.resolve_json_native("{!!props.urls!!}", json_context)
+        assert result == ["https://example.com", "https://test.com"]
+        assert isinstance(result, list)
+        assert len(result) == 2
+
+    def test_resolve_array_of_numbers(self, engine, json_context):
+        """Test resolving array of numbers."""
+        result = engine.resolve_json_native("{!!props.items!!}", json_context)
+        assert result == [1, 2, 3]
+        assert isinstance(result, list)
+
+    def test_resolve_object(self, engine, json_context):
+        """Test resolving object value."""
+        result = engine.resolve_json_native("{!!props.payload!!}", json_context)
+        assert result == {"key": "value", "count": 42}
+        assert isinstance(result, dict)
+        assert result["key"] == "value"
+        assert result["count"] == 42
+
+    def test_resolve_nested_object(self, engine, json_context):
+        """Test resolving nested object value."""
+        result = engine.resolve_json_native("{!!props.metadata!!}", json_context)
+        assert result == {"name": "test", "enabled": True}
+        assert isinstance(result, dict)
+
+    def test_resolve_null(self, engine, json_context):
+        """Test resolving null value."""
+        result = engine.resolve_json_native("{!!props.nothing!!}", json_context)
+        assert result is None
+
+    def test_resolve_from_env(self, engine, json_context):
+        """Test resolving from env context."""
+        result = engine.resolve_json_native("{!!env.FEATURE_FLAG!!}", json_context)
+        assert result is True
+        assert isinstance(result, bool)
+
+        result2 = engine.resolve_json_native("{!!env.MAX_RETRIES!!}", json_context)
+        assert result2 == 3
+        assert isinstance(result2, int)
+
+        result3 = engine.resolve_json_native("{!!env.CONFIG!!}", json_context)
+        assert result3 == {"debug": False, "timeout": 30}
+        assert isinstance(result3, dict)
+
+    def test_resolve_from_input(self, engine, json_context):
+        """Test resolving from input context (alias for props)."""
+        result = engine.resolve_json_native("{!!input.include_images!!}", json_context)
+        assert result is True
+        assert isinstance(result, bool)
+
+    def test_resolve_with_whitespace(self, engine, json_context):
+        """Test resolving with whitespace in placeholder."""
+        result = engine.resolve_json_native("{!! props.include_images !!}", json_context)
+        assert result is True
+
+        result2 = engine.resolve_json_native("{!!  props.urls  !!}", json_context)
+        assert result2 == ["https://example.com", "https://test.com"]
+
+    def test_resolve_missing_path_error(self, engine, json_context):
+        """Test error when resolving missing path."""
+        with pytest.raises(TemplateError) as exc_info:
+            engine.resolve_json_native("{!!props.missing!!}", json_context)
+        assert "not found" in str(exc_info.value).lower()
+        assert "props.missing" in str(exc_info.value)
+
+    def test_resolve_invalid_format_error(self, engine, json_context):
+        """Test error when placeholder has invalid format."""
+        with pytest.raises(TemplateError) as exc_info:
+            engine.resolve_json_native("{{props.value}}", json_context)
+        assert "invalid" in str(exc_info.value).lower()
+
+        with pytest.raises(TemplateError) as exc_info:
+            engine.resolve_json_native("prefix {!!props.value!!}", json_context)
+        assert "invalid" in str(exc_info.value).lower()
+        assert "no surrounding content" in str(exc_info.value).lower()
+
+    def test_resolve_mixed_content_error(self, engine, json_context):
+        """Test error when JSON-native placeholder has surrounding content."""
+        # These should all raise errors because JSON-native must be the sole value
+        invalid_cases = [
+            "text {!!props.value!!}",
+            "{!!props.value!!} text",
+            "prefix {!!props.value!!} suffix",
+            "The value is {!!props.value!!}",
+        ]
+
+        for invalid_case in invalid_cases:
+            with pytest.raises(TemplateError) as exc_info:
+                engine.resolve_json_native(invalid_case, json_context)
+            assert "invalid" in str(exc_info.value).lower()
+
+    def test_preserve_type_integrity(self, engine, json_context):
+        """Test that types are preserved exactly."""
+        # Boolean should not become string
+        bool_result = engine.resolve_json_native("{!!props.include_images!!}", json_context)
+        assert bool_result is True
+        assert bool_result != "true"
+        assert bool_result != "True"
+
+        # Number should not become string
+        num_result = engine.resolve_json_native("{!!props.max_results!!}", json_context)
+        assert num_result == 100
+        assert num_result != "100"
+
+        # Array should not become string
+        arr_result = engine.resolve_json_native("{!!props.urls!!}", json_context)
+        assert isinstance(arr_result, list)
+        assert arr_result != str(arr_result)
+
+        # Object should not become string
+        obj_result = engine.resolve_json_native("{!!props.payload!!}", json_context)
+        assert isinstance(obj_result, dict)
+        assert obj_result != str(obj_result)
