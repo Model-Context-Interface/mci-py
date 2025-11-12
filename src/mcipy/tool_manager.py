@@ -222,6 +222,39 @@ class ToolManager:
         if tool is None:
             raise ToolManagerError(f"Tool not found: {tool_name}")
 
+        # Delegate to execute_tool_model for actual execution
+        return self.execute_tool_model(tool=tool, properties=properties, env_vars=env_vars)
+
+    def execute_tool_model(
+        self,
+        tool: Tool,
+        properties: dict[str, Any] | None = None,
+        env_vars: dict[str, Any] | None = None,
+    ) -> ExecutionResult:
+        """
+        Execute a Tool model instance directly with the provided properties.
+
+        This method performs the actual execution logic used by both execute()
+        and executeSeparated(). It validates input properties, builds the execution
+        context, and dispatches to the appropriate executor.
+
+        Args:
+            tool: Tool model instance to execute
+            properties: Properties/parameters to pass to the tool (default: empty dict)
+            env_vars: Environment variables for template context (default: empty dict)
+
+        Returns:
+            ExecutionResult with success/error status and content
+
+        Raises:
+            ToolManagerError: If properties validation fails
+        """
+        # Default to empty dicts if None
+        if properties is None:
+            properties = {}
+        if env_vars is None:
+            env_vars = {}
+
         # Validate input schema if present
         # Check both: not None (schema exists) and not empty dict (schema has content)
         # This handles three cases: None (no schema), {} (empty schema), and {...} (schema with properties)

@@ -14,6 +14,7 @@ This document provides a comprehensive API reference for the Python MCI Adapter 
     - [withoutTags()](#withouttags)
     - [toolsets()](#toolsets)
     - [execute()](#execute)
+    - [executeSeparated()](#executeseparated)
     - [list_tools()](#list_tools)
     - [get_tool_schema()](#get_tool_schema)
 - [Data Models](#data-models)
@@ -672,6 +673,194 @@ ExecutionResult(
     content=None,
     error="Connection timeout after 5000ms",
     metadata=None
+)
+```
+
+---
+
+#### `executeSeparated()`
+
+Execute a Tool model instance directly with the provided properties and environment variables.
+
+This method allows executing a Tool model instance directly without requiring it to be registered in the tool registry. It uses the same execution engine (templating, validation, executor selection) as the regular `execute()` method but bypasses tool name lookup and filtering.
+
+**Use Cases:**
+- Debugging/testing specific Tool models in isolation
+- Validating behavior with different props/env_vars without modifying global context
+- Dynamic tool execution (e.g., tools loaded from database or constructed on-the-fly)
+- Integration tests and IDE plugins
+
+**Note:** This method does not modify the client's tool registry or schema. The tool is executed in isolation and is not persisted.
+
+**Method Signature:**
+
+```python
+def executeSeparated(
+    self,
+    tool: Tool,
+    properties: dict[str, Any] | None = None,
+    env_vars: dict[str, Any] | None = None,
+    validating: bool = False,
+) -> ExecutionResult
+```
+
+**Parameters:**
+
+| Name | Type | Required | Description |
+|------|------|----------|-------------|
+| `tool` | `Tool` | Yes | Tool model instance to execute (must have valid execution config) |
+| `properties` | `dict[str, Any]` | No | Properties/parameters to pass to the tool (default: `{}`) |
+| `env_vars` | `dict[str, Any]` | No | Environment variables for template context. If `None`, uses the client's environment variables. (default: `None`) |
+| `validating` | `bool` | No | If `True`, execution is blocked (same as client-level validating mode). This parameter allows overriding the client's validating state for this specific execution. (default: `False`) |
+
+**Returns:**
+
+| Type | Description |
+|------|-------------|
+| `ExecutionResult` | Result object with success/error status and content |
+
+**Raises:**
+
+- `MCIClientError` - If tool model is invalid or execution fails with validation error
+- `MCIClientError` - If validating mode is enabled (client-level or method-level)
+
+**Example 1: Execute a dynamically created tool**
+
+```python
+from mcipy import MCIClient
+from mcipy.models import Tool, TextExecutionConfig
+
+client = MCIClient(schema_file_path="example.mci.json")
+
+# Create a tool model dynamically
+tool = Tool(
+    name="dynamic_greeting",
+    description="Generate a greeting message",
+    execution=TextExecutionConfig(
+        type="text",
+        text="Hello {{props.name}} from {{env.LOCATION}}!"
+    )
+)
+
+# Execute the tool directly
+result = client.executeSeparated(
+    tool=tool,
+    properties={"name": "Alice"},
+    env_vars={"LOCATION": "San Francisco"}
+)
+
+print(result.result.content[0].text)
+# Output: "Hello Alice from San Francisco!"
+```
+
+**Example 2: Test a tool with different configurations**
+
+```python
+from mcipy import MCIClient
+from mcipy.models import Tool, HTTPExecutionConfig
+
+client = MCIClient(
+    schema_file_path="example.mci.json",
+    env_vars={"API_KEY": "default-key"}
+)
+
+# Create a tool for testing
+tool = Tool(
+    name="test_api",
+    execution=HTTPExecutionConfig(
+        type="http",
+        method="GET",
+        url="https://api.example.com/data",
+        params={"id": "{{props.item_id}}"},
+        headers={"Authorization": "Bearer {{env.API_KEY}}"}
+    )
+)
+
+# Test with different API keys without modifying client
+result1 = client.executeSeparated(
+    tool=tool,
+    properties={"item_id": "123"},
+    env_vars={"API_KEY": "test-key-1"}
+)
+
+result2 = client.executeSeparated(
+    tool=tool,
+    properties={"item_id": "456"},
+    env_vars={"API_KEY": "test-key-2"}
+)
+
+# Or use client's default env_vars
+result3 = client.executeSeparated(
+    tool=tool,
+    properties={"item_id": "789"},
+    env_vars=None  # Uses client's API_KEY
+)
+```
+
+**Example 3: Debug a tool loaded from database**
+
+```python
+from mcipy import MCIClient
+from mcipy.models import Tool, CLIExecutionConfig
+
+client = MCIClient(schema_file_path="example.mci.json")
+
+# Simulate loading a tool from a database
+# (In reality, you'd deserialize from JSON/database)
+db_tool = Tool(
+    name="db_backup",
+    description="Backup database",
+    execution=CLIExecutionConfig(
+        type="cli",
+        command="pg_dump",
+        args=["-U", "{{props.username}}", "{{props.database}}"]
+    )
+)
+
+# Test the tool before saving to production
+result = client.executeSeparated(
+    tool=db_tool,
+    properties={"username": "admin", "database": "testdb"}
+)
+
+if result.result.isError:
+    print(f"Tool failed validation: {result.result.content[0].text}")
+else:
+    print("Tool works correctly, safe to save to production")
+```
+
+**Success Response:**
+
+```python
+ExecutionResult(
+    result=ExecutionResultContent(
+        isError=False,
+        content=[
+            TextContent(type="text", text="Hello Alice from San Francisco!")
+        ],
+        metadata=None
+    )
+)
+```
+
+**Error Response - Validating Mode:**
+
+```python
+# Raises MCIClientError
+MCIClientError: Tool execution is disabled in validating mode. Set validating=False to execute tools.
+```
+
+**Error Response - Execution Error:**
+
+```python
+ExecutionResult(
+    result=ExecutionResultContent(
+        isError=True,
+        content=[
+            TextContent(type="text", text="Command failed: pg_dump: command not found")
+        ],
+        metadata=None
+    )
 )
 ```
 

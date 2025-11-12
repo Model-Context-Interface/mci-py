@@ -230,6 +230,94 @@ class MCIClient:
             # Convert ToolManagerError to MCIClientError for consistent API
             raise MCIClientError(str(e)) from e
 
+    def executeSeparated(
+        self,
+        tool: Tool,
+        properties: dict[str, Any] | None = None,
+        env_vars: dict[str, Any] | None = None,
+        validating: bool = False,
+    ) -> ExecutionResult:
+        """
+        Execute a tool model directly with the provided properties and environment variables.
+
+        This method allows executing a Tool model instance directly without requiring it
+        to be registered in the tool registry. It uses the same execution engine
+        (templating, validation, executor selection) as the regular execute() method
+        but bypasses tool name lookup and filtering.
+
+        This is useful for:
+        - Debugging/testing specific Tool models in isolation
+        - Validating behavior with different props/env_vars without modifying global context
+        - Dynamic tool execution (e.g., tools loaded from database or constructed on-the-fly)
+        - Integration tests and IDE plugins
+
+        Note: This method does not modify the client's tool registry or schema.
+        The tool is executed in isolation and is not persisted.
+
+        Args:
+            tool: Tool model instance to execute (must have valid execution config)
+            properties: Properties/parameters to pass to the tool (default: empty dict)
+            env_vars: Environment variables for template context (default: empty dict).
+                     If None, uses the client's environment variables.
+            validating: If True, execution is blocked (same as client-level validating mode).
+                       This parameter allows overriding the client's validating state for
+                       this specific execution. (default: False)
+
+        Returns:
+            ExecutionResult with success/error status and content
+
+        Raises:
+            MCIClientError: If tool model is invalid, missing execution config,
+                          or execution fails with validation error,
+                          or if validating mode is enabled (client-level or method-level)
+
+        Example:
+            ```python
+            from mcipy import MCIClient
+            from mcipy.models import Tool, TextExecutionConfig
+
+            # Create a tool model dynamically
+            tool = Tool(
+                name="dynamic_greeting",
+                description="Generate a greeting message",
+                execution=TextExecutionConfig(
+                    type="text",
+                    text="Hello {{props.name}} from {{env.LOCATION}}!"
+                )
+            )
+
+            # Execute the tool directly
+            client = MCIClient(schema_file_path="example.mci.json")
+            result = client.executeSeparated(
+                tool=tool,
+                properties={"name": "Alice"},
+                env_vars={"LOCATION": "San Francisco"}
+            )
+            print(result.result.content[0].text)
+            # Output: "Hello Alice from San Francisco!"
+            ```
+        """
+        # Check validating mode - either client-level or method-level
+        if self._validating or validating:
+            raise MCIClientError(
+                "Tool execution is disabled in validating mode. "
+                "Set validating=False to execute tools."
+            )
+
+        # Use client's env_vars if not provided
+        if env_vars is None:
+            env_vars = self._env_vars
+
+        try:
+            return self._tool_manager.execute_tool_model(
+                tool=tool,
+                properties=properties,
+                env_vars=env_vars,
+            )
+        except ToolManagerError as e:
+            # Convert ToolManagerError to MCIClientError for consistent API
+            raise MCIClientError(str(e)) from e
+
     def list_tools(self) -> list[str]:
         """
         List available tool names (excluding disabled tools).
