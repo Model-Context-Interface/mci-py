@@ -30,6 +30,9 @@ class TemplateEngine:
     - Control blocks: @if(condition) ... @elseif(condition) ... @else ... @endif
     """
 
+    # Pattern for JSON-native placeholders: {!!path!!} with optional whitespace
+    _JSON_NATIVE_PATTERN = r"^\{!!\s*([^}]+?)\s*!!\}$"
+
     def is_json_native_placeholder(self, value: str) -> bool:
         """
         Check if a string is a JSON-native placeholder (and only that).
@@ -47,8 +50,7 @@ class TemplateEngine:
             return False
 
         # Pattern: exactly {!! ... !!} with nothing before or after
-        pattern = r"^\{!!\s*([^}]+?)\s*!!\}$"
-        return bool(re.match(pattern, value))
+        return bool(re.match(self._JSON_NATIVE_PATTERN, value))
 
     def resolve_json_native(self, placeholder: str, context: dict[str, Any]) -> Any:
         """
@@ -76,8 +78,7 @@ class TemplateEngine:
             )
 
         # Extract the path from {!! ... !!}
-        pattern = r"^\{!!\s*([^}]+?)\s*!!\}$"
-        match = re.match(pattern, placeholder)
+        match = re.match(self._JSON_NATIVE_PATTERN, placeholder)
         if not match:
             raise TemplateError(f"Failed to extract path from placeholder: '{placeholder}'")
 
